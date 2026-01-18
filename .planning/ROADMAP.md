@@ -26,7 +26,7 @@ None
 **Depends on**: Nothing (first phase)
 **Research**: Likely (UX decision on rotation feel)
 **Research topics**: Edge-only drag zone (preferred), visual indicator for drag area, normalized rotation as fallback
-**Plans**: TBD
+**Plans**: 1 plan
 
 **Context from user:**
 - Edge-only drag preferred — only responds to drags near dial edge for natural arc feel
@@ -71,7 +71,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Dial Rotation | 0/TBD | Not started | - |
+| 1. Dial Rotation | 0/1 | Not started | - |
 | 2. Minigame Logic | 0/TBD | Not started | - |
 | 3. Complications | 0/TBD | Not started | - |
 | 4. Minigame-Complication Integration | 0/TBD | Not started | - |
