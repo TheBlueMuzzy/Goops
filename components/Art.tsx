@@ -398,6 +398,26 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         }
     };
 
+    // Helper to get laser slider indicator light colors
+    // Returns { left: color, right: color } based on target and active state
+    const getLaserLightColors = (sliderIndex: number): { left: string; right: string } => {
+        const OFF = "#231f20";
+        const ON = "#d8672b";
+
+        if (!laserComplication.active) {
+            return { left: OFF, right: OFF };
+        }
+
+        const target = laserComplication.targets[sliderIndex];
+        if (target === -1) {
+            return { left: ON, right: OFF }; // Target is left
+        } else if (target === 1) {
+            return { left: OFF, right: ON }; // Target is right
+        } else {
+            return { left: OFF, right: OFF }; // Target is center
+        }
+    };
+
     const transitionStyle = { transition: isMonitorDragging ? 'none' : 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)' };
     const opacityTransitionStyle = { transition: isMonitorDragging ? 'none' : 'opacity 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)' };
     
@@ -527,32 +547,40 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     <ConsoleSlider x={445.24} y={207.9} value={laserSliders[2]} onChange={(v) => updateLaserSlider(2, v)} />
                     <ConsoleSlider x={445.24} y={298.78} value={laserSliders[3]} onChange={(v) => updateLaserSlider(3, v)} />
 
-                    {/* Slider Lights (Top Left) */}
+                    {/* Slider Lights (Top Left = Slider 0) */}
                     <g>
-                        <path fill="#231f20" fillRule="evenodd" d="M280.92,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
+                        {/* Right light */}
+                        <path fill={getLaserLightColors(0).right} fillRule="evenodd" d="M280.92,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
                         <path fill="#1f1f38" fillRule="evenodd" d="M280.93,197.87c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M280.93,194.87h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                        <path fill="#d8672b" fillRule="evenodd" d="M63.6,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
+                        {/* Left light */}
+                        <path fill={getLaserLightColors(0).left} fillRule="evenodd" d="M63.6,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
                         <path fill="#1f1f38" fillRule="evenodd" d="M63.61,197.87c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M63.61,194.87h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
                     </g>
-                    {/* Slider Lights (Bot Left) */}
+                    {/* Slider Lights (Bot Left = Slider 1) */}
                     <g>
-                        <path fill="#231f20" fillRule="evenodd" d="M280.92,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
+                        {/* Right light */}
+                        <path fill={getLaserLightColors(1).right} fillRule="evenodd" d="M280.92,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
                         <path fill="#1f1f38" fillRule="evenodd" d="M280.93,288.75c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M280.93,285.75h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                        <path fill="#d8672b" fillRule="evenodd" d="M63.6,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
+                        {/* Left light */}
+                        <path fill={getLaserLightColors(1).left} fillRule="evenodd" d="M63.6,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
                         <path fill="#1f1f38" fillRule="evenodd" d="M63.61,288.75c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M63.61,285.75h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
                     </g>
-                    {/* Slider Lights (Top Right) */}
+                    {/* Slider Lights (Top Right = Slider 2) */}
                     <g>
-                        <path fill="#231f20" fillRule="evenodd" d="M336.96,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
+                        {/* Left light */}
+                        <path fill={getLaserLightColors(2).left} fillRule="evenodd" d="M336.96,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
                         <path fill="#1f1f38" fillRule="evenodd" d="M336.97,197.87c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M336.97,194.87h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                        <path fill="#d8672b" fillRule="evenodd" d="M554.28,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
+                        {/* Right light */}
+                        <path fill={getLaserLightColors(2).right} fillRule="evenodd" d="M554.28,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
                         <path fill="#1f1f38" fillRule="evenodd" d="M554.29,197.87c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M554.29,194.87h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
                     </g>
-                    {/* Slider Lights (Bot Right) */}
+                    {/* Slider Lights (Bot Right = Slider 3) */}
                     <g>
-                        <path fill="#231f20" fillRule="evenodd" d="M336.96,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
+                        {/* Left light */}
+                        <path fill={getLaserLightColors(3).left} fillRule="evenodd" d="M336.96,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
                         <path fill="#1f1f38" fillRule="evenodd" d="M336.97,288.75c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M336.97,285.75h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                        <path fill="#d8672b" fillRule="evenodd" d="M554.28,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
+                        {/* Right light */}
+                        <path fill={getLaserLightColors(3).right} fillRule="evenodd" d="M554.28,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
                         <path fill="#1f1f38" fillRule="evenodd" d="M554.29,288.75c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M554.29,285.75h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
                     </g>
 
