@@ -4,96 +4,56 @@
 
 ### Where We Stopped
 
-Executing Plan 01-01-PLAN.md, starting Task 1 (Add dial rotation state and drag handlers).
+Executing Plan 01-01-PLAN.md, Task 3 (Human verify dial rotation on mobile).
 
-Files have been read and analyzed:
-- `components/Art.tsx` - Main file to modify (595 lines)
-- `components/ConsoleView.tsx` - Reference for drag pattern
+**IMPORTANT**: Just implemented tangent-based rotation approach. Needs user testing.
 
-### What Needs To Be Done
+### What Was Done
 
-**Task 1: Add dial rotation state and drag handlers**
+**Task 1 & 2 COMPLETE**: Dial rotation state and drag handlers implemented.
 
-1. Add local state at top of ConsoleLayoutSVG component (around line 125-131):
+Latest change: Switched from "angle-matching" to "tangent-based" rotation:
+- Old: newRotation = cursor_angle - grab_offset (grab point follows cursor angle)
+- New: rotation based on tangential distance from grab point to cursor
+
+The new approach means:
+- Dragging along the dial edge (tangentially) rotates proportionally
+- Dragging toward/away from center (radially) has minimal effect
+- Creates the "triangle" behavior user described
+
+### Key Code (Art.tsx lines ~170-242)
+
 ```tsx
-const [localDialRotation, setLocalDialRotation] = useState(0);
-const [isDialDragging, setIsDialDragging] = useState(false);
-const dialStartAngle = useRef(0);
-const dialStartRotation = useRef(0);
+// Store grab point ON the dial edge
+const grabAngleRad = info.angle * Math.PI / 180;
+dialGrabX.current = DIAL_CENTER_X + DIAL_RADIUS * Math.cos(grabAngleRad);
+dialGrabY.current = DIAL_CENTER_Y + DIAL_RADIUS * Math.sin(grabAngleRad);
+
+// During move: project drag vector onto tangent
+const dx = cursor.x - dialGrabX.current;
+const dy = cursor.y - dialGrabY.current;
+const tanX = -Math.sin(grabAngleRad);
+const tanY = Math.cos(grabAngleRad);
+const tangentDist = dx * tanX + dy * tanY;
+
+// Convert to rotation
+const deltaAngle = (tangentDist / DIAL_RADIUS) * (180 / Math.PI);
 ```
 
-2. Add useRef import if not present (already imported on line 2)
+### Remaining Tasks
 
-3. Add helper function to convert client coords to SVG coords and calculate angle:
-```tsx
-const getAngleFromPointer = (clientX: number, clientY: number): number | null => {
-    const svg = document.querySelector('svg');
-    if (!svg) return null;
-
-    const rect = svg.getBoundingClientRect();
-    const viewBox = { x: 0, y: 827.84, width: 648, height: 1152 };
-
-    // Convert client coords to SVG coords
-    const svgX = ((clientX - rect.left) / rect.width) * viewBox.width + viewBox.x;
-    const svgY = ((clientY - rect.top) / rect.height) * viewBox.height + viewBox.y;
-
-    // Dial center in SVG coords
-    const dialCenterX = 194.32;
-    const dialCenterY = 1586.66;
-
-    const dx = svgX - dialCenterX;
-    const dy = svgY - dialCenterY;
-
-    return Math.atan2(dy, dx) * (180 / Math.PI);
-};
-```
-
-4. Add drag handlers:
-```tsx
-const handleDialStart = (clientX: number, clientY: number) => {
-    const angle = getAngleFromPointer(clientX, clientY);
-    if (angle === null) return;
-
-    setIsDialDragging(true);
-    dialStartAngle.current = angle;
-    dialStartRotation.current = localDialRotation;
-};
-
-const handleDialMove = (clientX: number, clientY: number) => {
-    if (!isDialDragging) return;
-
-    const angle = getAngleFromPointer(clientX, clientY);
-    if (angle === null) return;
-
-    const deltaAngle = angle - dialStartAngle.current;
-    setLocalDialRotation(dialStartRotation.current + deltaAngle);
-};
-
-const handleDialEnd = () => {
-    setIsDialDragging(false);
-};
-```
-
-5. Add useEffect for global event listeners (similar to periscope in ConsoleView.tsx lines 132-162)
-
-6. Update dial group (lines 455-472):
-   - Replace `transform={`rotate(${dialRotation} ...)`}` with `transform={`rotate(${localDialRotation} ...)`}`
-   - Replace `onClick={onDialClick}` with drag handlers:
-     - `onMouseDown={(e) => handleDialStart(e.clientX, e.clientY)}`
-     - `onTouchStart={(e) => handleDialStart(e.touches[0].clientX, e.touches[0].clientY)}`
-   - Remove transition style when dragging
-
-### Key Technical Details
-
-- Dial center: (194.32, 1586.66) in SVG coordinates
-- Dial radius: 86.84
-- SVG viewBox: "0 827.84 648 1152"
-- Edge zone (for Task 2): outer 30% = distance >= 60.8 AND <= 86.84
-
-### After Task 1
-
-Run `npm run test:run` to verify tests pass, then proceed to Task 2 (edge-only drag zone).
+1. **User testing** - Does the tangent-based rotation feel right?
+2. If rotation direction is wrong, negate deltaAngle
+3. Once rotation feels good, re-enable snap functionality
+4. Remove console.log statements
+5. Create SUMMARY.md and commit
 
 ### Files Modified
 
-None yet - implementation not started.
+- `components/Art.tsx` - Dial rotation handlers (lines ~170-242)
+
+### Notes
+
+- Snap is disabled for testing (line ~247)
+- Console logs are active for debugging
+- SVG path errors were fixed earlier in session

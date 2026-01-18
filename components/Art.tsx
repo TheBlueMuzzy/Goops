@@ -133,15 +133,18 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     // Local state for dial rotation (drag-based, replaces prop)
     const [localDialRotation, setLocalDialRotation] = useState(0);
     const [isDialDragging, setIsDialDragging] = useState(false);
-    const dialStartAngle = useRef(0);
-    const dialStartRotation = useRef(0);
 
     // Dial center in SVG coordinates
     const DIAL_CENTER_X = 194.32;
     const DIAL_CENTER_Y = 1586.66;
     const DIAL_RADIUS = 86.84;
-    // Edge zone: outer 30% of radius (from 70% radius to 100% radius)
-    const DIAL_EDGE_INNER = DIAL_RADIUS * 0.7; // ~60.8
+    // Touch zone: allow touches from 40% of radius out to 130% (extra padding for finger imprecision)
+    const DIAL_TOUCH_INNER = DIAL_RADIUS * 0.4; // ~35 - includes the chevron arrows
+    const DIAL_TOUCH_OUTER = DIAL_RADIUS * 1.3; // ~113 - padding beyond visual edge
+    // Curved arrow angular range (in degrees, where 90° is down in SVG coords)
+    // Widened to 0° to 180° to cover the entire bottom half of the dial
+    const DIAL_ARROW_ANGLE_MIN = 0;
+    const DIAL_ARROW_ANGLE_MAX = 180;
 
     // Helper to convert client coordinates to SVG coordinates and get angle + distance to dial center
     const getPointerInfo = (clientX: number, clientY: number): { angle: number; distance: number } | null => {
@@ -164,34 +167,88 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         return { angle, distance };
     };
 
-    // Dial drag handlers
+    // Dial drag handlers - tangent-based rotation
+    // Rotation is proportional to how far you drag tangentially from the grab point
+    const dialGrabAngle = useRef(0); // The angle (from center) where we grabbed
+    const dialGrabX = useRef(0); // SVG X coord of grab point on dial edge
+    const dialGrabY = useRef(0); // SVG Y coord of grab point on dial edge
+    const dialRotationAtGrab = useRef(0);
+
+    // Helper to get SVG coords from client coords
+    const getSvgCoords = (clientX: number, clientY: number): { x: number; y: number } | null => {
+        const svg = document.querySelector('svg');
+        if (!svg) return null;
+        const rect = svg.getBoundingClientRect();
+        const viewBox = { x: 0, y: 827.84, width: 648, height: 1152 };
+        const svgX = ((clientX - rect.left) / rect.width) * viewBox.width + viewBox.x;
+        const svgY = ((clientY - rect.top) / rect.height) * viewBox.height + viewBox.y;
+        return { x: svgX, y: svgY };
+    };
+
     const handleDialStart = (clientX: number, clientY: number) => {
         const info = getPointerInfo(clientX, clientY);
         if (info === null) return;
 
-        // Edge-only drag: only allow drag if pointer is in the outer 30% of the dial
-        // Reject if too close to center (< DIAL_EDGE_INNER) or outside dial (> DIAL_RADIUS)
-        if (info.distance < DIAL_EDGE_INNER || info.distance > DIAL_RADIUS) {
-            return; // Don't start drag - pointer is not in edge zone
-        }
+        // Simple distance check - anywhere on the dial
+        if (info.distance > DIAL_TOUCH_OUTER) return;
 
+        // Store grab point on the dial's edge (projected to the dial circumference)
+        const grabAngleRad = info.angle * Math.PI / 180;
+        dialGrabAngle.current = info.angle;
+        dialGrabX.current = DIAL_CENTER_X + DIAL_RADIUS * Math.cos(grabAngleRad);
+        dialGrabY.current = DIAL_CENTER_Y + DIAL_RADIUS * Math.sin(grabAngleRad);
+        dialRotationAtGrab.current = localDialRotation;
+
+        console.log('[Dial] Grab:', {
+            angle: info.angle.toFixed(1),
+            grabPoint: `(${dialGrabX.current.toFixed(1)}, ${dialGrabY.current.toFixed(1)})`,
+            rotation: localDialRotation.toFixed(1)
+        });
         setIsDialDragging(true);
-        dialStartAngle.current = info.angle;
-        dialStartRotation.current = localDialRotation;
     };
 
     const handleDialMove = (clientX: number, clientY: number) => {
         if (!isDialDragging) return;
 
-        const info = getPointerInfo(clientX, clientY);
-        if (info === null) return;
+        const coords = getSvgCoords(clientX, clientY);
+        if (coords === null) return;
 
-        const deltaAngle = info.angle - dialStartAngle.current;
-        setLocalDialRotation(dialStartRotation.current + deltaAngle);
+        // Vector from original grab point to current cursor
+        const dx = coords.x - dialGrabX.current;
+        const dy = coords.y - dialGrabY.current;
+
+        // Tangent direction at grab point (perpendicular to radius, counterclockwise positive)
+        const grabAngleRad = dialGrabAngle.current * Math.PI / 180;
+        const tanX = -Math.sin(grabAngleRad);
+        const tanY = Math.cos(grabAngleRad);
+
+        // Project drag vector onto tangent (tangential distance)
+        const tangentDist = dx * tanX + dy * tanY;
+
+        // Convert tangent distance to angle: arc_length = radius * angle
+        // So angle = arc_length / radius (in radians)
+        const deltaAngleRad = tangentDist / DIAL_RADIUS;
+        const deltaAngle = deltaAngleRad * (180 / Math.PI);
+
+        const newRotation = dialRotationAtGrab.current + deltaAngle;
+
+        console.log('[Dial] Move:', {
+            cursor: `(${coords.x.toFixed(0)}, ${coords.y.toFixed(0)})`,
+            tangentDist: tangentDist.toFixed(1),
+            deltaAngle: deltaAngle.toFixed(1),
+            newRotation: newRotation.toFixed(1)
+        });
+        setLocalDialRotation(newRotation);
     };
 
+    // Snap positions: 4 corners at 45°, 135°, 225°, 315°
+    const DIAL_SNAP_POSITIONS = [45, 135, 225, 315];
+
     const handleDialEnd = () => {
+        if (!isDialDragging) return;
         setIsDialDragging(false);
+        console.log('[Dial] End drag at rotation:', localDialRotation.toFixed(1));
+        // SNAP DISABLED FOR TESTING - just keep current rotation
     };
 
     // Global event listeners for dial drag (follows periscope pattern)
@@ -462,12 +519,12 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
 
                 {/* Slider Bottom Light (Off) */}
                 <g>
-                    <path fill="#231f20" d="M382.12,1706.83c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.54-11.53,11.54Z"/>
+                    <path fill="#231f20" d="M382.12,1706.83c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
                     <path fill="#1f1f38" d="M382.12,1685.25c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04s-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04M382.12,1682.25c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.04-13.03-13.04h0Z"/>
                 </g>
                 {/* Slider Top Light (On) */}
                 <g>
-                    <path fill="#d8672b" d="M382.12,1489.51c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.54-11.53,11.54Z"/>
+                    <path fill="#d8672b" d="M382.12,1489.51c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
                     <path fill="#1f1f38" d="M382.12,1467.94c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04s-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04M382.12,1464.94c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
                 </g>
 
@@ -482,7 +539,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
 
                 {/* Light below Blue */}
                 <g>
-                    <path fill="#d8672b" d="M546.19,1547c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.53,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
+                    <path fill="#d8672b" d="M546.19,1547c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
                     <path fill="#1f1f38" d="M546.19,1525.42c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04s-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04M546.19,1522.42c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.04h0Z"/>
                 </g>
 
@@ -512,7 +569,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
 
                 {/* Light below Purple */}
                 <g>
-                    <path fill="#d8672b" d="M565.12,1689.3c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.53,11.53,5.17,11.54-11.53,11.54Z"/>
+                    <path fill="#d8672b" d="M565.12,1689.3c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
                     <path fill="#1f1f38" d="M565.12,1667.73c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04h0c-5.54,0-10.03-4.49-10.03-10.04h0M565.12,1664.73c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.04h0Z"/>
                 </g>
             </g>
@@ -549,7 +606,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 
                 {/* The Dial Itself */}
                 <g
-                    transform={`rotate(${localDialRotation} ${DIAL_CENTER_X} ${DIAL_CENTER_Y})`}
+                    transform={`rotate(${Math.round(localDialRotation)} ${DIAL_CENTER_X} ${DIAL_CENTER_Y})`}
                     className="cursor-grab"
                     style={{
                         transition: isDialDragging ? 'none' : 'transform 0.3s ease-out',
