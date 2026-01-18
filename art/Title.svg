@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 337.37 112.85">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #5bbc70;
+        font-family: FromWhereYouAre, 'From Where You Are';
+        font-size: 62.79px;
+      }
+
+      .cls-2 {
+        letter-spacing: .01em;
+      }
+
+      .cls-3 {
+        letter-spacing: .01em;
+      }
+
+      .cls-4 {
+        letter-spacing: .03em;
+      }
+    </style>
+  </defs>
+  <g id="MainMenu">
+    <text id="Title" class="cls-1" transform="translate(57.27 77.1)"><tspan class="cls-2" x="0" y="0">G</tspan><tspan x="50.77" y="0">O</tspan><tspan class="cls-3" x="94.43" y="0">O</tspan><tspan class="cls-4" x="138.94" y="0">P</tspan><tspan x="182.79" y="0">S</tspan></text>
+  </g>
+</svg>
