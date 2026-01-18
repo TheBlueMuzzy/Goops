@@ -366,6 +366,11 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     const handleRelease = (btn: string, action?: () => void) => {
         if (pressedBtn === btn) {
             setPressedBtn(null);
+            // Handle Lights Out button presses
+            if (btn === 'blue') handleLightsButton(0);
+            else if (btn === 'green') handleLightsButton(1);
+            else if (btn === 'purple') handleLightsButton(2);
+            // Also call external handler if provided
             if (action) action();
         } else {
             setPressedBtn(null);
@@ -446,6 +451,34 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 targets: generateRandomTargets()
             });
         }
+    };
+
+    // Lights Out button toggle logic
+    // B1 (blue) → L1 + L2, B2 (green) → L2 + L3, B3 (purple) → L1 + L3
+    const handleLightsButton = (buttonIndex: 0 | 1 | 2) => {
+        if (!lightsComplication.active || lightsComplication.solved) return;
+
+        setLightsComplication(prev => {
+            const newLights = [...prev.lights] as [boolean, boolean, boolean];
+
+            if (buttonIndex === 0) { // B1 (blue)
+                newLights[0] = !newLights[0];
+                newLights[1] = !newLights[1];
+            } else if (buttonIndex === 1) { // B2 (green)
+                newLights[1] = !newLights[1];
+                newLights[2] = !newLights[2];
+            } else { // B3 (purple)
+                newLights[0] = !newLights[0];
+                newLights[2] = !newLights[2];
+            }
+
+            const allOn = newLights.every(l => l);
+            return {
+                ...prev,
+                lights: newLights,
+                buttonPhaseComplete: allOn
+            };
+        });
     };
 
     // Helper to get Reset Laser text color based on complication state
