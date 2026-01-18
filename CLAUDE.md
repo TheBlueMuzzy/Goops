@@ -14,6 +14,8 @@ Goops (Gooptris) is a puzzle-action game built with React/TypeScript/Vite. Playe
 - `PRD.md` — Full product requirements
 - `ARCHITECTURE_PLAN.md` — Phased refactoring plan (partially complete)
 - `tests/` — Unit tests for core logic (run before committing!)
+- `.planning/PROJECT.md` — GSD project definition and requirements
+- `.planning/codebase/` — 7 architecture/structure documents
 
 ## Development Workflow
 1. **After ANY code change**, run `npm run test:run`
@@ -33,6 +35,16 @@ Offer `/gsd:progress` or other GSD commands at natural breakpoints:
 - After completing a milestone
 - When returning to work after a break
 - When the scope feels unclear or needs planning
+
+### Context Window Management
+**At 8% context remaining or below**, stop current work and:
+1. Update all relevant `.md` files with current progress/status
+2. Update `CLAUDE.md` "Current Status" section if needed
+3. Update `.planning/PROJECT.md` if requirements changed
+4. Commit and push all changes to git
+5. Tell user to start a fresh terminal chat
+
+This avoids auto-compaction which loses context. User prefers clean handoffs between sessions.
 
 ## Commands
 - `npm run dev -- --host` — Dev server (accessible from phone at local IP)
@@ -56,15 +68,16 @@ Do NOT remove the `isMobile` checks without understanding why they exist.
 - Mobile performance optimization
 - Unit test infrastructure (36 tests)
 - Pre-commit hooks
+- GSD project initialization (`.planning/PROJECT.md`, codebase map)
+- Minigame sliders (Reset Laser, Reset Lights) — functional
 
 ### In Progress
-- Minigame UI (Reset Laser, Reset Lights, Reset Controls)
-  - Sliders partially working
-  - Buttons click but don't toggle
-  - Dial doesn't spin yet
+- Minigame controls (next: `/gsd:create-roadmap`)
+  - Buttons click but don't toggle — needs toggle state
+  - Dial doesn't spin yet — needs drag/rotation logic
 
 ### Not Started
-- Minigame logic
+- Minigame logic (how controls affect gameplay)
 - Multi-color pieces (needs piece redesign first)
 - Action-based complication triggers
 
