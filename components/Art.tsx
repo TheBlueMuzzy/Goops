@@ -542,10 +542,10 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     </g>
 
                     {/* Functional Sliders */}
-                    <ConsoleSlider x={172.65} y={207.9} value={laserSliders[0]} onChange={(v) => updateLaserSlider(0, v)} />
-                    <ConsoleSlider x={172.65} y={298.78} value={laserSliders[1]} onChange={(v) => updateLaserSlider(1, v)} />
-                    <ConsoleSlider x={445.24} y={207.9} value={laserSliders[2]} onChange={(v) => updateLaserSlider(2, v)} />
-                    <ConsoleSlider x={445.24} y={298.78} value={laserSliders[3]} onChange={(v) => updateLaserSlider(3, v)} />
+                    <ConsoleSlider x={172.65} y={207.9} value={laserSliders[0]} onChange={(v) => updateLaserSlider(0, v)} className={shakingSlider === 0 ? "shake-anim" : ""} />
+                    <ConsoleSlider x={172.65} y={298.78} value={laserSliders[1]} onChange={(v) => updateLaserSlider(1, v)} className={shakingSlider === 1 ? "shake-anim" : ""} />
+                    <ConsoleSlider x={445.24} y={207.9} value={laserSliders[2]} onChange={(v) => updateLaserSlider(2, v)} className={shakingSlider === 2 ? "shake-anim" : ""} />
+                    <ConsoleSlider x={445.24} y={298.78} value={laserSliders[3]} onChange={(v) => updateLaserSlider(3, v)} className={shakingSlider === 3 ? "shake-anim" : ""} />
 
                     {/* Slider Lights (Top Left = Slider 0) */}
                     <g>

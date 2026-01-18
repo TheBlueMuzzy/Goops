@@ -13,13 +13,14 @@ interface ConsoleSliderProps {
     trackColor?: string;
     handleColor?: string;
     arrowColor?: string;
+    className?: string; // For shake animation etc.
 }
 
 // Arrow path from Art.tsx
 const ARROW_PATH = "M21.05,1.52v.45l-.14.45c-2.77,3.62-5.81,7.05-8.67,10.61-.73.94-1.94,1.07-2.8.21L.54,3.02C.27,2.71.1,2.38,0,1.98c.01-.15-.02-.31,0-.45C.1.77.79.08,1.55,0h17.84c.82.02,1.56.72,1.66,1.52ZM19.57,7.83c-.69.84-1.38,1.67-2.07,2.49-1.14,1.37-2.32,2.78-3.45,4.18-.81,1.04-2.03,1.66-3.31,1.66-1.1,0-2.15-.45-2.96-1.27l-.05-.05L1.62,7.81h-.07c-.76.08-1.45.77-1.54,1.52-.02.14.01.31,0,.45.09.41.26.74.54,1.05l8.9,10.22c.86.87,2.06.73,2.8-.21,2.86-3.56,5.91-6.99,8.67-10.61l.14-.45v-.45c-.09-.74-.74-1.39-1.48-1.5Z";
 
 export const ConsoleSlider: React.FC<ConsoleSliderProps> = ({
-    x, y, 
+    x, y,
     rotation = 0,
     length = 176,
     width = 50,
@@ -28,7 +29,8 @@ export const ConsoleSlider: React.FC<ConsoleSliderProps> = ({
     onChange,
     trackColor = "#eebfc5",
     handleColor = "#d36b28",
-    arrowColor = "#ffffff"
+    arrowColor = "#ffffff",
+    className = ""
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState(0); // Pixel offset from center
@@ -101,7 +103,7 @@ export const ConsoleSlider: React.FC<ConsoleSliderProps> = ({
     };
 
     return (
-        <g transform={`translate(${x}, ${y}) rotate(${rotation})`}>
+        <g transform={`translate(${x}, ${y}) rotate(${rotation})`} className={className}>
             {/* Track Slot */}
             <rect 
                 x={-length / 2} 
