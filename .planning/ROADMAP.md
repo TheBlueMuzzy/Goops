@@ -14,7 +14,7 @@ None
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Dial Rotation** - Implement drag/spin behavior for Reset Controls dial
+- [x] **Phase 1: Dial Rotation** - Implement drag/spin behavior for Reset Controls dial
 - [ ] **Phase 2: Minigame Logic** - Puzzle rules for all three minigames
 - [ ] **Phase 3: Complications** - Define complications and how they trigger during gameplay
 - [ ] **Phase 4: Minigame-Complication Integration** - Connect minigame solutions to complications
@@ -71,7 +71,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Dial Rotation | 0/1 | Not started | - |
+| 1. Dial Rotation | 1/1 | Complete | 2026-01-18 |
 | 2. Minigame Logic | 0/TBD | Not started | - |
 | 3. Complications | 0/TBD | Not started | - |
 | 4. Minigame-Complication Integration | 0/TBD | Not started | - |

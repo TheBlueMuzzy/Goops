@@ -159,10 +159,11 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     };
 
     // Vector approach: rotate dial so line from center through grab point aims at cursor
-    // All refs to avoid stale closure issues
+    // All refs to avoid stale closure issues in event handlers
     const isDraggingRef = useRef(false);
     const grabAngleRef = useRef(0);      // Angle of initial grab point from center
     const rotationAtGrabRef = useRef(0); // Dial rotation when grab started
+    const currentRotationRef = useRef(0); // Current rotation (ref version for snap calculation)
 
     // Convert screen coordinates to SVG coordinates
     // Use a NON-ROTATING reference element for clean CTM
@@ -225,6 +226,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         // Vector approach: rotate dial so grab point aims at cursor
         // newRotation = cursorAngle - grabAngle + rotationAtGrab
         const newRotation = cursorAngle - grabAngleRef.current + rotationAtGrabRef.current;
+        currentRotationRef.current = newRotation; // Keep ref in sync for snap calculation
         setLocalDialRotation(newRotation);
     };
 
@@ -236,17 +238,22 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         isDraggingRef.current = false;
         setIsDialDragging(false);
 
+        // Use ref value (not state) to avoid stale closure issues
+        const currentRotation = currentRotationRef.current;
+
         // Snap to nearest corner position (45°, 135°, 225°, 315°)
-        // Normalize rotation to 0-360 range
-        let normalized = localDialRotation % 360;
+        // Must find the snap angle that's closest to current rotation to avoid
+        // the CSS transition animating the "long way around"
+
+        // Normalize to find which base snap position we're closest to
+        let normalized = currentRotation % 360;
         if (normalized < 0) normalized += 360;
 
-        // Find closest snap position
-        let closestSnap = DIAL_SNAP_POSITIONS[0];
-        let minDiff = Math.abs(normalized - closestSnap);
+        // Find closest snap position in 0-360 space
+        let closestBaseSnap = DIAL_SNAP_POSITIONS[0];
+        let minDiff = Infinity;
 
         for (const snap of DIAL_SNAP_POSITIONS) {
-            // Check distance in both directions (handles wrap-around)
             const diff = Math.min(
                 Math.abs(normalized - snap),
                 Math.abs(normalized - snap + 360),
@@ -254,11 +261,31 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
             );
             if (diff < minDiff) {
                 minDiff = diff;
-                closestSnap = snap;
+                closestBaseSnap = snap;
             }
         }
 
-        setLocalDialRotation(closestSnap);
+        // Now find the equivalent of closestBaseSnap that's actually closest
+        // to the current rotation (handles multi-revolution rotations)
+        const base = Math.floor(currentRotation / 360) * 360;
+        const candidates = [
+            base + closestBaseSnap - 360,
+            base + closestBaseSnap,
+            base + closestBaseSnap + 360
+        ];
+
+        let finalSnap = candidates[0];
+        let minFinalDiff = Math.abs(currentRotation - candidates[0]);
+        for (const c of candidates) {
+            const diff = Math.abs(currentRotation - c);
+            if (diff < minFinalDiff) {
+                minFinalDiff = diff;
+                finalSnap = c;
+            }
+        }
+
+        currentRotationRef.current = finalSnap; // Keep ref in sync
+        setLocalDialRotation(finalSnap);
     };
 
     // Global event listeners for dial drag (follows periscope pattern)
@@ -619,7 +646,6 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     transform={`rotate(${Math.round(localDialRotation)} ${DIAL_CENTER_X} ${DIAL_CENTER_Y})`}
                     className="cursor-grab"
                     style={{
-                        transition: isDialDragging ? 'none' : 'transform 0.3s ease-out',
                         cursor: isDialDragging ? 'grabbing' : 'grab'
                     }}
                     onMouseDown={(e) => handleDialStart(e.clientX, e.clientY)}

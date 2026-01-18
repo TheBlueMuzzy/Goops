@@ -26,7 +26,7 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 ### Active
 
 - [ ] Buttons toggle on/off (blue, green, purple arcade buttons)
-- [ ] Dial spins when dragged/clicked (Reset Controls dial)
+- [x] Dial spins when dragged (Reset Controls dial) — snaps to 4 corners
 - [ ] Visual feedback for control states (lit indicators, position memory)
 
 ### Out of Scope
