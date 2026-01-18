@@ -569,6 +569,17 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         return RED;
     };
 
+    // Helper to get Reset Lights text color based on complication state
+    const getLightsTextColor = (): string => {
+        const TEAL = "#14b8a6";  // Inactive
+        const RED = "#ef4444";   // Active, unsolved
+        const GREEN = "#22c55e"; // Solved
+
+        if (!lightsComplication.active) return TEAL;
+        if (lightsComplication.solved) return GREEN;
+        return RED;
+    };
+
     // Helper to get laser slider indicator light colors
     // Returns { left: color, right: color } based on target and active state
     const getLaserLightColors = (sliderIndex: number): { left: string; right: string } => {
@@ -776,7 +787,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 {/* Purple Base */}
                 <polygon fill="#45486c" points="608.7 1720.12 341.17 1720.12 341.17 1452.22 564.14 1452.22 608.7 1720.12"/>
                 <text
-                    fill="#aad9d9"
+                    fill={getLightsTextColor()}
                     fontFamily="'Amazon Ember'"
                     fontSize="20.93"
                     transform="translate(414.68 1486.69)"
