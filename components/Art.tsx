@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { EndGameScreen } from './EndGameScreen';
 import { ConsoleSlider } from './ConsoleSlider';
 import { GameStats } from '../types';
@@ -129,6 +129,91 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     // Local state for visual sliders (functional but not yet tied to game logic)
     const [laserSliders, setLaserSliders] = useState<(-1|0|1)[]>([0, 0, 0, 0]);
     const [lightSlider, setLightSlider] = useState<-1|0|1>(0);
+
+    // Local state for dial rotation (drag-based, replaces prop)
+    const [localDialRotation, setLocalDialRotation] = useState(0);
+    const [isDialDragging, setIsDialDragging] = useState(false);
+    const dialStartAngle = useRef(0);
+    const dialStartRotation = useRef(0);
+
+    // Dial center in SVG coordinates
+    const DIAL_CENTER_X = 194.32;
+    const DIAL_CENTER_Y = 1586.66;
+    const DIAL_RADIUS = 86.84;
+
+    // Helper to convert client coordinates to SVG coordinates and get angle to dial center
+    const getAngleFromPointer = (clientX: number, clientY: number): number | null => {
+        const svg = document.querySelector('svg');
+        if (!svg) return null;
+
+        const rect = svg.getBoundingClientRect();
+        const viewBox = { x: 0, y: 827.84, width: 648, height: 1152 };
+
+        // Convert client coords to SVG coords
+        const svgX = ((clientX - rect.left) / rect.width) * viewBox.width + viewBox.x;
+        const svgY = ((clientY - rect.top) / rect.height) * viewBox.height + viewBox.y;
+
+        const dx = svgX - DIAL_CENTER_X;
+        const dy = svgY - DIAL_CENTER_Y;
+
+        return Math.atan2(dy, dx) * (180 / Math.PI);
+    };
+
+    // Dial drag handlers
+    const handleDialStart = (clientX: number, clientY: number) => {
+        const angle = getAngleFromPointer(clientX, clientY);
+        if (angle === null) return;
+
+        setIsDialDragging(true);
+        dialStartAngle.current = angle;
+        dialStartRotation.current = localDialRotation;
+    };
+
+    const handleDialMove = (clientX: number, clientY: number) => {
+        if (!isDialDragging) return;
+
+        const angle = getAngleFromPointer(clientX, clientY);
+        if (angle === null) return;
+
+        const deltaAngle = angle - dialStartAngle.current;
+        setLocalDialRotation(dialStartRotation.current + deltaAngle);
+    };
+
+    const handleDialEnd = () => {
+        setIsDialDragging(false);
+    };
+
+    // Global event listeners for dial drag (follows periscope pattern)
+    useEffect(() => {
+        if (!isDialDragging) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            handleDialMove(e.clientX, e.clientY);
+        };
+        const handleMouseUp = () => {
+            handleDialEnd();
+        };
+        const handleTouchMove = (e: TouchEvent) => {
+            if (e.touches.length > 0) {
+                handleDialMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        };
+        const handleTouchEnd = () => {
+            handleDialEnd();
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('touchmove', handleTouchMove);
+        window.addEventListener('touchend', handleTouchEnd);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [isDialDragging]);
 
     // Reset abort confirmation if session state changes (e.g. game over or restart)
     useEffect(() => {
@@ -452,11 +537,19 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 </text>
                 
                 {/* The Dial Itself */}
-                <g 
-                    transform={`rotate(${dialRotation} 194.32 1586.66)`} 
-                    className="cursor-pointer"
-                    onClick={onDialClick}
-                    style={{ transition: 'transform 0.3s ease-out' }}
+                <g
+                    transform={`rotate(${localDialRotation} ${DIAL_CENTER_X} ${DIAL_CENTER_Y})`}
+                    className="cursor-grab"
+                    style={{
+                        transition: isDialDragging ? 'none' : 'transform 0.3s ease-out',
+                        cursor: isDialDragging ? 'grabbing' : 'grab'
+                    }}
+                    onMouseDown={(e) => handleDialStart(e.clientX, e.clientY)}
+                    onTouchStart={(e) => {
+                        if (e.touches.length > 0) {
+                            handleDialStart(e.touches[0].clientX, e.touches[0].clientY);
+                        }
+                    }}
                 >
                     <circle fill="#d36b28" cx="194.32" cy="1586.66" r="86.84"/>
                     {/* Inner Arc */}
