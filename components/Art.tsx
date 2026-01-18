@@ -146,96 +146,151 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     const DIAL_ARROW_ANGLE_MIN = 0;
     const DIAL_ARROW_ANGLE_MAX = 180;
 
-    // Helper to convert client coordinates to SVG coordinates and get angle + distance to dial center
-    const getPointerInfo = (clientX: number, clientY: number): { angle: number; distance: number } | null => {
+    // Get dial center in screen coordinates
+    const getDialScreenCenter = (): { x: number; y: number } | null => {
         const svg = document.querySelector('svg');
         if (!svg) return null;
-
         const rect = svg.getBoundingClientRect();
         const viewBox = { x: 0, y: 827.84, width: 648, height: 1152 };
-
-        // Convert client coords to SVG coords
-        const svgX = ((clientX - rect.left) / rect.width) * viewBox.width + viewBox.x;
-        const svgY = ((clientY - rect.top) / rect.height) * viewBox.height + viewBox.y;
-
-        const dx = svgX - DIAL_CENTER_X;
-        const dy = svgY - DIAL_CENTER_Y;
-
-        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        return { angle, distance };
+        return {
+            x: rect.left + ((DIAL_CENTER_X - viewBox.x) / viewBox.width) * rect.width,
+            y: rect.top + ((DIAL_CENTER_Y - viewBox.y) / viewBox.height) * rect.height
+        };
     };
 
-    // Dial drag handlers - tangent-based rotation
-    // Rotation is proportional to how far you drag tangentially from the grab point
-    const dialGrabAngle = useRef(0); // The angle (from center) where we grabbed
-    const dialGrabX = useRef(0); // SVG X coord of grab point on dial edge
-    const dialGrabY = useRef(0); // SVG Y coord of grab point on dial edge
-    const dialRotationAtGrab = useRef(0);
+    // Vector approach: rotate dial so line from center through grab point aims at cursor
+    // All refs to avoid stale closure issues
+    const isDraggingRef = useRef(false);
+    const grabAngleRef = useRef(0);      // Angle of initial grab point from center
+    const rotationAtGrabRef = useRef(0); // Dial rotation when grab started
 
-    // Helper to get SVG coords from client coords
-    const getSvgCoords = (clientX: number, clientY: number): { x: number; y: number } | null => {
-        const svg = document.querySelector('svg');
-        if (!svg) return null;
-        const rect = svg.getBoundingClientRect();
-        const viewBox = { x: 0, y: 827.84, width: 648, height: 1152 };
-        const svgX = ((clientX - rect.left) / rect.width) * viewBox.width + viewBox.x;
-        const svgY = ((clientY - rect.top) / rect.height) * viewBox.height + viewBox.y;
-        return { x: svgX, y: svgY };
+    // Debug visualization: store grab point in dial's local coordinates AND world SVG coords
+    const [debugGrabLocal, setDebugGrabLocal] = useState<{x: number, y: number} | null>(null);
+    const [debugTouchWorld, setDebugTouchWorld] = useState<{x: number, y: number} | null>(null);
+
+    // Convert screen coordinates to SVG coordinates
+    // Use a NON-ROTATING reference element for clean CTM
+    const screenToSvg = (clientX: number, clientY: number): { x: number; y: number } | null => {
+        try {
+            // Use the hidden reference point that doesn't rotate
+            const refPoint = document.getElementById('coord-reference') as SVGCircleElement | null;
+            if (!refPoint) {
+                console.log('[screenToSvg] ERROR: Reference point not found');
+                return null;
+            }
+
+            const svg = refPoint.ownerSVGElement;
+            if (!svg) {
+                console.log('[screenToSvg] ERROR: No owner SVG');
+                return null;
+            }
+
+            const point = svg.createSVGPoint();
+            point.x = clientX;
+            point.y = clientY;
+
+            const ctm = refPoint.getScreenCTM();
+            if (!ctm) {
+                console.log('[screenToSvg] ERROR: No CTM');
+                return null;
+            }
+
+            const svgPoint = point.matrixTransform(ctm.inverse());
+
+            console.log('[screenToSvg]', {
+                screen: { x: Math.round(clientX), y: Math.round(clientY) },
+                svg: { x: Math.round(svgPoint.x), y: Math.round(svgPoint.y) }
+            });
+
+            return { x: svgPoint.x, y: svgPoint.y };
+        } catch (e) {
+            console.log('[screenToSvg] ERROR:', e);
+            return null;
+        }
     };
 
     const handleDialStart = (clientX: number, clientY: number) => {
-        const info = getPointerInfo(clientX, clientY);
-        if (info === null) return;
+        console.log('[handleDialStart] Called with:', clientX, clientY);
 
-        // Simple distance check - anywhere on the dial
-        if (info.distance > DIAL_TOUCH_OUTER) return;
+        // Convert touch to SVG coordinates (fixes aspect ratio distortion!)
+        const touchSvg = screenToSvg(clientX, clientY);
+        if (!touchSvg) {
+            console.log('[handleDialStart] screenToSvg returned null');
+            return;
+        }
 
-        // Store grab point on the dial's edge (projected to the dial circumference)
-        const grabAngleRad = info.angle * Math.PI / 180;
-        dialGrabAngle.current = info.angle;
-        dialGrabX.current = DIAL_CENTER_X + DIAL_RADIUS * Math.cos(grabAngleRad);
-        dialGrabY.current = DIAL_CENTER_Y + DIAL_RADIUS * Math.sin(grabAngleRad);
-        dialRotationAtGrab.current = localDialRotation;
+        // Calculate distance and angle in SVG space
+        const dx = touchSvg.x - DIAL_CENTER_X;
+        const dy = touchSvg.y - DIAL_CENTER_Y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-        console.log('[Dial] Grab:', {
-            angle: info.angle.toFixed(1),
-            grabPoint: `(${dialGrabX.current.toFixed(1)}, ${dialGrabY.current.toFixed(1)})`,
-            rotation: localDialRotation.toFixed(1)
+        console.log('[handleDialStart] Distance check:', {
+            touchSvg,
+            dialCenter: { x: DIAL_CENTER_X, y: DIAL_CENTER_Y },
+            dx: dx.toFixed(1),
+            dy: dy.toFixed(1),
+            distance: distance.toFixed(1),
+            maxAllowed: DIAL_TOUCH_OUTER.toFixed(1),
+            passes: distance <= DIAL_TOUCH_OUTER
         });
+
+        // Check touch zone in SVG space
+        if (distance > DIAL_TOUCH_OUTER) return;
+
+        // Store grab angle (in SVG coordinates) and current rotation
+        grabAngleRef.current = Math.atan2(dy, dx) * (180 / Math.PI);
+        rotationAtGrabRef.current = localDialRotation;
+        isDraggingRef.current = true;
         setIsDialDragging(true);
+
+        // Debug: place dot at ACTUAL touch position in dial's LOCAL coordinates
+        // To convert world touch to local: rotate by -dialRotation around center
+        const rotRad = -localDialRotation * Math.PI / 180;
+        const relX = touchSvg.x - DIAL_CENTER_X;
+        const relY = touchSvg.y - DIAL_CENTER_Y;
+        const localX = DIAL_CENTER_X + relX * Math.cos(rotRad) - relY * Math.sin(rotRad);
+        const localY = DIAL_CENTER_Y + relX * Math.sin(rotRad) + relY * Math.cos(rotRad);
+        setDebugGrabLocal({ x: localX, y: localY });
+        setDebugTouchWorld({ x: touchSvg.x, y: touchSvg.y }); // Also store world coords
+
+        // Debug logging
+        const svg = document.querySelector('svg');
+        const rect = svg?.getBoundingClientRect();
+        const viewBox = { x: 0, y: 827.84, width: 648, height: 1152 };
+        // For dialRotation=0, localX/Y = touchSvg, so placedScreen should = touchScreen
+        const placedScreenX = rect ? rect.left + ((localX - viewBox.x) / viewBox.width) * rect.width : 0;
+        const placedScreenY = rect ? rect.top + ((localY - viewBox.y) / viewBox.height) * rect.height : 0;
+
+        console.log('[Dial] GRAB DEBUG (copy this):');
+        console.log(JSON.stringify({
+            touchScreen: { x: Math.round(clientX), y: Math.round(clientY) },
+            touchSvg: { x: Math.round(touchSvg.x), y: Math.round(touchSvg.y) },
+            placedSvgLocal: { x: Math.round(localX), y: Math.round(localY) },
+            placedScreen: { x: Math.round(placedScreenX), y: Math.round(placedScreenY) },
+            grabAngleDeg: Math.round(grabAngleRef.current),
+            dialRotation: Math.round(localDialRotation)
+        }, null, 2));
     };
 
     const handleDialMove = (clientX: number, clientY: number) => {
-        if (!isDialDragging) return;
+        if (!isDraggingRef.current) return;
 
-        const coords = getSvgCoords(clientX, clientY);
-        if (coords === null) return;
+        // Convert to SVG coordinates (fixes aspect ratio!)
+        const cursorSvg = screenToSvg(clientX, clientY);
+        if (!cursorSvg) return;
 
-        // Vector from original grab point to current cursor
-        const dx = coords.x - dialGrabX.current;
-        const dy = coords.y - dialGrabY.current;
+        const dx = cursorSvg.x - DIAL_CENTER_X;
+        const dy = cursorSvg.y - DIAL_CENTER_Y;
 
-        // Tangent direction at grab point (perpendicular to radius, counterclockwise positive)
-        const grabAngleRad = dialGrabAngle.current * Math.PI / 180;
-        const tanX = -Math.sin(grabAngleRad);
-        const tanY = Math.cos(grabAngleRad);
+        // Current cursor angle from center (in SVG space)
+        const cursorAngle = Math.atan2(dy, dx) * (180 / Math.PI);
 
-        // Project drag vector onto tangent (tangential distance)
-        const tangentDist = dx * tanX + dy * tanY;
-
-        // Convert tangent distance to angle: arc_length = radius * angle
-        // So angle = arc_length / radius (in radians)
-        const deltaAngleRad = tangentDist / DIAL_RADIUS;
-        const deltaAngle = deltaAngleRad * (180 / Math.PI);
-
-        const newRotation = dialRotationAtGrab.current + deltaAngle;
+        // Vector approach: rotate dial so grab point aims at cursor
+        // newRotation = cursorAngle - grabAngle + rotationAtGrab
+        const newRotation = cursorAngle - grabAngleRef.current + rotationAtGrabRef.current;
 
         console.log('[Dial] Move:', {
-            cursor: `(${coords.x.toFixed(0)}, ${coords.y.toFixed(0)})`,
-            tangentDist: tangentDist.toFixed(1),
-            deltaAngle: deltaAngle.toFixed(1),
+            cursorAngle: cursorAngle.toFixed(1),
             newRotation: newRotation.toFixed(1)
         });
         setLocalDialRotation(newRotation);
@@ -245,8 +300,11 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     const DIAL_SNAP_POSITIONS = [45, 135, 225, 315];
 
     const handleDialEnd = () => {
-        if (!isDialDragging) return;
+        if (!isDraggingRef.current) return;
+        isDraggingRef.current = false;
         setIsDialDragging(false);
+        setDebugGrabLocal(null);
+        setDebugTouchWorld(null);
         console.log('[Dial] End drag at rotation:', localDialRotation.toFixed(1));
         // SNAP DISABLED FOR TESTING - just keep current rotation
     };
@@ -630,8 +688,43 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                         <path fill="#fff" d="M21.05,1.52v.45l-.14.45c-2.77,3.62-5.81,7.05-8.67,10.61-.73.94-1.94,1.07-2.8.21L.54,3.02C.27,2.71.1,2.38,0,1.98c.01-.15-.02-.31,0-.45C.1.77.79.08,1.55,0h17.84c.82.02,1.56.72,1.66,1.52ZM19.57,7.83c-.69.84-1.38,1.67-2.07,2.49-1.14,1.37-2.32,2.78-3.45,4.18-.81,1.04-2.03,1.66-3.31,1.66-1.1,0-2.15-.45-2.96-1.27l-.05-.05L1.62,7.81h-.07c-.76.08-1.45.77-1.54,1.52-.02.14.01.31,0,.45.09.41.26.74.54,1.05l8.9,10.22c.86.87,2.06.73,2.8-.21,2.86-3.56,5.91-6.99,8.67-10.61l.14-.45v-.45c-.09-.74-.74-1.39-1.48-1.5Z"/>
                     </g>
                     <path fill="#fff" d="M169.51,1524.47l20.43-20.43c1.99-1.99,5.23-1.99,7.22,0l20.43,20.43c3.22,3.22.94,8.72-3.61,8.72h-40.86c-4.55,0-6.83-5.5-3.61-8.72Z"/>
+
+                    {/* DEBUG: Center dot (cyan) */}
+                    <circle fill="#00ffff" cx={DIAL_CENTER_X} cy={DIAL_CENTER_Y} r="8" />
+
+                    {/* DEBUG: Grab point and line (only when dragging) - INSIDE dial group, rotates with dial */}
+                    {debugGrabLocal && (
+                        <>
+                            {/* Line from center through grab point, extending far */}
+                            <line
+                                x1={DIAL_CENTER_X}
+                                y1={DIAL_CENTER_Y}
+                                x2={DIAL_CENTER_X + (debugGrabLocal.x - DIAL_CENTER_X) * 5}
+                                y2={DIAL_CENTER_Y + (debugGrabLocal.y - DIAL_CENTER_Y) * 5}
+                                stroke="#ff00ff"
+                                strokeWidth="4"
+                            />
+                            {/* Grab point dot (magenta) - rotates with dial */}
+                            <circle fill="#ff00ff" cx={debugGrabLocal.x} cy={debugGrabLocal.y} r="12" />
+                        </>
+                    )}
                 </g>
             </g>
+
+            {/* DEBUG: Green dot at WORLD touch position - OUTSIDE dial group, doesn't rotate */}
+            {debugTouchWorld && (
+                <circle fill="#00ff00" cx={debugTouchWorld.x} cy={debugTouchWorld.y} r="15" stroke="#000" strokeWidth="2" />
+            )}
+
+            {/* Hidden reference point for coordinate conversion - MUST be outside rotating groups */}
+            <circle
+                id="coord-reference"
+                cx={DIAL_CENTER_X}
+                cy={DIAL_CENTER_Y}
+                r="1"
+                fill="transparent"
+                style={{ pointerEvents: 'none' }}
+            />
 
             {/* System Upgrades OR End Work Day */}
             <g 
