@@ -145,6 +145,25 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     // Track which slider is shaking (for wrong position feedback)
     const [shakingSlider, setShakingSlider] = useState<number | null>(null);
 
+    // Reset Lights complication state (Lights Out puzzle)
+    interface LightsComplication {
+        active: boolean;
+        solved: boolean;
+        lights: [boolean, boolean, boolean]; // L1, L2, L3 on/off state
+        buttonPhaseComplete: boolean; // all lights on?
+        sliderTarget: 1 | -1; // random top or bottom
+    }
+    const [lightsComplication, setLightsComplication] = useState<LightsComplication>({
+        active: false,
+        solved: false,
+        lights: [false, false, false],
+        buttonPhaseComplete: false,
+        sliderTarget: 1
+    });
+
+    // Track if Reset Lights slider is shaking
+    const [lightsSliderShaking, setLightsSliderShaking] = useState(false);
+
     // Local state for dial rotation (drag-based, replaces prop)
     const [localDialRotation, setLocalDialRotation] = useState(0);
     const [isDialDragging, setIsDialDragging] = useState(false);
