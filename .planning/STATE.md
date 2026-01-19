@@ -8,23 +8,23 @@
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- `complications` — Phase 3 work (awaiting verification)
+- `complications` — Phase 3 work (VERIFIED, ready for merge)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** Phase 2 COMPLETE - all 3 minigames tested and working!
+**Current focus:** Phase 3 COMPLETE - complications system tested and working!
 
 ## Current Position
 
-Phase: 3 of 4 (Complications) - AWAITING VERIFICATION
-Plan: 3 of 3 (03-03 tasks 1-2 done, human-verify checkpoint pending)
-Status: All code complete, awaiting manual user testing
-Last activity: 2026-01-19 — UI alerts and console panel updates
+Phase: 3 of 4 (Complications) - COMPLETE
+Plan: 3 of 3 (all tasks complete, UAT passed)
+Status: Phase 3 verified, ready to merge to master
+Last activity: 2026-01-19 — UAT testing, bug fixes, balance adjustments
 
-Progress: ██████████░░░░░░░░░░ 50% (2 of 4 phases complete, Phase 3 started)
+Progress: ███████████████░░░░░ 75% (3 of 4 phases complete)
 
 ## What's Done
 
@@ -46,27 +46,33 @@ Progress: ██████████░░░░░░░░░░ 50% (2 of
   - Visual feedback: corner lights, PRESS text, shake on wrong press
   - Proper drag vs tap separation
 
-## What's Done (Phase 3)
+## What's Done (Phase 3) - COMPLETE
 
 - 03-01: Complication Types & Triggers
   - ComplicationType enum: LIGHTS, CONTROLS, LASER
   - Counter tracking: totalUnitsAdded, totalUnitsPopped, totalRotations
-  - Threshold-based triggers (20/30/15 defaults)
-  - Progressive difficulty (thresholds increment after each trigger)
+  - Threshold-based triggers (randomized 12-24 range)
+  - Progressive rank unlock: LASER@rank1, CONTROLS@rank2, LIGHTS@rank3
 - 03-02: Gameplay Effects
   - LIGHTS: Screen dims to 0.8 opacity over 3 seconds
   - CONTROLS: Left/right controls flip every 3 seconds
-  - LASER: Requires 2 taps to pop (primed groups shown with red dashed outline)
-- 03-03: UI & Console Updates (Tasks 1-2 complete)
+  - LASER: First tap restarts fill animation (primed groups shown with red dashed outline)
+- 03-03: UI & Console Updates (All tasks complete)
   - Pulsing red "[X] Malfunction / Fix at Console" center alerts
   - Console panels: lights only ON when complication active
   - Text states: RESET X (teal) → RESET X (red) → X FIXED (green)
-  - Removed click-to-test toggles
+  - Full minigame integration with resolve callbacks
+  - Minigame state resets on complication removal
+- UAT Bug Fixes:
+  - Array mutation (spread operator for React detection)
+  - Minigame initialization (reuses Phase 2 toggle logic)
+  - Solve callback chain (onResolveComplication prop)
+  - Counter pauses during active complications
 
 ## What's Next
 
-**Human verification checkpoint for Phase 3**
-Manual test the full complication flow: trigger → effect → alert → console → minigame → resolution
+**Merge `complications` branch to master after final review**
+Then proceed to Phase 4: Final Integration/Polish
 
 ## Performance Metrics
 
@@ -147,6 +153,6 @@ const handlePointerDown = (e: React.PointerEvent) => {
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: Phase 2 complete, all minigames user-tested and working
-Resume with: `/gsd:progress` → will route to `/gsd:plan-phase 3`
+Stopped at: Phase 3 complete, UAT passed, ready for merge to master
+Resume with: `/gsd:progress` → will show Phase 3 complete, ready for Phase 4
 Resume file: None needed - clean state

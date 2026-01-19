@@ -18,9 +18,20 @@
 - Console receives `complications` prop from ConsoleView and tracks real state
 - Added `recentlyFixed` state to show brief green "FIXED" text when resolved
 
-### Task 3: Human-verify checkpoint
-- **PENDING** - Requires manual user acceptance testing
-- Full complication flow: triggers -> effects -> alerts -> console -> minigame -> resolution
+### Task 3: Human-verify checkpoint - COMPLETE
+- Full complication flow tested: triggers -> effects -> alerts -> console -> minigame -> resolution
+- Multiple bugs discovered and fixed during UAT:
+  - Array mutation bug: `.push()` → spread operator for React state detection
+  - Minigame initialization: reused Phase 2 toggle logic correctly
+  - Minigame solve callback: added `onResolveComplication` prop chain
+  - Minigame state reset: added useEffect to reset when complication removed
+
+### Balance Adjustments (Post-UAT)
+- Progressive rank unlock: LASER@rank1, CONTROLS@rank2, LIGHTS@rank3
+- Randomized thresholds: 12-24 range (replaces fixed increments)
+- Counter resets on resolve: each type counter resets to 0 when fixed
+- Counters pause during complications: only increment when no complication active
+- LASER effect change: first tap restarts fill animation (replaces double-tap)
 
 ## Files Created/Modified
 - `components/GameBoard.tsx` - Added malfunction alert overlay, pulse animation, ComplicationType import
@@ -80,16 +91,16 @@ const getLaserTextState = (): { text: string; color: string } => {
 - [x] Console panels only light up when complication active
 - [x] "RESET X" (red) -> "[X] FIXED" (green) text flow works
 - [x] Click-to-test mechanism removed
-- [ ] Full flow tested manually (trigger -> fix -> clear) - **PENDING human verification**
+- [x] Full flow tested manually (trigger -> fix -> clear) - **VERIFIED**
 
 ## Commits
 1. `feat(ui): implement malfunction alert overlay`
 2. `feat(console): update panel indicator behavior`
+3. `feat(complications): improve trigger/effect balance` (UAT fixes + balance adjustments)
 
 ## Next Phase Readiness
-- Task 3 (human-verify checkpoint) is PENDING
-- Once verified, Phase 3 will be complete
-- Ready for Phase 4: Minigame-Complication Integration after verification
+- Phase 3 COMPLETE - all tasks verified
+- Ready for Phase 4: Final Integration/Polish
 
 ---
 
