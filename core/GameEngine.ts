@@ -75,7 +75,8 @@ export class GameEngine {
             totalUnitsAdded: 0,
             totalUnitsPopped: 0,
             totalRotations: 0,
-            complicationThresholds: { lights: 20, controls: 30, laser: 15 }
+            complicationThresholds: { lights: 20, controls: 30, laser: 15 },
+            primedGroups: new Set()
         };
 
         this.applyUpgrades();
@@ -149,9 +150,10 @@ export class GameEngine {
             totalUnitsAdded: 0,
             totalUnitsPopped: 0,
             totalRotations: 0,
-            complicationThresholds: { lights: 20, controls: 30, laser: 15 }
+            complicationThresholds: { lights: 20, controls: 30, laser: 15 },
+            primedGroups: new Set()
         };
-        
+
         this.lockStartTime = null;
         this.lastGoalSpawnTime = Date.now();
         this.lastComplicationCheckTime = Date.now();
@@ -214,13 +216,20 @@ export class GameEngine {
     
     public resolveComplication(complicationId: string) {
         if (this.state.gameOver) return;
-        
+
+        // Check if this is a LASER complication being resolved
+        const complication = this.state.complications.find(c => c.id === complicationId);
+        if (complication?.type === ComplicationType.LASER) {
+            // Clear primed groups when LASER complication is fixed
+            this.state.primedGroups.clear();
+        }
+
         this.state.complications = this.state.complications.filter(c => c.id !== complicationId);
         this.state.activeComplicationId = null;
-        
+
         // Go back to Console after repair to confirm status
-        this.state.phase = GamePhase.CONSOLE; 
-        
+        this.state.phase = GamePhase.CONSOLE;
+
         gameEventBus.emit(GameEventType.COMPLICATION_RESOLVED);
         audio.playPop(5); // Success sound
         this.emitChange();

@@ -635,6 +635,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 const isHighlighted = gid === highlightedGroupId;
                 const isShaking = gid === shakingGroupId;
                 const isGlowing = cells.some(c => c.cell.isGlowing);
+                const isPrimed = state.primedGroups.has(gid); // LASER effect: primed for 2nd tap
 
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                 cells.forEach(c => {
@@ -707,8 +708,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                     key={`cnt-${c.cell.id}`}
                                     d={getContourPath(c.screenX, c.screenY, c.width, BLOCK_SIZE, c.neighbors)}
                                     fill="none"
-                                    stroke={isGlowing ? "white" : color}
-                                    strokeWidth={isGlowing ? 3 : 2}
+                                    stroke={isPrimed ? "#ff6b6b" : (isGlowing ? "white" : color)}
+                                    strokeWidth={isPrimed ? 3 : (isGlowing ? 3 : 2)}
+                                    strokeDasharray={isPrimed ? "4 2" : undefined}
                                 />
                             ))}
                             {isHighlighted && <rect x={minX} y={minY} width={maxX - minX} height={maxY - minY} fill="white" fillOpacity={0.3} />}
@@ -741,10 +743,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                 key={`cnt-${c.cell.id}`}
                                 d={getContourPath(c.screenX, c.screenY, c.width, BLOCK_SIZE, c.neighbors)}
                                 fill="none"
-                                stroke={isGlowing ? "white" : color}
-                                strokeWidth={isGlowing ? "3" : "2"}
-                                className={!isMobile ? (isGlowing ? "super-glowing-stroke" : "glow-stroke") : undefined}
-                                style={!isMobile ? { color: isGlowing ? 'white' : color } : undefined}
+                                stroke={isPrimed ? "#ff6b6b" : (isGlowing ? "white" : color)}
+                                strokeWidth={isPrimed ? "3" : (isGlowing ? "3" : "2")}
+                                strokeDasharray={isPrimed ? "4 2" : undefined}
+                                className={!isMobile && !isPrimed ? (isGlowing ? "super-glowing-stroke" : "glow-stroke") : undefined}
+                                style={!isMobile && !isPrimed ? { color: isGlowing ? 'white' : color } : undefined}
                              />
                         ))}
                     </g>

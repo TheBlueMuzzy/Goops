@@ -1,7 +1,7 @@
 
 import { Command } from './Command';
 import { GameEngine } from '../GameEngine';
-import { GamePhase, PieceState, PieceType, ActivePiece, GameState } from '../../types';
+import { GamePhase, PieceState, PieceType, ActivePiece, GameState, ComplicationType } from '../../types';
 import { normalizeX, checkCollision, getRotatedCells, getGhostY, mergePiece, findContiguousGroup, getFloatingBlocks, spawnGoalBurst, calculateAdjacencyBonus, calculateHeightBonus, calculateOffScreenBonus, calculateMultiplier, updateGroups } from '../../utils/gameLogic';
 import { getGridX, getScreenX } from '../../utils/coordinates';
 import { gameEventBus } from '../events/EventBus';
@@ -187,13 +187,28 @@ export class BlockTapCommand implements Command {
          const elapsed = now - (cell.timestamp || 0); 
          
          if (elapsed < totalDuration) {
-             gameEventBus.emit(GameEventType.ACTION_REJECTED); 
+             gameEventBus.emit(GameEventType.ACTION_REJECTED);
              return;
          }
 
          const group = findContiguousGroup(engine.state.grid, this.x, this.y);
-         
+
          if (group.length > 0) {
+            // LASER complication: require 2 taps to pop
+            const laserComplication = engine.state.complications.find(c => c.type === ComplicationType.LASER);
+            if (laserComplication) {
+                const groupId = cell.groupId;
+                if (!engine.state.primedGroups.has(groupId)) {
+                    // First tap: prime the group, don't pop yet
+                    engine.state.primedGroups.add(groupId);
+                    gameEventBus.emit(GameEventType.ACTION_REJECTED); // Feedback sound
+                    engine.emitChange();
+                    return;
+                }
+                // Second tap: remove from primed set and proceed with pop
+                engine.state.primedGroups.delete(groupId);
+            }
+
             gameEventBus.emit(GameEventType.GOOP_POPPED, { combo: engine.state.combo, count: group.length });
             engine.state.cellsCleared++;
 

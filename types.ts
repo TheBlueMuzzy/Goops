@@ -153,6 +153,9 @@ export interface GameState {
     controls: number;
     laser: number;
   };
+
+  // LASER complication: tracks groups that have been tapped once (primed)
+  primedGroups: Set<string>;
 }
 
 // --- Meta Progression Types ---
