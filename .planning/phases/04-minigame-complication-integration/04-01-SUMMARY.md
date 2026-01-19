@@ -26,7 +26,7 @@ key-files:
     - Game.tsx
 
 key-decisions:
-  - "Clear complications in finalizeGame() to prevent carry-over"
+  - "Clear complications at END of finalizeGame() - placing at start broke game-over flow"
 
 patterns-established: []
 
@@ -43,21 +43,21 @@ completed: 2026-01-19
 
 ## Performance
 
-- **Duration:** 5 min
+- **Duration:** 20 min
 - **Started:** 2026-01-19T16:57:00Z
-- **Completed:** 2026-01-19T17:02:00Z
+- **Completed:** 2026-01-19T17:15:00Z
 - **Tasks:** 3
 - **Files modified:** 4 (2 code, 2 docs)
 
 ## Accomplishments
 
-- Fixed bug: complications now cleared in `finalizeGame()` so they don't persist after game over
+- Fixed bug: complications now cleared at END of `finalizeGame()` so game ends properly even with active malfunctions
 - Removed dead `BlownFuse` component and LAYER 5 overlay (referenced non-existent `ComplicationType.BLOWN_FUSE`)
 - Updated ROADMAP.md and STATE.md to reflect milestone completion
 
 ## Task Commits
 
-1. **Task 1: Clear complications on game end** - `7978e0b` (fix)
+1. **Task 1: Clear complications on game end** - `4c47e1b` (fix) - clears complications/activeComplicationId/primedGroups at end of finalizeGame
 2. **Task 2: Remove dead BlownFuse code** - `ff57c62` (chore)
 3. **Task 3: Update planning docs** - (included in metadata commit)
 
@@ -73,16 +73,19 @@ completed: 2026-01-19
 
 | Decision | Rationale |
 |----------|-----------|
-| Clear complications in finalizeGame() | Simplest fix for the carry-over bug; startRun() already clears, but finalizeGame() didn't |
+| Clear complications at END of finalizeGame() | Placing at start broke game-over flow; must run after all scoring/penalty logic |
+| Also clear primedGroups | LASER effect primed groups should reset with other complication state |
 | Delete BlownFuse entirely | Dead code referencing non-existent ComplicationType; minigames now live in Art.tsx |
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+Initial implementation placed complication clearing at START of finalizeGame() which broke the game-over flow. Moved to END of function (after scoring/penalty, before emitChange) to fix.
 
 ## Issues Encountered
 
-None
+- First attempt at clearing complications broke game-over detection when malfunction was active
+- Root cause: order of state changes matters; clearing complications early interfered with game-over flow
+- Fix: Move clearing to end of finalizeGame(), right before emitChange()
 
 ## Verification Checklist
 
