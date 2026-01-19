@@ -19,12 +19,12 @@ See: .planning/PROJECT.md (updated 2026-01-19)
 
 ## Current Position
 
-Phase: 2 of 4 (Minigame Logic) - COMPLETE
-Plan: 3 of 3 complete (02-03-SUMMARY.md)
-Status: Phase 2 complete, user-tested, ready for Phase 3
-Last activity: 2026-01-19 — Bug fixes for Reset Laser after user testing
+Phase: 3 of 4 (Complications) - IN PROGRESS
+Plan: 1 of 3 complete (03-01-SUMMARY.md)
+Status: Complication types & triggers implemented, gameplay effects next
+Last activity: 2026-01-19 — Complication triggers, counters, threshold-based spawning
 
-Progress: ██████████░░░░░░░░░░ 50% (2 of 4 phases complete)
+Progress: ██████████░░░░░░░░░░ 50% (2 of 4 phases complete, Phase 3 started)
 
 ## What's Done
 
@@ -46,12 +46,19 @@ Progress: ██████████░░░░░░░░░░ 50% (2 of
   - Visual feedback: corner lights, PRESS text, shake on wrong press
   - Proper drag vs tap separation
 
+## What's Done (Phase 3)
+
+- 03-01: Complication Types & Triggers
+  - ComplicationType enum: LIGHTS, CONTROLS, LASER
+  - Counter tracking: totalUnitsAdded, totalUnitsPopped, totalRotations
+  - Threshold-based triggers (20/30/15 defaults)
+  - Progressive difficulty (thresholds increment after each trigger)
+
 ## What's Next
 
-Start Phase 3: Complications
-- Define complication triggers during gameplay
-- Visual effects indicating which minigame to complete
-- Multiple simultaneous complications
+Continue Phase 3: Complications
+- 03-02: Gameplay Effects (dim lights, flip controls, +1 tap laser)
+- 03-03: UI & Console Updates (center alerts, panel indicators)
 
 ## Performance Metrics
 
