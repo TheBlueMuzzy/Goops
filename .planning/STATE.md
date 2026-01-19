@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-18)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** Phase 2 in progress - 2 of 3 minigames complete!
+**Current focus:** Phase 2 COMPLETE - all 3 minigames implemented!
 
 ## Current Position
 
-Phase: 2 of 4 (Minigame Logic) - IN PROGRESS
-Plan: 2 of 3 complete (02-02-SUMMARY.md)
-Status: Plan 02-02 complete, ready for 02-03
-Last activity: 2026-01-18 — Completed 02-02 (Reset Lights Logic)
+Phase: 2 of 4 (Minigame Logic) - COMPLETE
+Plan: 3 of 3 complete (02-03-SUMMARY.md)
+Status: Phase 2 complete, ready for Phase 3
+Last activity: 2026-01-18 — Completed 02-03 (Reset Controls Logic)
 
-Progress: ████████░░░░░░░░░░░░ 40% (1 of 4 phases + 2 plans)
+Progress: ██████████░░░░░░░░░░ 50% (2 of 4 phases complete)
 
 ## What's Done
 
@@ -28,20 +28,24 @@ Progress: ████████░░░░░░░░░░░░ 40% (1 of
   - Redesigned from Lights Out toggle → sequence memory puzzle
   - Flow: slider → watch 4-button sequence → repeat → slider
   - Guaranteed 6 interactions per solve
+- Reset Controls minigame logic complete (02-03)
+  - Dial alignment puzzle: align to 4 random corners in sequence
+  - Press dial when aligned (15° tolerance)
+  - Visual feedback: corner lights, PRESS text, shake on wrong press
 
 ## What's Next
 
-Execute remaining Phase 2 plans:
-- ✓ 02-01: Reset Laser Logic — COMPLETE
-- ✓ 02-02: Reset Lights Logic — COMPLETE
-- 02-03: Reset Controls Logic (dial alignment + press sequence)
+Start Phase 3: Complications
+- Define complication triggers during gameplay
+- Visual effects indicating which minigame to complete
+- Multiple simultaneous complications
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: ~15 min per plan
-- Total execution time: ~3 hours
+- Total execution time: ~4 hours
 
 ## Accumulated Context
 
@@ -52,6 +56,7 @@ Execute remaining Phase 2 plans:
 - No CSS transition on dial snap (causes fly-away visual bug)
 - Use refs instead of state for values needed in event handler closures
 - Reset Lights: Sequence memory over Lights Out toggle (toggle had null space, 1-press solutions)
+- Reset Controls: 15° tolerance for dial alignment, 4 corner sequence
 
 ### Key Technical Discovery
 
@@ -80,5 +85,5 @@ const currentRotationRef = useRef(0);
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Phase 1 complete
+Stopped at: Phase 2 complete
 Resume file: None needed - clean state
