@@ -54,9 +54,10 @@ export const ConsoleSlider: React.FC<ConsoleSliderProps> = ({
     const handlePointerDown = (e: React.PointerEvent) => {
         e.stopPropagation();
         e.currentTarget.setPointerCapture(e.pointerId);
-        setIsDragging(true);
         dragStartPos.current = { x: e.clientX, y: e.clientY };
         startValueOffset.current = currentPos;
+        setDragOffset(currentPos); // Initialize dragOffset before enabling drag
+        setIsDragging(true);
     };
 
     const handlePointerMove = (e: React.PointerEvent) => {

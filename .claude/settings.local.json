@@ -26,7 +26,8 @@
       "WebFetch(domain:www.nngroup.com)",
       "WebFetch(domain:news.ycombinator.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:www.jaapsch.net)"
+      "WebFetch(domain:www.jaapsch.net)",
+      "Bash(ping:*)"
     ]
   }
 }
