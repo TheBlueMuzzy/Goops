@@ -314,10 +314,6 @@ export class GameEngine {
         this.state.gameOver = true;
         this.isSessionActive = false;
 
-        // Clear any active complications so they don't carry over
-        this.state.complications = [];
-        this.state.activeComplicationId = null;
-
         // Switch to console to show the End Day screen
         this.state.phase = GamePhase.CONSOLE;
 
@@ -344,7 +340,12 @@ export class GameEngine {
         
         // 3. Apply Penalty
         this.state.score = Math.max(0, this.state.score - penalty);
-        
+
+        // 4. Clear any active complications so they don't show on end screen
+        this.state.complications = [];
+        this.state.activeComplicationId = null;
+        this.state.primedGroups.clear();
+
         gameEventBus.emit(GameEventType.GAME_OVER);
         this.emitChange();
     }
