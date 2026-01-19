@@ -303,6 +303,9 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         justDraggedRef.current = hasMovedRef.current;
         setIsDialDragging(false);
 
+        // Only snap if there was actual movement (not a simple tap)
+        if (!hasMovedRef.current) return;
+
         // Use ref value (not state) to avoid stale closure issues
         const currentRotation = currentRotationRef.current;
 
