@@ -1144,26 +1144,28 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     style={{
                         cursor: isDialDragging ? 'grabbing' : 'grab'
                     }}
-                    onMouseDown={(e) => {
-                        setDialPressed(true);
-                        handleDialStart(e.clientX, e.clientY);
-                    }}
-                    onMouseUp={() => setDialPressed(false)}
-                    onMouseLeave={() => setDialPressed(false)}
+                    onMouseDown={(e) => handleDialStart(e.clientX, e.clientY)}
                     onTouchStart={(e) => {
-                        setDialPressed(true);
                         if (e.touches.length > 0) {
                             handleDialStart(e.touches[0].clientX, e.touches[0].clientY);
                         }
                     }}
-                    onTouchEnd={() => setDialPressed(false)}
                     onClick={() => {
                         // Ignore click if we just finished dragging
                         if (justDraggedRef.current) {
                             justDraggedRef.current = false;
                             return;
                         }
-                        handleDialPress();
+                        // Only show press animation on valid confirm tap (aligned and active)
+                        if (controlsComplication.active && !controlsComplication.solved && isDialAligned()) {
+                            setDialPressed(true);
+                            setTimeout(() => {
+                                setDialPressed(false);
+                                handleDialPress();
+                            }, 100);
+                        } else {
+                            handleDialPress(); // Will trigger shake if not aligned
+                        }
                     }}
                 >
                     <circle fill="#d36b28" cx="194.32" cy="1586.66" r="86.84"/>
