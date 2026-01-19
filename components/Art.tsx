@@ -469,20 +469,23 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
             // Reset sliders to center
             setLaserSliders([0, 0, 0, 0]);
         } else {
-            // Activate with random targets that don't match current slider positions
-            const generateRandomTargets = (): (-1 | 0 | 1)[] => {
-                return [0, 1, 2, 3].map((i) => {
-                    // Pick a random target different from current slider position
-                    const current = laserSliders[i];
-                    const options: (-1 | 0 | 1)[] = ([-1, 0, 1] as (-1 | 0 | 1)[]).filter(v => v !== current);
-                    return options[Math.floor(Math.random() * options.length)];
-                });
-            };
+            // Generate random targets (can be any of -1, 0, 1)
+            const allPositions: (-1 | 0 | 1)[] = [-1, 0, 1];
+            const targets = [0, 1, 2, 3].map(() => {
+                return allPositions[Math.floor(Math.random() * 3)];
+            }) as (-1 | 0 | 1)[];
 
+            // Set sliders to wrong positions (one of the two that ISN'T the target)
+            const wrongPositions = targets.map(target => {
+                const options = allPositions.filter(v => v !== target);
+                return options[Math.floor(Math.random() * 2)];
+            }) as (-1 | 0 | 1)[];
+
+            setLaserSliders(wrongPositions);
             setLaserComplication({
                 active: true,
                 solved: false,
-                targets: generateRandomTargets()
+                targets: targets
             });
         }
     };

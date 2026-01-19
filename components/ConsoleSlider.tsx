@@ -103,7 +103,9 @@ export const ConsoleSlider: React.FC<ConsoleSliderProps> = ({
     };
 
     return (
-        <g transform={`translate(${x}, ${y}) rotate(${rotation})`} className={className}>
+        <g transform={`translate(${x}, ${y}) rotate(${rotation})`}>
+            {/* Inner group for shake animation (separate from positioning transform) */}
+            <g className={className}>
             {/* Track Slot */}
             <rect 
                 x={-length / 2} 
@@ -135,18 +137,19 @@ export const ConsoleSlider: React.FC<ConsoleSliderProps> = ({
             </g>
 
             {/* Hit Area (Invisible, wider for better touch) */}
-            <rect 
-                x={-length / 2 - 20} 
-                y={-width / 2 - 20} 
-                width={length + 40} 
-                height={width + 40} 
-                fill="transparent" 
+            <rect
+                x={-length / 2 - 20}
+                y={-width / 2 - 20}
+                width={length + 40}
+                height={width + 40}
+                fill="transparent"
                 style={{ cursor: 'grab', touchAction: 'none' }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
             />
+            </g>
         </g>
     );
 };
