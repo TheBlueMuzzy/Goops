@@ -174,7 +174,9 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         targetCorner: 0 | 1 | 2 | 3 | null; // Which corner is lit (0=TR 45°, 1=TL 135°, 2=BL 225°, 3=BR 315°)
         completedCorners: number; // 0-4 count of completed alignments
     }
-    const CORNER_ANGLES = [45, 135, 225, 315]; // TR, TL, BL, BR
+    // In SVG, rotation goes clockwise from 3 o'clock
+    // So 315° points top-right, 225° points top-left, etc.
+    const CORNER_ANGLES = [315, 225, 135, 45]; // TR, TL, BL, BR
 
     const [controlsComplication, setControlsComplication] = useState<ControlsComplication>({
         active: false,
@@ -185,6 +187,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
 
     // Track if dial is shaking (wrong press feedback)
     const [dialShaking, setDialShaking] = useState(false);
+    const [dialPressed, setDialPressed] = useState(false);
 
     // Local state for dial rotation (drag-based, replaces prop)
     const [localDialRotation, setLocalDialRotation] = useState(0);
@@ -1134,17 +1137,24 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 
                 {/* The Dial Itself */}
                 <g
-                    transform={`rotate(${Math.round(localDialRotation)} ${DIAL_CENTER_X} ${DIAL_CENTER_Y})`}
+                    transform={`translate(0 ${dialPressed ? 4 : 0}) rotate(${Math.round(localDialRotation)} ${DIAL_CENTER_X} ${DIAL_CENTER_Y})`}
                     className={dialShaking ? 'shake' : ''}
                     style={{
                         cursor: isDialDragging ? 'grabbing' : 'grab'
                     }}
-                    onMouseDown={(e) => handleDialStart(e.clientX, e.clientY)}
+                    onMouseDown={(e) => {
+                        setDialPressed(true);
+                        handleDialStart(e.clientX, e.clientY);
+                    }}
+                    onMouseUp={() => setDialPressed(false)}
+                    onMouseLeave={() => setDialPressed(false)}
                     onTouchStart={(e) => {
+                        setDialPressed(true);
                         if (e.touches.length > 0) {
                             handleDialStart(e.touches[0].clientX, e.touches[0].clientY);
                         }
                     }}
+                    onTouchEnd={() => setDialPressed(false)}
                     onClick={handleDialPress}
                 >
                     <circle fill="#d36b28" cx="194.32" cy="1586.66" r="86.84"/>
@@ -1163,7 +1173,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 {/* PRESS text - shows when dial is aligned with target */}
                 {controlsComplication.active && !controlsComplication.solved && isDialAligned() && (
                     <text
-                        fill="#22c55e"
+                        fill="#ffffff"
                         fontFamily="'Amazon Ember'"
                         fontSize="24"
                         fontWeight="bold"
