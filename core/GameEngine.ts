@@ -71,7 +71,11 @@ export class GameEngine {
             goalsTarget: goalsTarget,
             phase: GamePhase.CONSOLE, // Start in Console
             complications: [],
-            activeComplicationId: null
+            activeComplicationId: null,
+            totalUnitsAdded: 0,
+            totalUnitsPopped: 0,
+            totalRotations: 0,
+            complicationThresholds: { lights: 20, controls: 30, laser: 15 }
         };
 
         this.applyUpgrades();
@@ -141,7 +145,11 @@ export class GameEngine {
             scoreBreakdown: { base: 0, height: 0, offscreen: 0, adjacency: 0, speed: 0 },
             phase: GamePhase.PERISCOPE,
             complications: [],
-            activeComplicationId: null
+            activeComplicationId: null,
+            totalUnitsAdded: 0,
+            totalUnitsPopped: 0,
+            totalRotations: 0,
+            complicationThresholds: { lights: 20, controls: 30, laser: 15 }
         };
         
         this.lockStartTime = null;
@@ -236,14 +244,32 @@ export class GameEngine {
         if (now - this.lastComplicationCheckTime < COMPLICATION_CHECK_INTERVAL) return;
         this.lastComplicationCheckTime = now;
 
-        if (this.state.complications.length > 0) return; 
+        // Don't spawn if there's already an active complication
+        if (this.state.complications.length > 0) return;
 
         const rank = calculateRankDetails(this.initialTotalScore + this.state.score).rank;
-        if (rank < 2) return; 
+        if (rank < 2) return;
 
-        // 5% chance per check (approx every 20s)
-        if (Math.random() < 0.05) {
-            this.spawnComplication(ComplicationType.BLOWN_FUSE);
+        // Check thresholds in priority order (most likely to trigger first)
+        // LASER: Triggered by units popped
+        if (this.state.totalUnitsPopped >= this.state.complicationThresholds.laser) {
+            this.spawnComplication(ComplicationType.LASER);
+            this.state.complicationThresholds.laser += 15; // Increment threshold for next trigger
+            return;
+        }
+
+        // LIGHTS: Triggered by units added (pieces placed)
+        if (this.state.totalUnitsAdded >= this.state.complicationThresholds.lights) {
+            this.spawnComplication(ComplicationType.LIGHTS);
+            this.state.complicationThresholds.lights += 20; // Increment threshold for next trigger
+            return;
+        }
+
+        // CONTROLS: Triggered by rotations
+        if (this.state.totalRotations >= this.state.complicationThresholds.controls) {
+            this.spawnComplication(ComplicationType.CONTROLS);
+            this.state.complicationThresholds.controls += 30; // Increment threshold for next trigger
+            return;
         }
     }
 
