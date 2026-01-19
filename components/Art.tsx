@@ -919,7 +919,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 <ArcadeButton
                     x={431.19} y={1495}
                     colorBody="#3d8380" colorTop="#96d7dd"
-                    isPressed={pressedBtn === 'blue' || lightsComplication.phase === 'showing'}
+                    isPressed={pressedBtn === 'blue' || lightsComplication.phase === 'slider1' || lightsComplication.phase === 'showing'}
                     onPress={() => handlePress('blue')}
                     onRelease={() => handleRelease('blue', onBlueClick)}
                 />
@@ -934,7 +934,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 <ArcadeButton
                     x={437.5} y={1565}
                     colorBody="#4c833c" colorTop="#f6f081"
-                    isPressed={pressedBtn === 'green' || lightsComplication.phase === 'showing'}
+                    isPressed={pressedBtn === 'green' || lightsComplication.phase === 'slider1' || lightsComplication.phase === 'showing'}
                     onPress={() => handlePress('green')}
                     onRelease={() => handleRelease('green', onGreenClick)}
                 />
@@ -949,7 +949,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 <ArcadeButton
                     x={444.51} y={1635}
                     colorBody="#803d83" colorTop="#cb8abc"
-                    isPressed={pressedBtn === 'purple' || lightsComplication.phase === 'showing'}
+                    isPressed={pressedBtn === 'purple' || lightsComplication.phase === 'slider1' || lightsComplication.phase === 'showing'}
                     onPress={() => handlePress('purple')}
                     onRelease={() => handleRelease('purple', onPurpleClick)}
                 />
