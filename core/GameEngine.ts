@@ -473,6 +473,9 @@ export class GameEngine {
                         this.handleGoals(consumedGoals, destroyedGoals, finalPiece);
                     }
 
+                    // Increment units added counter for complication tracking
+                    this.state.totalUnitsAdded += finalPiece.cells.length;
+
                     gameEventBus.emit(GameEventType.PIECE_DROPPED);
                     this.state.grid = newGrid;
                     

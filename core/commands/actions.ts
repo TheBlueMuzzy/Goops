@@ -40,6 +40,9 @@ export class MoveBoardCommand implements Command {
             engine.state.activePiece = newPiece;
         }
 
+        // Increment rotation counter for complication tracking
+        engine.state.totalRotations++;
+
         gameEventBus.emit(GameEventType.PIECE_MOVED);
         engine.emitChange();
     }
@@ -98,10 +101,13 @@ export class HardDropCommand implements Command {
         const droppedPiece = { ...engine.state.activePiece, y };
         
         const { grid: newGrid, consumedGoals, destroyedGoals } = mergePiece(engine.state.grid, droppedPiece, engine.state.goalMarks);
-        
+
         if (consumedGoals.length > 0 || destroyedGoals.length > 0) {
             engine.handleGoals(consumedGoals, destroyedGoals, droppedPiece);
         }
+
+        // Increment units added counter for complication tracking
+        engine.state.totalUnitsAdded += droppedPiece.cells.length;
 
         const distance = Math.floor(y - engine.state.activePiece.y);
         engine.updateScoreAndStats(distance * 2, { speed: distance * 2 });
@@ -190,6 +196,9 @@ export class BlockTapCommand implements Command {
          if (group.length > 0) {
             gameEventBus.emit(GameEventType.GOOP_POPPED, { combo: engine.state.combo, count: group.length });
             engine.state.cellsCleared++;
+
+            // Increment popped counter for complication tracking
+            engine.state.totalUnitsPopped += group.length;
             
             const groupSize = group.length;
             engine.state.gameStats.maxGroupSize = Math.max(engine.state.gameStats.maxGroupSize, groupSize);
