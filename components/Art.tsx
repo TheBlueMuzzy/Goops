@@ -224,6 +224,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     const rotationAtGrabRef = useRef(0); // Dial rotation when grab started
     const currentRotationRef = useRef(0); // Current rotation (ref version for snap calculation)
     const justDraggedRef = useRef(false); // Track if we just finished a drag (to ignore click)
+    const hasMovedRef = useRef(false); // Track if dial actually moved during drag
 
     // Convert screen coordinates to SVG coordinates
     // Use a NON-ROTATING reference element for clean CTM
@@ -267,6 +268,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         grabAngleRef.current = Math.atan2(dy, dx) * (180 / Math.PI);
         rotationAtGrabRef.current = localDialRotation;
         isDraggingRef.current = true;
+        hasMovedRef.current = false; // Reset movement tracking
         setIsDialDragging(true);
     };
 
@@ -287,6 +289,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         // newRotation = cursorAngle - grabAngle + rotationAtGrab
         const newRotation = cursorAngle - grabAngleRef.current + rotationAtGrabRef.current;
         currentRotationRef.current = newRotation; // Keep ref in sync for snap calculation
+        hasMovedRef.current = true; // Mark that we actually dragged
         setLocalDialRotation(newRotation);
     };
 
@@ -296,7 +299,8 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     const handleDialEnd = () => {
         if (!isDraggingRef.current) return;
         isDraggingRef.current = false;
-        justDraggedRef.current = true; // Mark that we just finished dragging
+        // Only mark as "just dragged" if there was actual movement (not a simple tap)
+        justDraggedRef.current = hasMovedRef.current;
         setIsDialDragging(false);
 
         // Use ref value (not state) to avoid stale closure issues
