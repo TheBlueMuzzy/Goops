@@ -962,11 +962,11 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     <tspan>Muz</tspan><tspan letterSpacing="0em" x="29.67">z</tspan><tspan x="37.29">yMade @ 2026</tspan>
                 </text>
 
-                {/* Operator Rank Selector - Dev Tool */}
+                {/* Operator Rank Selector - Dev Tool (disabled during game over) */}
                 <g
                     id="RankSelector"
-                    className="cursor-pointer hover:brightness-125 active:brightness-90 transition-all origin-center"
-                    onClick={handleRankClick}
+                    className={isGameOver ? "pointer-events-none" : "cursor-pointer hover:brightness-125 active:brightness-90 transition-all origin-center"}
+                    onClick={isGameOver ? undefined : handleRankClick}
                 >
                     <text fill={rankDropdownOpen ? "#5bbc70" : "#aad9d9"} fontFamily="'Amazon Ember'" fontSize="20.93" fontWeight={rankDropdownOpen ? "bold" : "normal"} transform="translate(259.17 1855.99)">
                         OPERATOR RANK
@@ -1390,8 +1390,8 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 )}
             </g>
 
-            {/* Rank Dropdown Overlay */}
-            {rankDropdownOpen && (
+            {/* Rank Dropdown Overlay (hidden during game over) */}
+            {rankDropdownOpen && !isGameOver && (
                 <foreignObject x="200" y="1550" width="250" height="300">
                     <div
                         onClick={(e) => e.stopPropagation()}
