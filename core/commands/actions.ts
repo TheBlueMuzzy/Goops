@@ -232,10 +232,9 @@ export class BlockTapCommand implements Command {
             gameEventBus.emit(GameEventType.GOOP_POPPED, { combo: engine.state.combo, count: group.length });
             engine.state.cellsCleared++;
 
-            // Increment popped counter for complication tracking (only when no complications active)
-            if (engine.state.complications.length === 0) {
-                engine.state.totalUnitsPopped += group.length;
-            }
+            // Increment popped counter for complication tracking
+            // Always increment so multiple complications can trigger simultaneously
+            engine.state.totalUnitsPopped += group.length;
             
             const groupSize = group.length;
             engine.state.gameStats.maxGroupSize = Math.max(engine.state.gameStats.maxGroupSize, groupSize);
