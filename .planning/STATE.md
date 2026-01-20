@@ -15,14 +15,14 @@
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** Phase 4 UAT in progress - testing complications integration
+**Current focus:** Milestone complete - all UAT passed
 
 ## Current Position
 
-Phase: 4 of 4 (Minigame-Complication Integration) - IN VERIFICATION
+Phase: 4 of 4 (Minigame-Complication Integration) - COMPLETE
 Plan: 4 of 4 (Documentation updates) - executed
-Status: All plans executed, UAT in progress
-Last activity: 2026-01-19 — Phase 4 complete (LIGHTS + CONTROLS rewrites)
+Status: UAT PASSED - All complications working, multiple can trigger simultaneously
+Last activity: 2026-01-20 — UAT bug fixes committed
 
 Progress: ████████████████████ 100% (All phases complete)
 
@@ -77,6 +77,11 @@ Progress: ████████████████████ 100% (All
 - 04-04: Documentation Updates
   - PRD updated with correct complication specs
   - STATE.md updated to reflect completion
+- UAT Bug Fixes (2026-01-20):
+  - CONTROLS minigame not activating: was setting targetCorner to angle (45/315/225/135) instead of index (0/1/2/3)
+  - Multiple complications couldn't trigger: checkComplications() blocked all spawns if any active
+  - Complication counters stopped accumulating when any complication active (totalUnitsPopped, rotationTimestamps)
+  - Alarm text now stacks vertically (oldest on top) when multiple complications active
 
 ## Approved Complication Specifications
 
@@ -153,7 +158,7 @@ None
 
 ## Session Continuity
 
-Last session: 2026-01-19
-Stopped at: Phase 4 plans executed, UAT in progress
-Resume with: Continue user acceptance testing
+Last session: 2026-01-20
+Stopped at: MILESTONE COMPLETE - All 4 phases done, UAT passed
+Resume with: Next milestone (multi-color pieces or new features)
 Resume file: None needed - clean state

@@ -106,15 +106,16 @@ Do NOT remove the `isMobile` checks without understanding why they exist.
   - **Reset Laser**: 4 sliders match indicator lights (left/right/both-on for center)
   - **Reset Lights**: Sequence memory (slider → watch 4-button sequence → repeat → slider)
   - **Reset Controls**: Dial alignment (align to 4 lit corners in sequence, tap to confirm)
-- Phase 3 & 4: Complications system complete:
-  - **LIGHTS**: Triggers on clearing 3+ groups in one drop, dims the game board
-  - **CONTROLS**: Triggers on clearing 6+ blocks in one group, requires double input + halves hold speed
+- Phase 3 & 4: Complications system complete (UAT passed 2026-01-20):
+  - **LASER** (rank 1+): Triggers on cumulative units popped (12-24), two-tap mechanic
+  - **CONTROLS** (rank 2+): Triggers on 20 rotations in 3 seconds, double input + half hold speed
+  - **LIGHTS** (rank 3+): Triggers 50% on piece lock when pressure 3-5 rows above goop, dims to 10%
+  - Multiple complications can be active simultaneously
   - Minigame solutions resolve active complications
 - **Dev Tool**: Operator Rank selector (0-100) in console footer for testing progression
 
 ### Next Up
 - Multi-color pieces (needs piece redesign first)
-- Additional complication types (LASER already has minigame ready)
 
 ## Testing Philosophy
 - Tests cover core game logic (collision, gravity, scoring, coordinates)

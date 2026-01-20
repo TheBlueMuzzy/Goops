@@ -31,7 +31,7 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 
 ### Active
 
-None — milestone complete, ready for user verification
+None — milestone complete, UAT passed (2026-01-20)
 
 ### Out of Scope
 
@@ -40,7 +40,7 @@ None — milestone complete, ready for user verification
 
 ## Context
 
-**Current state:** All phases complete. Complication system fully implemented:
+**Current state:** All phases complete, UAT passed. Complication system fully implemented (multiple complications can be active simultaneously):
 
 **Complication Triggers:**
 | Type | Trigger | Rank |
@@ -84,4 +84,4 @@ None — milestone complete, ready for user verification
 | LIGHTS trigger on piece lock | Situational trigger based on pressure gap, not counter | ✓ Good |
 
 ---
-*Last updated: 2026-01-19 — Milestone complete, all 4 phases done*
+*Last updated: 2026-01-20 — Milestone complete, UAT passed*
