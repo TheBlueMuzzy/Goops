@@ -1,11 +1,12 @@
 
 import React, { useMemo, useCallback, useRef, useState, useEffect } from 'react';
-import { GameState, FallingBlock, GridCell, PieceState, ComplicationType } from '../types';
+import { GameState, FallingBlock, GridCell, PieceState, ComplicationType, GamePhase } from '../types';
 import { VISIBLE_WIDTH, VISIBLE_HEIGHT, COLORS, TOTAL_WIDTH, TOTAL_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 import { normalizeX, getGhostY, getPaletteForRank } from '../utils/gameLogic';
 import { gameEventBus } from '../core/events/EventBus';
 import { GameEventType } from '../core/events/GameEvents';
 import { isMobile } from '../utils/device';
+import { HudMeter } from './HudMeter';
 
 interface GameBoardProps {
   state: GameState;
@@ -19,6 +20,8 @@ interface GameBoardProps {
   onSoftDrop: (active: boolean) => void;
   onSwap: () => void;
   lightsDimmed?: boolean; // LIGHTS complication effect: dim to 10% + grayscale
+  laserCapacitor?: number;  // HUD meter: 0-100 (100 = full)
+  controlsHeat?: number;    // HUD meter: 0-100 (0 = cool)
 }
 
 const BLOCK_SIZE = 30; 
@@ -41,7 +44,8 @@ interface RenderableCell {
 
 export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, onBlockTap,
-    onRotate, onDragInput, onSwipeUp, onSoftDrop, onSwap, lightsDimmed
+    onRotate, onDragInput, onSwipeUp, onSoftDrop, onSwap, lightsDimmed,
+    laserCapacitor = 100, controlsHeat = 0
 }) => {
   const { grid, boardOffset, activePiece, fallingBlocks, floatingTexts, timeLeft, goalMarks } = state;
   const [highlightedGroupId, setHighlightedGroupId] = useState<string | null>(null);
@@ -870,6 +874,30 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 }
                 return null;
             })}
+
+            {/* HUD Meters - only visible in PERISCOPE phase */}
+            {state.phase === GamePhase.PERISCOPE && (
+                <>
+                    {/* Left meter: Laser Capacitor (drains as player pops) */}
+                    <HudMeter
+                        value={laserCapacitor}
+                        colorMode="drain"
+                        x={vbX + 8}
+                        y={vbH * 0.1}
+                        height={vbH * 0.8}
+                        width={14}
+                    />
+                    {/* Right meter: Controls Heat (builds while rotating) */}
+                    <HudMeter
+                        value={controlsHeat}
+                        colorMode="heat"
+                        x={vbX + vbW - 22}
+                        y={vbH * 0.1}
+                        height={vbH * 0.8}
+                        width={14}
+                    />
+                </>
+            )}
         </svg>
 
         {/* Hold-to-Swap Visual Indicator */}

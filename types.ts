@@ -157,6 +157,10 @@ export interface GameState {
 
   // LASER complication: tracks groups that have been tapped once (primed)
   primedGroups: Set<string>;
+
+  // HUD meters for complication feedback
+  laserCapacitor: number;  // 0-100 (100 = full, 0 = empty/triggers LASER)
+  controlsHeat: number;    // 0-100 (0 = cool, 100 = overheated/triggers CONTROLS)
 }
 
 // --- Meta Progression Types ---

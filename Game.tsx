@@ -234,6 +234,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             onSoftDrop={(active) => engine.execute(new SetSoftDropCommand(active))}
             onSwap={() => engine.execute(new SwapPieceCommand())}
             lightsDimmed={activeEffects.dimmed && gameState.phase === GamePhase.PERISCOPE}
+            laserCapacitor={gameState.laserCapacitor}
+            controlsHeat={gameState.controlsHeat}
          />
          {/* LIGHTS complication effect is now handled via lightsDimmed prop on GameBoard */}
       </div>

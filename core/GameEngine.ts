@@ -86,7 +86,9 @@ export class GameEngine {
                 controls: this.randomThreshold(),
                 laser: this.randomThreshold()
             },
-            primedGroups: new Set()
+            primedGroups: new Set(),
+            laserCapacitor: 100,  // Starts full
+            controlsHeat: 0       // Starts cool
         };
 
         this.applyUpgrades();
@@ -166,7 +168,9 @@ export class GameEngine {
                 controls: this.randomThreshold(),
                 laser: this.randomThreshold()
             },
-            primedGroups: new Set()
+            primedGroups: new Set(),
+            laserCapacitor: 100,  // Starts full
+            controlsHeat: 0       // Starts cool
         };
 
         this.lockStartTime = null;
