@@ -1,7 +1,7 @@
 
 import { GameState, GridCell, ActivePiece, PieceDefinition, FallingBlock, ScoreBreakdown, GameStats, FloatingText, GoalMark, GamePhase, PieceState, PieceType, Complication, ComplicationType } from '../types';
-import { 
-    TOTAL_WIDTH, TOTAL_HEIGHT, VISIBLE_WIDTH, VISIBLE_HEIGHT, PER_BLOCK_DURATION, INITIAL_TIME_MS, 
+import {
+    TOTAL_WIDTH, TOTAL_HEIGHT, VISIBLE_WIDTH, VISIBLE_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, INITIAL_TIME_MS,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS, UPGRADE_CONFIG
 } from '../constants';
 import { 
@@ -243,7 +243,8 @@ export class GameEngine {
                     this.state.totalRotations = 0;
                     break;
                 case ComplicationType.LIGHTS:
-                    this.state.totalUnitsAdded = 0;
+                    // LIGHTS trigger is 50% chance on piece lock when pressure gap met
+                    // No counter to reset - chance automatically resumes after resolution
                     break;
             }
         }
@@ -301,12 +302,7 @@ export class GameEngine {
             return;
         }
 
-        // LIGHTS: Triggered by units added (rank 3+)
-        if (rank >= 3 && this.state.totalUnitsAdded >= this.state.complicationThresholds.lights) {
-            this.spawnComplication(ComplicationType.LIGHTS);
-            this.state.complicationThresholds.lights = this.randomThreshold(); // New random threshold for next trigger
-            return;
-        }
+        // LIGHTS: Now triggered on piece lock (not here) - see tick() method
     }
 
     public finalizeGame() {
@@ -514,14 +510,47 @@ export class GameEngine {
                         this.handleGoals(consumedGoals, destroyedGoals, finalPiece);
                     }
 
-                    // Increment units added counter for complication tracking (only when no complications active)
-                    if (this.state.complications.length === 0) {
-                        this.state.totalUnitsAdded += finalPiece.cells.length;
+                    // LIGHTS complication trigger: 50% chance when pressure 3-5 rows above highest goop (rank 3+)
+                    const currentRank = calculateRankDetails(this.initialTotalScore + this.state.score).rank;
+                    const hasLightsActive = this.state.complications.some(c => c.type === ComplicationType.LIGHTS);
+
+                    if (currentRank >= 3 && !hasLightsActive) {
+                        // Find highest goop row (lowest Y value with any block)
+                        let highestGoopY = TOTAL_HEIGHT; // Default to bottom if no goop
+                        for (let y = 0; y < TOTAL_HEIGHT; y++) {
+                            for (let x = 0; x < TOTAL_WIDTH; x++) {
+                                if (newGrid[y][x]) {
+                                    highestGoopY = y;
+                                    break;
+                                }
+                            }
+                            if (highestGoopY < TOTAL_HEIGHT) break;
+                        }
+
+                        // Calculate pressure line Y position in grid coordinates
+                        // pressureRatio: 0 at start (full time), 1 at end (no time)
+                        const pressureRatio = Math.max(0, 1 - (this.state.timeLeft / this.maxTime));
+                        // waterHeightBlocks: 1 at start, VISIBLE_HEIGHT at end
+                        const waterHeightBlocks = 1 + (pressureRatio * (VISIBLE_HEIGHT - 1));
+                        // Convert to grid Y (pressure line rises from bottom)
+                        // BUFFER_HEIGHT rows at top are offscreen, so grid Y = BUFFER_HEIGHT + (VISIBLE_HEIGHT - waterHeightBlocks)
+                        const pressureLineY = BUFFER_HEIGHT + (VISIBLE_HEIGHT - waterHeightBlocks);
+
+                        // Gap = how many rows between pressure line and highest goop
+                        const gap = highestGoopY - pressureLineY;
+
+                        // Random threshold between 3-5 rows
+                        const gapThreshold = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
+
+                        // If gap >= threshold, 50% chance to trigger LIGHTS
+                        if (gap >= gapThreshold && Math.random() < 0.5) {
+                            this.spawnComplication(ComplicationType.LIGHTS);
+                        }
                     }
 
                     gameEventBus.emit(GameEventType.PIECE_DROPPED);
                     this.state.grid = newGrid;
-                    
+
                     this.spawnNewPiece(undefined, newGrid);
                     this.state.combo = 0;
                     this.isSoftDropping = false;

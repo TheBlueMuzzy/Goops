@@ -10,14 +10,15 @@ import { isMobile } from '../utils/device';
 interface GameBoardProps {
   state: GameState;
   rank: number;
-  maxTime: number; 
+  maxTime: number;
   onBlockTap: (x: number, y: number) => void;
-  
+
   onRotate: (dir: number) => void;
   onDragInput: (dir: number) => void; // 0 = stop, 1 = left, -1 = right
   onSwipeUp: () => void;
   onSoftDrop: (active: boolean) => void;
   onSwap: () => void;
+  lightsDimmed?: boolean; // LIGHTS complication effect: dim to 10% + grayscale
 }
 
 const BLOCK_SIZE = 30; 
@@ -38,9 +39,9 @@ interface RenderableCell {
     isFalling?: boolean;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ 
-    state, rank, maxTime, onBlockTap, 
-    onRotate, onDragInput, onSwipeUp, onSoftDrop, onSwap 
+export const GameBoard: React.FC<GameBoardProps> = ({
+    state, rank, maxTime, onBlockTap,
+    onRotate, onDragInput, onSwipeUp, onSoftDrop, onSwap, lightsDimmed
 }) => {
   const { grid, boardOffset, activePiece, fallingBlocks, floatingTexts, timeLeft, goalMarks } = state;
   const [highlightedGroupId, setHighlightedGroupId] = useState<string | null>(null);
@@ -394,6 +395,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     .malfunction-pulse {
         animation: malfunctionPulse 0.5s ease-in-out infinite;
     }
+    @keyframes lightsDimIn {
+        from { filter: brightness(1) grayscale(0); }
+        to { filter: brightness(0.1) grayscale(1); }
+    }
+    .lights-dimmed {
+        animation: lightsDimIn 1.5s ease-out forwards;
+    }
   `, []);
 
   const now = Date.now();
@@ -567,12 +575,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         )}
         
         <style>{style}</style>
-        <svg 
-            width="100%" 
+        <svg
+            width="100%"
             height="100%"
             viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
             preserveAspectRatio="xMidYMin meet"
-            className="touch-none"
+            className={`touch-none ${lightsDimmed ? 'lights-dimmed' : ''}`}
             style={{ willChange: 'transform' }} // OPTIMIZATION: Promote to compositor layer
         >
             {maskDefinitions}

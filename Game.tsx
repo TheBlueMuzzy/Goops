@@ -206,21 +206,21 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
         In Console Phase, it is revealed via the Periscope Mask in ConsoleView.
       */}
       <div className="absolute inset-0 z-0">
-         <GameBoard 
-            state={gameState} 
+         <GameBoard
+            state={gameState}
             rank={currentRank}
-            maxTime={60000} 
-            onBlockTap={(x, y) => engine.execute(new BlockTapCommand(x, y))} 
+            maxTime={60000}
+            onBlockTap={(x, y) => engine.execute(new BlockTapCommand(x, y))}
             onRotate={(dir) => engine.execute(new RotatePieceCommand(dir === 1))}
             onDragInput={(dir) => {
                 dragDirectionRef.current = dir;
                 if (dir !== 0) {
                     startMovementLoop();
                 } else {
-                    const stillHolding = 
-                        heldKeys.current.has('ArrowLeft') || 
-                        heldKeys.current.has('ArrowRight') || 
-                        heldKeys.current.has('KeyA') || 
+                    const stillHolding =
+                        heldKeys.current.has('ArrowLeft') ||
+                        heldKeys.current.has('ArrowRight') ||
+                        heldKeys.current.has('KeyA') ||
                         heldKeys.current.has('KeyD');
                     if (!stillHolding) {
                         stopMovementLoop();
@@ -230,24 +230,9 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             onSwipeUp={() => engine.execute(new SetPhaseCommand(GamePhase.CONSOLE))}
             onSoftDrop={(active) => engine.execute(new SetSoftDropCommand(active))}
             onSwap={() => engine.execute(new SwapPieceCommand())}
+            lightsDimmed={activeEffects.dimmed && gameState.phase === GamePhase.PERISCOPE}
          />
-         {/* Complication Effect Layers */}
-         {/* LIGHTS malfunction: dims screen over 3 seconds, clears instantly - only during PERISCOPE phase */}
-         <style>{`
-           @keyframes dimIn {
-             from { opacity: 0; }
-             to { opacity: 1; }
-           }
-         `}</style>
-         {activeEffects.dimmed && gameState.phase === GamePhase.PERISCOPE && (
-             <div
-               className="absolute inset-0 z-[5] pointer-events-none"
-               style={{
-                 backgroundColor: 'rgba(0,0,0,0.8)',
-                 animation: 'dimIn 3s ease-out forwards'
-               }}
-             />
-         )}
+         {/* LIGHTS complication effect is now handled via lightsDimmed prop on GameBoard */}
       </div>
 
       {/* LAYER 2: CONSOLE VIEW (Visible in Console Phase) */}
