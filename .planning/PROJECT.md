@@ -26,11 +26,12 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 - ✓ Reset Laser puzzle logic (4 sliders match indicator lights)
 - ✓ Reset Lights puzzle logic (sequence memory: slider → watch → repeat → slider)
 - ✓ Reset Controls puzzle logic (dial alignment: 4 corners in sequence)
+- ✓ Complications — triggers and effects defined and implemented
+- ✓ Minigame-Complication integration — puzzles resolve complications
 
 ### Active
 
-- [ ] Complications — what triggers minigames during gameplay
-- [ ] Minigame-Complication integration — wire puzzle solutions to resolve complications
+None — milestone complete, ready for user verification
 
 ### Out of Scope
 
@@ -39,17 +40,28 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 
 ## Context
 
-**Current state:** All 3 minigame puzzles are complete and tested:
-- **Reset Laser**: 4 sliders match indicator lights (left/right/both-on=center)
-- **Reset Lights**: Sequence memory (slider → watch 4 buttons → repeat → slider)
-- **Reset Controls**: Dial alignment (rotate to 4 lit corners in sequence, tap to confirm)
+**Current state:** All phases complete. Complication system fully implemented:
 
-Click minigame title text to toggle each puzzle for testing.
+**Complication Triggers:**
+| Type | Trigger | Rank |
+|------|---------|------|
+| LASER | Cumulative units popped (12-24 threshold) | 1+ |
+| CONTROLS | 20 rotations within 3 seconds | 2+ |
+| LIGHTS | 50% chance on piece lock when pressure 3-5 rows above goop | 3+ |
+
+**Complication Effects:**
+| Type | Effect |
+|------|--------|
+| LASER | Two-tap mechanic (first tap primes, restarts fill; second tap pops) |
+| CONTROLS | Requires 2 inputs per move, held keys at half speed |
+| LIGHTS | Dims to 10% + grayscale over 1.5s (alert exempt) |
 
 **Key files:**
 - `components/Art.tsx` — All minigame state machines, puzzle logic, visual feedback
-- `components/ConsoleSlider.tsx` — Slider component with drag, snap, shake animation
-- `components/GameBoard.tsx` — Contains @keyframes shake definition
+- `components/GameBoard.tsx` — Game rendering, LIGHTS dim effect via CSS filter
+- `core/GameEngine.ts` — Complication triggers and spawn logic
+- `core/commands/actions.ts` — MoveBoardCommand rotation tracking
+- `Game.tsx` — CONTROLS double-input effect, movement loop
 
 **User preferences:**
 - Not a professional engineer, prefers readable code over abstractions
@@ -67,7 +79,9 @@ Click minigame title text to toggle each puzzle for testing.
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Sliders use local state in Art.tsx | Simple, self-contained, no game logic coupling | ✓ Good |
-| Buttons/dial should follow same pattern | Consistency, keep UI state separate from game state | — Pending |
+| LIGHTS effect via CSS filter on SVG | Alert stays visible, cleaner than overlay | ✓ Good |
+| CONTROLS tracks timestamps not counter | Speed-based trigger (20 in 3s) needs timing data | ✓ Good |
+| LIGHTS trigger on piece lock | Situational trigger based on pressure gap, not counter | ✓ Good |
 
 ---
-*Last updated: 2026-01-19 — Phase 2 complete, all minigames tested*
+*Last updated: 2026-01-19 — Milestone complete, all 4 phases done*

@@ -211,18 +211,18 @@ While in Periscope Mode, equipment malfunctions occur based on player actions.
 
 **Triggers:**
 
-| Complication | Trigger | Upgradeable? |
-|--------------|---------|--------------|
-| Reset Lights | X total goop units added to tank (cumulative, even popped ones) | Yes - higher threshold |
-| Reset Laser | X total goop units popped (cumulative) | Yes - higher threshold |
-| Reset Controls | X tank rotation steps (cumulative) | Yes - higher threshold |
+| Complication | Trigger | Rank Unlock | Upgradeable? |
+|--------------|---------|-------------|--------------|
+| Reset Laser | X total goop units popped (cumulative, 12-24 range) | Rank 1+ | Yes - higher threshold |
+| Reset Controls | 20 rotation inputs within 3 seconds | Rank 2+ | No - speed-based |
+| Reset Lights | 50% chance on piece lock when pressure is 3-5 rows above highest goop | Rank 3+ | No - situational |
 
 **Key Design:** The game does NOT pause when you exit to console. The tank keeps filling, pressure keeps rising. Fix complications fast!
 
 **Complication Effects (while unfixed):**
-- Reset Lights: TBD visual impairment
-- Reset Laser: Laser disabled (can't pop goop)
-- Reset Controls: Tank rotation disabled
+- Reset Lights: Dims to 10% brightness + grayscale over 1.5s (periscope only, alert exempt)
+- Reset Laser: Two-tap mechanic (first tap primes group and restarts fill animation, second tap pops)
+- Reset Controls: Requires 2 inputs per move, held keys move at half speed
 
 **Ignoring Complications:**
 - Player can choose to not fix immediately
@@ -587,11 +587,9 @@ Color split: Cells [0,1] = colorA, cells [2,3] = colorB
 
 ## Open Questions
 
-1. **Complication effects** - What visual/gameplay impairments for unfixed complications?
-2. **Bonus crack scoring** - How many points per bonus crack?
-3. **Complication thresholds** - Starting values for triggers?
-4. **Mobile controls** - Swipe up for swap vs exit periscope conflict?
-5. **Difficulty curve** - How aggressively do complication thresholds scale with rank?
+1. **Bonus crack scoring** - How many points per bonus crack?
+2. **Mobile controls** - Swipe up for swap vs exit periscope conflict?
+3. **Difficulty curve** - How aggressively do complication thresholds scale with rank?
 
 ---
 

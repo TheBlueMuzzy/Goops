@@ -8,31 +8,34 @@
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- `complications` — Phase 4 in progress (LIGHTS + CONTROLS rewrites)
+- None — all work complete on master
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** Phase 4 - LIGHTS + CONTROLS complication rewrites (user-specified triggers/effects)
+**Current focus:** Milestone complete - ready for user verification
 
 ## Current Position
 
-Phase: 4 of 4 (Minigame-Complication Integration) - IN PROGRESS
-Plan: 2 of 4 (LIGHTS rewrite next)
-Status: LIGHTS + CONTROLS rewrites pending
-Last activity: 2026-01-19 — P0 bug fix (game-over soft-lock on mobile)
+Phase: 4 of 4 (Minigame-Complication Integration) - COMPLETE
+Plan: 4 of 4 (Documentation updates)
+Status: All plans executed, awaiting user verification
+Last activity: 2026-01-19 — Phase 4 complete (LIGHTS + CONTROLS rewrites)
 
-Progress: ████████████████░░░░ 80% (Phase 4 in progress)
+Progress: ████████████████████ 100% (All phases complete)
 
 ## What's Done
 
+### Phase 1: Dial Rotation - COMPLETE
 - Dial rotation responds to drag (vector approach)
 - SVG coordinate conversion working (uses hidden reference element)
 - Snap to 4 corners (45°, 135°, 225°, 315°) on release
 - Debug code cleaned up
 - Works on both PC and mobile
+
+### Phase 2: Minigame Logic - COMPLETE
 - Reset Laser minigame logic complete (02-01)
   - Bug fixes (2026-01-19): both lights ON for center target, sliders start in wrong positions
 - Reset Lights minigame logic complete (02-02)
@@ -46,58 +49,49 @@ Progress: ████████████████░░░░ 80% (Phas
   - Visual feedback: corner lights, PRESS text, shake on wrong press
   - Proper drag vs tap separation
 
-## What's Done (Phase 3) - COMPLETE
-
+### Phase 3: Complications - COMPLETE
 - 03-01: Complication Types & Triggers
   - ComplicationType enum: LIGHTS, CONTROLS, LASER
-  - Counter tracking: totalUnitsAdded, totalUnitsPopped, totalRotations
-  - Threshold-based triggers (randomized 12-24 range)
   - Progressive rank unlock: LASER@rank1, CONTROLS@rank2, LIGHTS@rank3
-- 03-02: Gameplay Effects
-  - LIGHTS: Screen dims to 0.8 opacity over 3 seconds
-  - CONTROLS: Left/right controls flip every 3 seconds
-  - LASER: First tap restarts fill animation (primed groups shown with red dashed outline)
-- 03-03: UI & Console Updates (All tasks complete)
+- 03-02: Gameplay Effects (now rewritten)
+- 03-03: UI & Console Updates
   - Pulsing red "[X] Malfunction / Fix at Console" center alerts
   - Console panels: lights only ON when complication active
   - Text states: RESET X (teal) → RESET X (red) → X FIXED (green)
   - Full minigame integration with resolve callbacks
-  - Minigame state resets on complication removal
-- UAT Bug Fixes:
-  - Array mutation (spread operator for React detection)
-  - Minigame initialization (reuses Phase 2 toggle logic)
-  - Solve callback chain (onResolveComplication prop)
-  - Counter pauses during active complications
 
-## What's Done (Phase 4) - COMPLETE
-
+### Phase 4: Minigame-Complication Integration - COMPLETE
 - 04-01: Final Cleanup
   - Bug fix: Complications now cleared in finalizeGame() (no carry-over between sessions)
   - Dead code removal: BlownFuse component and LAYER 5 overlay removed
-  - Planning docs updated for milestone completion
+- 04-02: LIGHTS Complication Rewrite
+  - Trigger: 50% chance on piece lock when pressure 3-5 rows above highest goop (rank 3+)
+  - Effect: Dims to 10% brightness + grayscale over 1.5s (alert exempt)
+  - Replaced cumulative counter with pressure-gap based trigger
+  - Replaced overlay with CSS filter on SVG
+- 04-03: CONTROLS Complication Rewrite
+  - Trigger: 20 rotation inputs within 3 seconds (rank 2+)
+  - Effect: Requires 2 inputs per move, held keys at half speed
+  - Replaced cumulative counter with timestamped tracking
+  - Removed flip controls effect, added double-tap requirement
+- 04-04: Documentation Updates
+  - PRD updated with correct complication specs
+  - STATE.md updated to reflect completion
 
-## What's Next
+## Approved Complication Specifications
 
-**Phase 4 Plan 2: LIGHTS Complication Rewrite**
-
-LIGHTS trigger and effect were implemented incorrectly. User provided actual specs:
-- Trigger: 50% chance on piece lock when pressure is 3-5 rows above highest goop
-- Effect: Dims to 10%, desaturates to grayscale over 1.5s (alert exempt)
-
-**After LIGHTS:**
-- Plan 3: CONTROLS complication rewrite (20 rotations in 3s → double inputs)
-- Plan 4: Documentation updates
-
-```
-/gsd:execute-plan .planning/phases/04-minigame-complication-integration/04-02-PLAN.md
-```
+| Complication | Trigger | Effect | Rank |
+|--------------|---------|--------|------|
+| LASER | Cumulative units popped (12-24 range) | Two-tap mechanic (prime then pop) | 1+ |
+| CONTROLS | 20 rotations in 3 seconds | 2 inputs per move, half hold speed | 2+ |
+| LIGHTS | 50% on piece lock when pressure gap >= 3-5 rows | 10% brightness + grayscale over 1.5s | 3+ |
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8 (across all 4 phases)
+- Total plans completed: 12 (across all 4 phases)
 - Average duration: ~30 min per plan (including bug fixes)
-- Total execution time: ~6 hours
+- Total execution time: ~8 hours
 
 ## Accumulated Context
 
@@ -110,6 +104,8 @@ LIGHTS trigger and effect were implemented incorrectly. User provided actual spe
 - Reset Lights: Sequence memory over Lights Out toggle (toggle had null space, 1-press solutions)
 - Reset Controls: 15° tolerance for dial alignment, 4 corner sequence
 - Reset Controls: Corner angles are 45°=TR, 315°=TL, 225°=BL, 135°=BR
+- LIGHTS effect: CSS filter on SVG instead of overlay (keeps alert visible)
+- CONTROLS effect: Double-tap + half speed instead of flip toggle
 
 ### Key Technical Discovery
 
@@ -142,26 +138,13 @@ CSS animations with `transform` override inline SVG `transform` attributes. To a
 </g>
 ```
 
-**Distinguishing Tap from Drag**
+**CSS Filter for Selective Dimming**
 
-Track actual movement with a ref to distinguish simple taps from drags:
+Apply filter to game content only, keeping alerts exempt:
 ```tsx
-const hasMovedRef = useRef(false);
-// In drag start: hasMovedRef.current = false;
-// In drag move: hasMovedRef.current = true;
-// In drag end: only set justDraggedRef if hasMovedRef.current
-```
-
-**Slider Jump on Drag Start**
-
-When dragging starts, initialize dragOffset to current position before enabling drag mode:
-```tsx
-const handlePointerDown = (e: React.PointerEvent) => {
-    dragStartPos.current = { x: e.clientX, y: e.clientY };
-    startValueOffset.current = currentPos;
-    setDragOffset(currentPos); // Initialize BEFORE enabling drag
-    setIsDragging(true);
-};
+<svg className={lightsDimmed ? 'lights-dimmed' : ''}>
+// .lights-dimmed { animation: lightsDimIn 1.5s ease-out forwards; }
+// @keyframes lightsDimIn { to { filter: brightness(0.1) grayscale(1); } }
 ```
 
 ### Deferred Issues
@@ -171,6 +154,6 @@ const handlePointerDown = (e: React.PointerEvent) => {
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: MILESTONE COMPLETE - All phases done
-Resume with: Merge `complications` branch to master
+Stopped at: MILESTONE COMPLETE - All 4 phases done
+Resume with: User verification testing
 Resume file: None needed - clean state
