@@ -233,7 +233,14 @@ export class BlockTapCommand implements Command {
             // Increment popped counter for complication tracking
             // Always increment so multiple complications can trigger simultaneously
             engine.state.totalUnitsPopped += group.length;
-            
+
+            // LASER capacitor drain: drains when popping groups (rank 1+)
+            const currentRank = calculateRankDetails(engine.initialTotalScore + engine.state.score).rank;
+            if (currentRank >= 1) {
+                const drainAmount = group.length * 4; // 4 per unit popped
+                engine.state.laserCapacitor = Math.max(0, engine.state.laserCapacitor - drainAmount);
+            }
+
             const groupSize = group.length;
             engine.state.gameStats.maxGroupSize = Math.max(engine.state.gameStats.maxGroupSize, groupSize);
 

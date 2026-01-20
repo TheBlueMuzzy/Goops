@@ -242,7 +242,7 @@ export class GameEngine {
             // Reset the corresponding counter so next trigger starts fresh
             switch (complication.type) {
                 case ComplicationType.LASER:
-                    this.state.totalUnitsPopped = 0;
+                    this.state.laserCapacitor = 100; // Refill capacitor to full
                     this.state.primedGroups.clear(); // Clear primed groups when LASER fixed
                     break;
                 case ComplicationType.CONTROLS:
@@ -295,12 +295,11 @@ export class GameEngine {
         // Rank 3+: LASER, CONTROLS, LIGHTS
         const rank = calculateRankDetails(this.initialTotalScore + this.state.score).rank;
 
-        // LASER: Triggered by units popped (rank 1+)
+        // LASER: Triggered when capacitor drains to 0 (rank 1+)
         // Only spawn if LASER isn't already active
         if (!hasComplication(ComplicationType.LASER) &&
-            this.state.totalUnitsPopped >= this.state.complicationThresholds.laser) {
+            rank >= 1 && this.state.laserCapacitor <= 0) {
             this.spawnComplication(ComplicationType.LASER);
-            this.state.complicationThresholds.laser = this.randomThreshold(); // New random threshold for next trigger
         }
 
         // CONTROLS: Triggered by 20+ rotations in 3 seconds (rank 2+)
