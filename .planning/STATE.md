@@ -15,16 +15,16 @@
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** Phase 6 in progress - Plan 06-02 (Milestone Infrastructure) pending
+**Current focus:** Phase 6 complete - Ready for Phase 7 (System Upgrades)
 
 ## Current Position
 
-Phase: 6 of 7 (Progression System) - IN PROGRESS
-Plan: 1 of 2 - 06-01 complete
-Status: XP curve retuned, XP floor implemented
-Last activity: 2026-01-20 — Plan 06-01 complete
+Phase: 6 of 7 (Progression System) - COMPLETE
+Plan: 2 of 2 - 06-02 complete
+Status: Milestone infrastructure complete
+Last activity: 2026-01-20 — Plan 06-02 complete
 
-Progress: █████████████████████ 5.5/7 phases complete
+Progress: ██████████████████████ 6/7 phases complete
 
 ## What's Done
 
@@ -101,13 +101,18 @@ Progress: █████████████████████ 5.5/7 
   - All rank checks use starting rank (not mid-run rank)
   - Operator rank selector disabled during game over screen
 
-### Phase 6: Progression System - IN PROGRESS
+### Phase 6: Progression System - COMPLETE
 - 06-01: XP Floor & Curve Retuning - COMPLETE
   - New linear delta curve: `(rank-1) * (1000 + 250*rank)`
   - Rank 2: 1,500 XP (was 5,000) — much smoother tutorial
   - Rank 10: 31,500 XP | Rank 100: 2,574,000 XP
   - XP floor: `max(100 * rank, score)` prevents zero-gain runs
-  - 15 progression tests (including rank 0)
+- 06-02: Milestone Infrastructure - COMPLETE
+  - Milestones at ranks 10, 20, 30... 100
+  - `getMilestoneRanks()`, `getNextMilestone()`, `getMilestonesInRange()` helpers
+  - `milestonesReached` tracked in SaveData
+  - 1 bonus powerUpPoint awarded per milestone
+  - MILESTONE_REACHED event for future UI celebrations
 - Bug fix: Rank 0 now works correctly
   - `calculateRankDetails` returns rank 0 for totalScore <= 0
   - Upgrade count text centered in button
@@ -123,8 +128,8 @@ Progress: █████████████████████ 5.5/7 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17 (across 6 phases)
-- Total tests: 50 (14 progression, 6 coordinates, 30 game logic)
+- Total plans completed: 18 (across 6 phases)
+- Total tests: 64 (28 progression, 6 coordinates, 30 game logic)
 - Average duration: ~30 min per plan (including bug fixes)
 
 ## Accumulated Context
@@ -190,15 +195,15 @@ None
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Phase 6 Plan 06-01 complete + rank 0 bug fix
-Resume with: Execute Plan 06-02 (Milestone Infrastructure)
-Resume file: `.planning/phases/06-progression/06-02-PLAN.md`
+Stopped at: Phase 6 complete (Plan 06-02)
+Resume with: Plan Phase 7 (System Upgrades)
+Next action: `/gsd:plan-phase 7`
 
-**Bug fix this session:** Rank 0 now displays correctly and means "no complications"
-- Rank 0: No complications (tutorial)
-- Rank 1+: LASER
-- Rank 2+: LASER + LIGHTS
-- Rank 3+: All three
+**Phase 6 complete:**
+- XP curve retuned (linear delta)
+- XP floor prevents zero-gain runs
+- Milestone infrastructure ready (10, 20, 30... 100)
+- 64 tests total
 
 ## Quick Commands
 
