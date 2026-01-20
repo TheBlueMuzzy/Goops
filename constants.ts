@@ -28,36 +28,43 @@ export const PRESSURE_TIER_THRESHOLD = 15; // Tier 1 starts at 15
 export const PRESSURE_TIER_STEP = 10; // New tier every 10 blocks
 export const PRESSURE_TIER_BONUS_MS = 250; // +0.25s per tier
 
-// Upgrades Configuration
-export const UPGRADE_CONFIG = {
-  TIME_BONUS: {
-    id: 'TIME_BONUS',
-    name: 'CHRONO-DILATION',
-    desc: 'Extends initial reactor pressure containment duration.',
+// System Upgrades Configuration
+// Each complication system has its own upgrade track (5 levels each)
+export const SYSTEM_UPGRADE_CONFIG = {
+  LASER: {
+    id: 'LASER',
+    name: 'CAPACITOR EFFICIENCY',
+    desc: 'Reduces laser capacitor drain rate when popping goop.',
     costPerLevel: 1,
-    maxLevel: 10,
-    effectPerLevel: 5000, // +5 seconds
-    formatEffect: (lvl: number) => `+${lvl * 5}s Initial Time`
+    maxLevel: 5,
+    effectPerLevel: 0.05, // -5% drain per level (0.95, 0.90, 0.85, 0.80, 0.75)
+    formatEffect: (lvl: number) => `-${lvl * 5}% Drain Rate`,
+    maxLevelBonus: 'No center targets in Reset Laser puzzle'
   },
-  STABILITY: {
-    id: 'STABILITY',
-    name: 'VISCOSITY REGULATOR',
-    desc: 'Increases intake fluid viscosity to reduce flow rate.',
+  LIGHTS: {
+    id: 'LIGHTS',
+    name: 'CIRCUIT STABILIZER',
+    desc: 'Reduces probability of lights malfunction triggering.',
     costPerLevel: 1,
-    maxLevel: 10,
-    effectPerLevel: 0.05, // +5% slower (higher ms value)
-    formatEffect: (lvl: number) => `-${lvl * 5}% Fall Speed`
+    maxLevel: 5,
+    effectPerLevel: 0.06, // -6% trigger chance per level (44%, 38%, 32%, 26%, 20%)
+    formatEffect: (lvl: number) => `-${lvl * 6}% Trigger Chance`,
+    maxLevelBonus: '3-button sequence instead of 4'
   },
-  SCORE_BOOST: {
-    id: 'SCORE_BOOST',
-    name: 'CATALYST INJECTOR',
-    desc: 'Enhances filtration yield for higher efficiency rating.',
-    costPerLevel: 2,
-    maxLevel: 10,
-    effectPerLevel: 0.10, // +10% score
-    formatEffect: (lvl: number) => `+${lvl * 10}% Score Yield`
+  CONTROLS: {
+    id: 'CONTROLS',
+    name: 'HEAT SINK UPGRADE',
+    desc: 'Increases heat dissipation rate when idle.',
+    costPerLevel: 1,
+    maxLevel: 5,
+    effectPerLevel: 0.10, // +10% dissipation per level (55, 60, 65, 70, 75 per sec)
+    formatEffect: (lvl: number) => `+${lvl * 10}% Heat Dissipation`,
+    maxLevelBonus: '3 alignments instead of 4'
   }
 };
+
+// Backwards compatibility alias (will be removed in later cleanup)
+export const UPGRADE_CONFIG = SYSTEM_UPGRADE_CONFIG;
 
 // The 4 Game Colors
 export const GAME_COLORS = [

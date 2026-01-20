@@ -2,7 +2,7 @@
 import { GameState, GridCell, ActivePiece, PieceDefinition, FallingBlock, ScoreBreakdown, GameStats, FloatingText, GoalMark, GamePhase, PieceState, PieceType, Complication, ComplicationType } from '../types';
 import {
     TOTAL_WIDTH, TOTAL_HEIGHT, VISIBLE_WIDTH, VISIBLE_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, INITIAL_TIME_MS,
-    PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS, UPGRADE_CONFIG
+    PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS
 } from '../constants';
 import { 
     spawnPiece, checkCollision, mergePiece, getRotatedCells, normalizeX, findContiguousGroup, 
@@ -104,11 +104,10 @@ export class GameEngine {
     }
 
     private applyUpgrades() {
-        const timeBonusLevel = this.powerUps[UPGRADE_CONFIG.TIME_BONUS.id] || 0;
-        const stabilityLevel = this.powerUps[UPGRADE_CONFIG.STABILITY.id] || 0;
-        
-        this.maxTime = INITIAL_TIME_MS + (timeBonusLevel * UPGRADE_CONFIG.TIME_BONUS.effectPerLevel);
-        
+        // System upgrades are now applied in complication-specific code (Plans 07-02)
+        // Base maxTime remains INITIAL_TIME_MS (no time bonus upgrade)
+        this.maxTime = INITIAL_TIME_MS;
+
         // Reset time if we haven't started playing yet
         if (this.state.gameStats.startTime === 0) {
             this.state.timeLeft = this.maxTime;
@@ -421,18 +420,15 @@ export class GameEngine {
     }
 
     public updateScoreAndStats(pointsToAdd: number, breakdown?: Partial<ScoreBreakdown>) {
-        const scoreBoostLevel = this.powerUps[UPGRADE_CONFIG.SCORE_BOOST.id] || 0;
-        const boostMod = 1 + (scoreBoostLevel * UPGRADE_CONFIG.SCORE_BOOST.effectPerLevel);
-        const finalPoints = Math.ceil(pointsToAdd * boostMod);
-
-        this.state.score += finalPoints;
+        // Score boost upgrade removed - points are now unmodified
+        this.state.score += pointsToAdd;
 
         if (breakdown) {
-            this.state.scoreBreakdown.base += (breakdown.base || 0) * boostMod;
-            this.state.scoreBreakdown.height += (breakdown.height || 0) * boostMod;
-            this.state.scoreBreakdown.offscreen += (breakdown.offscreen || 0) * boostMod;
-            this.state.scoreBreakdown.adjacency += (breakdown.adjacency || 0) * boostMod;
-            this.state.scoreBreakdown.speed += (breakdown.speed || 0) * boostMod;
+            this.state.scoreBreakdown.base += (breakdown.base || 0);
+            this.state.scoreBreakdown.height += (breakdown.height || 0);
+            this.state.scoreBreakdown.offscreen += (breakdown.offscreen || 0);
+            this.state.scoreBreakdown.adjacency += (breakdown.adjacency || 0);
+            this.state.scoreBreakdown.speed += (breakdown.speed || 0);
         }
     }
 
@@ -503,9 +499,8 @@ export class GameEngine {
             }
         }
 
-        const stabilityLevel = this.powerUps[UPGRADE_CONFIG.STABILITY.id] || 0;
-        const stabilityMod = stabilityLevel * UPGRADE_CONFIG.STABILITY.effectPerLevel;
-        const gameSpeed = INITIAL_SPEED * (1 + stabilityMod); 
+        // Stability upgrade removed - use base INITIAL_SPEED
+        const gameSpeed = INITIAL_SPEED;
 
         // Falling Blocks
         if (this.state.fallingBlocks.length > 0) {

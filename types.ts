@@ -171,8 +171,8 @@ export interface GameState {
 export interface SaveData {
   rank: number;            // Current Player Rank (1-100)
   totalScore: number;      // Cumulative score across all runs
-  powerUpPoints: number;   // Currency to buy upgrades
-  powerUps: Record<string, number>; // Map of UpgradeID -> Grade Level
+  powerUpPoints: number;   // Currency to buy upgrades (1 per rank)
+  powerUps: Record<string, number>; // System upgrade levels: LASER, LIGHTS, CONTROLS (0-5)
   firstRunComplete: boolean;
   milestonesReached: number[];  // Milestone ranks achieved [10, 20, 30...]
   settings: {
