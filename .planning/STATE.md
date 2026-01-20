@@ -15,16 +15,16 @@
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** Phase 5 - HUD meters and complication balance
+**Current focus:** Phase 5 complete, ready for Phase 6
 
 ## Current Position
 
-Phase: 5 of 7 (HUD & Balance) - IN PROGRESS
-Plan: 1 of 4 (Meter State & UI) - complete
-Status: HUD meters visible, meter logic pending
-Last activity: 2026-01-20 — Plan 05-01 complete, meters render in periscope
+Phase: 5 of 7 (HUD & Balance) - COMPLETE
+Plan: 4 of 4 - all complete
+Status: HUD meters, cooldowns, and rank unlocks all working
+Last activity: 2026-01-20 — Phase 5 complete, human verified
 
-Progress: ████████████████░░░░ 5/7 phases (Plan 1/4 of Phase 5)
+Progress: ████████████████████ 5/7 phases complete
 
 ## What's Done
 
@@ -52,7 +52,7 @@ Progress: ████████████████░░░░ 5/7 phase
 ### Phase 3: Complications - COMPLETE
 - 03-01: Complication Types & Triggers
   - ComplicationType enum: LIGHTS, CONTROLS, LASER
-  - Progressive rank unlock: LASER@rank1, CONTROLS@rank2, LIGHTS@rank3
+  - Progressive rank unlock: LASER@rank1, LIGHTS@rank2, CONTROLS@rank3
 - 03-02: Gameplay Effects (now rewritten)
 - 03-03: UI & Console Updates
   - Pulsing red "[X] Malfunction / Fix at Console" center alerts
@@ -65,38 +65,56 @@ Progress: ████████████████░░░░ 5/7 phase
   - Bug fix: Complications now cleared in finalizeGame() (no carry-over between sessions)
   - Dead code removal: BlownFuse component and LAYER 5 overlay removed
 - 04-02: LIGHTS Complication Rewrite
-  - Trigger: 50% chance on piece lock when pressure 3-5 rows above highest goop (rank 3+)
+  - Trigger: 50% chance on piece lock when pressure 3-5 rows above highest goop (rank 2+)
   - Effect: Dims to 10% brightness + grayscale over 1.5s (alert exempt)
   - Replaced cumulative counter with pressure-gap based trigger
   - Replaced overlay with CSS filter on SVG
 - 04-03: CONTROLS Complication Rewrite
-  - Trigger: 20 rotation inputs within 3 seconds (rank 2+)
+  - Trigger: Heat meter reaches 100 (rank 3+)
   - Effect: Requires 2 inputs per move, held keys at half speed
-  - Replaced cumulative counter with timestamped tracking
-  - Removed flip controls effect, added double-tap requirement
+  - Heat builds +5 per rotation, drains at 50/sec when idle
 - 04-04: Documentation Updates
   - PRD updated with correct complication specs
   - STATE.md updated to reflect completion
-- UAT Bug Fixes (2026-01-20):
-  - CONTROLS minigame not activating: was setting targetCorner to angle (45/315/225/135) instead of index (0/1/2/3)
-  - Multiple complications couldn't trigger: checkComplications() blocked all spawns if any active
-  - Complication counters stopped accumulating when any complication active (totalUnitsPopped, rotationTimestamps)
-  - Alarm text now stacks vertically (oldest on top) when multiple complications active
+
+### Phase 5: HUD & Balance - COMPLETE
+- 05-01: Meter State & UI
+  - Added laserCapacitor and controlsHeat to GameState
+  - Created HudMeter component with color gradients
+  - Meters positioned at top of periscope view
+- 05-02: LASER Meter Logic
+  - Capacitor drains 4 per unit popped (rank 1+)
+  - LASER triggers when capacitor hits 0
+  - Resolution refills capacitor to 100
+- 05-03: CONTROLS Heat Logic
+  - Heat builds +5 per rotation (rank 3+)
+  - Heat drains at 50/sec when idle for 200ms
+  - CONTROLS triggers when heat reaches 100
+  - Resolution resets heat to 0
+- 05-04: Cooldowns & Rank Unlocks
+  - Cooldown formula: max(8, 20 - (rank - unlockRank)) seconds
+  - Rank unlocks: LASER@1, LIGHTS@2, CONTROLS@3
+  - Meters only visible at appropriate rank
+  - Cooldown timers above meters
+  - Rank selector disabled during game over
+- Bug fixes:
+  - All rank checks use starting rank (not mid-run rank)
+  - Operator rank selector disabled during game over screen
 
 ## Approved Complication Specifications
 
 | Complication | Trigger | Effect | Rank |
 |--------------|---------|--------|------|
-| LASER | Cumulative units popped (12-24 range) | Two-tap mechanic (prime then pop) | 1+ |
-| CONTROLS | 20 rotations in 3 seconds | 2 inputs per move, half hold speed | 2+ |
-| LIGHTS | 50% on piece lock when pressure gap >= 3-5 rows | 10% brightness + grayscale over 1.5s | 3+ |
+| LASER | Capacitor drains to 0 (4 per unit popped) | Two-tap mechanic (prime then pop) | 1+ |
+| LIGHTS | 50% on piece lock when pressure gap >= 3-5 rows | 10% brightness + grayscale over 1.5s | 2+ |
+| CONTROLS | Heat meter reaches 100 (+5 per rotation) | 2 inputs per move, half hold speed | 3+ |
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12 (across all 4 phases)
+- Total plans completed: 16 (across all 5 phases)
 - Average duration: ~30 min per plan (including bug fixes)
-- Total execution time: ~8 hours
+- Total execution time: ~10 hours
 
 ## Accumulated Context
 
@@ -111,6 +129,8 @@ Progress: ████████████████░░░░ 5/7 phase
 - Reset Controls: Corner angles are 45°=TR, 315°=TL, 225°=BL, 135°=BR
 - LIGHTS effect: CSS filter on SVG instead of overlay (keeps alert visible)
 - CONTROLS effect: Double-tap + half speed instead of flip toggle
+- Complication unlocks based on starting rank, not mid-run rank
+- HUD meters only visible when complication can trigger (rank-gated)
 
 ### Key Technical Discovery
 
@@ -159,6 +179,6 @@ None
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Phase 4 - core bugs fixed, value tweaking needed
-Resume with: Tweak complication trigger thresholds and effects
+Stopped at: Phase 5 complete
+Resume with: Phase 6 planning or other work
 Resume file: None needed - clean state
