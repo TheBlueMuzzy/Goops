@@ -207,17 +207,24 @@ When required cracks are sealed AND pressure < 90%:
 
 ### Complications System
 
-While in Periscope Mode, equipment malfunctions occur based on player actions.
+While in Periscope Mode, equipment malfunctions occur based on player actions. Players start at **Rank 0** with no complications, providing a safe learning period.
 
 **Triggers:**
 
 | Complication | Trigger | Rank Unlock | Upgradeable? |
 |--------------|---------|-------------|--------------|
-| Reset Laser | X total goop units popped (cumulative, 12-24 range) | Rank 1+ | Yes - higher threshold |
-| Reset Controls | 20 rotation inputs within 3 seconds | Rank 2+ | No - speed-based |
-| Reset Lights | 50% chance on piece lock when pressure is 3-5 rows above highest goop | Rank 3+ | No - situational |
+| Reset Laser | Capacitor drain meter empties (cumulative pops drain it) | Rank 1+ | Yes - slower drain rate |
+| Reset Lights | 15-50% chance on piece lock when pressure is 3-5 rows above highest goop | Rank 2+ | Yes - lower probability |
+| Reset Controls | Heat meter fills to 100% (builds while rotating, drains when stopped) | Rank 3+ | Yes - faster heat dissipation |
 
 **Key Design:** The game does NOT pause when you exit to console. The tank keeps filling, pressure keeps rising. Fix complications fast!
+
+**Complication Cooldown:**
+After resolving a complication, the same type cannot trigger again for a cooldown period:
+- Base cooldown: 20 seconds (at unlock rank)
+- Cooldown decreases by ~1 second per rank above unlock
+- Minimum cooldown: 8 seconds
+- Upgrades can increase cooldown duration
 
 **Complication Effects (while unfixed):**
 - Reset Lights: Dims to 10% brightness + grayscale over 1.5s (periscope only, alert exempt)
@@ -232,6 +239,29 @@ While in Periscope Mode, equipment malfunctions occur based on player actions.
 **Stacking:**
 Multiple complications can be active simultaneously.
 
+### Complication HUD Elements (Periscope Mode)
+
+Visual meters show complication buildup, helping players anticipate malfunctions:
+
+**Laser Capacitor Meter** (left side of screen)
+- Vertical bar that starts full and drains as player pops goop
+- Drains proportionally to units popped
+- When empty → LASER complication triggers
+- Refills after complication resolved
+- Color: Blue → Yellow → Red as it empties
+
+**Controls Heat Meter** (right side of screen)
+- Vertical bar that fills as player rotates the tank
+- Builds up while rotating (continuous increase)
+- Drains quickly when rotation stops (returns to 0 over ~2 seconds)
+- When full (100%) → CONTROLS complication triggers
+- Player must "juggle" rotation speed to avoid overheating
+- Color: Green → Yellow → Red as it fills
+
+**Lights Complication** (no meter)
+- No HUD indicator — triggers feel random/unpredictable to player
+- This is intentional: creates tension without player control
+
 ### Console Mini-Games
 
 Each complication has a corresponding mini-game on the console.
@@ -245,8 +275,8 @@ Each complication has a corresponding mini-game on the console.
 
 **Mechanic:**
 - If left light is lit → slide to left position
-- If right light is lit → slide to right position  
-- If neither light is lit → slide to center position
+- If right light is lit → slide to right position
+- If BOTH lights are lit → slide to center position
 
 **On Complication Trigger:**
 - Sliders are set to random incorrect positions
@@ -256,65 +286,64 @@ Each complication has a corresponding mini-game on the console.
 
 **Target Moves:** ~4 (one per slider)
 
-#### Reset Lights (3-Button Lights Out)
+**Upgrade Effect (max level):** No center targets — removes "both lights" positions, making puzzle simpler
+
+#### Reset Lights (Sequence Memory)
 
 **Setup:**
-- 3 buttons in a row
-- 3 lights in a row (above or near buttons)
-- Goal: Turn all 3 lights ON simultaneously
+- 1 vertical slider with 2 positions (up/down)
+- 3 arcade buttons (blue, green, purple)
+- 3 indicator lights above buttons
+- 1 indicator light above/below slider
+- Goal: Complete a slider-sequence-slider flow
 
-**Toggle Pattern:**
+**Flow:**
+1. **Slider 1:** One indicator light shows target position. Move slider to match.
+2. **Watch:** After correct slider position, a 4-button sequence plays (lights flash in order)
+3. **Repeat:** Player must press buttons in the same order as the sequence
+4. **Slider 2:** Another indicator light shows opposite position. Move slider to match.
 
-| Button | Toggles Lights |
-|--------|----------------|
-| B1 | Lights 1 and 2 |
-| B2 | Lights 2 and 3 |
-| B3 | Lights 1 and 3 |
-
-**Starting States (hard only, for ~4 move target):**
-Only spawn these states: 000, 011, 101, 110
-- These require 2-3 optimal moves
-- With 1 mistake: ~4 moves total
-
-**Solution Reference:**
-
-| Start (L1 L2 L3) | Optimal Path | Moves |
-|------------------|--------------|-------|
-| 000 (all off) | B1 → B2 → B3 | 3 |
-| 011 | B3 → B2 | 2 |
-| 101 | B2 → B1 | 2 |
-| 110 | B2 → B3 | 2 |
+**Sequence Rules:**
+- 4 buttons in sequence
+- Each button (blue/green/purple) appears max 2 times
+- Buttons flash for 400ms with 200ms gaps
 
 **On Complication Trigger:**
-- Slider is pushed down (covers buttons until pulled up?)
-- Lights set to one of the hard starting states
-- Button positions randomized
+- Slider resets to center
+- Random slider target generated
+- Random 4-button sequence generated
 
-**Completion:** All 3 lights ON → complication cleared
+**Completion:** Correct slider → correct sequence → correct slider → complication cleared
 
-**Target Moves:** ~4 (2-3 optimal + 1 mistake)
+**Target Interactions:** ~8 (slider + 4 buttons + slider, with potential mistakes)
+
+**Upgrade Effect (max level):** 3-button sequence instead of 4
 
 #### Reset Controls (Dial Alignment)
 
 **Setup:**
 - Circular dial with an arrow/pointer
-- Multiple light positions around the dial perimeter
-- Goal: Align arrow to each lit position in sequence
+- 4 light positions at corners (45°, 135°, 225°, 315°)
+- Goal: Align arrow to each lit position in sequence, then tap to confirm
 
 **Mechanic:**
-1. A light illuminates at one position on the dial
-2. Player spins dial until arrow points at the light
-3. Light turns off, new light illuminates at different position
-4. Repeat 4 times total
-5. After 4th alignment, all lights flash → complete
+1. A corner light illuminates
+2. Player spins dial until arrow points at the lit corner
+3. Player taps dial to confirm alignment
+4. If correct: light turns off, new corner light illuminates
+5. If wrong: dial shakes, player must realign
+6. Repeat 4 times total
+7. After 4th successful alignment → complete
 
 **On Complication Trigger:**
 - Dial arrow at random starting position
-- First target light illuminates
+- First target corner light illuminates
 
 **Completion:** 4 successful alignments → complication cleared
 
-**Target Moves:** 4 dial spins
+**Target Moves:** 4 dial spins + 4 taps
+
+**Upgrade Effect (max level):** 3 alignments instead of 4
 
 ---
 
@@ -428,7 +457,16 @@ bonusCracks = additionalCracksSealed * TBD
 
 ### Score → XP
 
-Score from each run is added directly to the player's XP. XP fills the rank meter toward the next Operator Rank.
+Score from each run is added to the player's XP. XP fills the rank meter toward the next Operator Rank.
+
+**XP Floor (Minimum Progress):**
+Every completed session grants minimum XP to ensure progression:
+```
+minimumXP = 100 * currentRank (minimum 100)
+xpGained = max(minimumXP, finalScore)
+```
+
+This ensures even bad sessions contribute to progression, preventing frustration loops.
 
 ---
 
@@ -464,6 +502,44 @@ Reserved for Rank 11+: Purple, Pink, Grey
 | 10 | 45% |
 
 Color split: Cells [0,1] = colorA, cells [2,3] = colorB
+
+---
+
+## Future Progression (Rank 10+)
+
+New mechanics are introduced every 10 ranks to maintain variety and challenge. Each new mechanic has probability-based activation — not every session includes every feature.
+
+### Milestone Unlocks
+
+| Rank | Feature | Probability | Description |
+|------|---------|-------------|-------------|
+| 10 | Multi-color pieces | 25% per piece | Pieces with 2 colors (cells 0-1 = colorA, 2-3 = colorB) |
+| 20 | Viscous fluid events | 10% per session | Pieces fall slower past pressure line |
+| 30 | Tank variations | 15% per session | Different width/height ("covering another shift") |
+| 40 | TBD | | |
+| 50 | TBD | | |
+
+### Themed Sessions
+
+At certain rank thresholds, sessions may randomly activate special conditions:
+
+**Viscous Fluid (Rank 20+)**
+- 10% chance per session
+- Pieces fall at 50% speed once past pressure line
+- Creates interesting timing decisions
+
+**Different Tank (Rank 30+)**
+- 15% chance per session
+- "Covering another employee's shift" narrative
+- Tank may be wider (36 columns), narrower (24 columns), or taller/shorter
+- Tests adaptability to different spatial constraints
+
+### Design Philosophy
+
+- **Difficulty spikes every 10 levels** with new mechanics
+- **Previous mechanics get easier** via system upgrades
+- **Probability-based activation** ensures variety without overwhelming
+- **Upgrades counter new challenges** — e.g., when multi-color unlocks, color-related upgrades also unlock
 
 ---
 
@@ -627,5 +703,6 @@ SOFT_DROP_FACTOR = 20
 
 ---
 
-*Document Version: 2.0*
+*Document Version: 3.0*
 *Last Updated: January 2026*
+*Changes: Fixed Reset Lights/Laser descriptions, added complication cooldowns, HUD meters, XP floor, future progression roadmap*

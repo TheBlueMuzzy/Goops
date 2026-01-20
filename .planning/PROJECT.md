@@ -31,7 +31,7 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 
 ### Active
 
-- Complication value tweaking (trigger thresholds, effect intensity)
+- Phase 5: HUD meters (laser capacitor, controls heat) + complication balance rewrite
 
 ### Out of Scope
 
@@ -40,21 +40,31 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 
 ## Context
 
-**Current state:** All phases complete, UAT passed. Complication system fully implemented (multiple complications can be active simultaneously):
+**Current state:** Phases 1-4 complete. Beginning Phase 5 (HUD & Balance). Major design decisions made:
 
-**Complication Triggers:**
-| Type | Trigger | Rank |
-|------|---------|------|
-| LASER | Cumulative units popped (12-24 threshold) | 1+ |
-| CONTROLS | 20 rotations within 3 seconds | 2+ |
-| LIGHTS | 50% chance on piece lock when pressure 3-5 rows above goop | 3+ |
+**New Design Decisions (Jan 2026):**
+- Player starts at rank 0 (no complications) — safe learning period
+- Rank unlocks shifted: LASER → rank 1, LIGHTS → rank 2, CONTROLS → rank 3
+- Complication cooldowns prevent rapid-fire triggers (20s base, scales down with rank, min 8s)
+- XP floor guarantees progression: `xpGained = max(100 * currentRank, finalScore)`
+- New HUD meters in periscope mode show complication buildup
 
-**Complication Effects:**
+**Complication Triggers (TO BE IMPLEMENTED in Phase 5):**
+| Type | Current Trigger | New Trigger | Rank |
+|------|-----------------|-------------|------|
+| LASER | Cumulative units popped (12-24) | Capacitor drain meter empties | 1+ |
+| LIGHTS | 50% chance on piece lock | 15-50% chance (scales with rank) | 2+ |
+| CONTROLS | 20 rotations in 3 seconds | Heat meter fills to 100% | 3+ |
+
+**Complication Effects (unchanged):**
 | Type | Effect |
 |------|--------|
 | LASER | Two-tap mechanic (first tap primes, restarts fill; second tap pops) |
 | CONTROLS | Requires 2 inputs per move, held keys at half speed |
 | LIGHTS | Dims to 10% + grayscale over 1.5s (alert exempt) |
+
+**New documents:**
+- `.planning/DESIGN_VISION.md` — Synthesized design philosophy and balance framework
 
 **Key files:**
 - `components/Art.tsx` — All minigame state machines, puzzle logic, visual feedback
@@ -84,4 +94,4 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 | LIGHTS trigger on piece lock | Situational trigger based on pressure gap, not counter | ✓ Good |
 
 ---
-*Last updated: 2026-01-20 — Milestone complete, UAT passed*
+*Last updated: 2026-01-20 — Design decisions locked, beginning Phase 5*

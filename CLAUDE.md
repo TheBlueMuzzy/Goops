@@ -114,9 +114,19 @@ Do NOT remove the `isMobile` checks without understanding why they exist.
   - Minigame solutions resolve active complications
 - **Dev Tool**: Operator Rank selector (0-100) in console footer for testing progression
 
-### Next Up
-- Complication value tweaking (trigger thresholds, effect intensity)
-- Multi-color pieces (needs piece redesign first)
+### Next Up (Phase 5: HUD & Balance)
+- Add Laser Capacitor Meter (left side of periscope) — drains as player pops
+- Add Controls Heat Meter (right side of periscope) — builds while rotating, drains when stopped
+- Rewrite LASER trigger: cumulative pops → capacitor drain meter
+- Rewrite CONTROLS trigger: 20 rotations/3s → heat meter at 100%
+- Implement complication cooldowns (same-type can't re-trigger for X seconds)
+- Shift rank unlocks: LASER → rank 1, LIGHTS → rank 2, CONTROLS → rank 3
+- Player starts at rank 0 (no complications)
+- Implement XP floor: `xpGained = max(100 * currentRank, finalScore)`
+
+### New Key Documents
+- `.planning/DESIGN_VISION.md` — Synthesized design philosophy, balance framework, progression roadmap
+- `PRD.md` v3.0 — Updated with correct minigame descriptions, HUD meters, future progression
 
 ## Testing Philosophy
 - Tests cover core game logic (collision, gravity, scoring, coordinates)
