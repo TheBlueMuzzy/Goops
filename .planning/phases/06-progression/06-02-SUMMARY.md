@@ -21,9 +21,10 @@ Three new functions:
 ### App.tsx handleRunComplete
 Updated to detect milestone crossings and:
 1. Filter out already-reached milestones (safety for dev rank jumps)
-2. Award 1 bonus powerUpPoint per new milestone
-3. Track milestones in `milestonesReached` array
-4. Emit `MILESTONE_REACHED` event for future UI use
+2. Track milestones in `milestonesReached` array
+3. Emit `MILESTONE_REACHED` event for future UI use
+
+Note: No bonus points awarded for milestones - exactly 1 point per rank gained.
 
 ### Storage (utils/storage.ts)
 Default `milestonesReached: []` added to `getDefaultSaveData()`.

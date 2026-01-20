@@ -46,16 +46,12 @@ const App: React.FC = () => {
 
       const rankDiff = newRankDetails.rank - oldRankDetails.rank;
 
-      // Award 1 Point per Rank gained
-      let pointsEarned = rankDiff > 0 ? rankDiff : 0;
+      // Award 1 Point per Rank gained (no bonuses - exactly 1 per rank)
+      const pointsEarned = rankDiff > 0 ? rankDiff : 0;
 
-      // Check for new milestones (ranks 10, 20, 30... 100)
+      // Track milestones crossed (for future UI celebration, no bonus points)
       const milestoneCandidates = getMilestonesInRange(oldRankDetails.rank, newRankDetails.rank);
-      // Filter out already-reached milestones (for safety, e.g., dev rank jumps)
       const newMilestones = milestoneCandidates.filter(m => !prev.milestonesReached.includes(m));
-
-      // Award 1 bonus point per new milestone
-      pointsEarned += newMilestones.length;
 
       // Emit event for UI celebration (future use)
       if (newMilestones.length > 0) {

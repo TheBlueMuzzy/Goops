@@ -111,8 +111,8 @@ Progress: ██████████████████████ 6/7
   - Milestones at ranks 10, 20, 30... 100
   - `getMilestoneRanks()`, `getNextMilestone()`, `getMilestonesInRange()` helpers
   - `milestonesReached` tracked in SaveData
-  - 1 bonus powerUpPoint awarded per milestone
   - MILESTONE_REACHED event for future UI celebrations
+  - Note: No bonus points - exactly 1 point per rank gained
 - Bug fix: Rank 0 now works correctly
   - `calculateRankDetails` returns rank 0 for totalScore <= 0
   - Upgrade count text centered in button
