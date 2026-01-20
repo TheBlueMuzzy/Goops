@@ -40,15 +40,13 @@ export class MoveBoardCommand implements Command {
             engine.state.activePiece = newPiece;
         }
 
-        // Track rotation timestamps for CONTROLS trigger (only when no complications active)
-        if (engine.state.complications.length === 0) {
-            const now = Date.now();
-            // Add current timestamp
-            engine.state.rotationTimestamps.push(now);
-            // Prune timestamps older than 3 seconds
-            const cutoff = now - 3000;
-            engine.state.rotationTimestamps = engine.state.rotationTimestamps.filter(t => t > cutoff);
-        }
+        // Track rotation timestamps for CONTROLS trigger
+        // Always track so multiple complications can trigger simultaneously
+        const now = Date.now();
+        engine.state.rotationTimestamps.push(now);
+        // Prune timestamps older than 3 seconds
+        const cutoff = now - 3000;
+        engine.state.rotationTimestamps = engine.state.rotationTimestamps.filter(t => t > cutoff);
 
         gameEventBus.emit(GameEventType.PIECE_MOVED);
         engine.emitChange();
