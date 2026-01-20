@@ -15,16 +15,16 @@
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** Phase 6 complete - Ready for Phase 7 (System Upgrades)
+**Current focus:** Phase 7 planned - Ready to execute 07-01
 
 ## Current Position
 
-Phase: 6 of 7 (Progression System) - COMPLETE
-Plan: 2 of 2 - 06-02 complete
-Status: Milestone infrastructure complete
-Last activity: 2026-01-20 — Plan 06-02 complete
+Phase: 7 of 7 (System Upgrades) - PLANNED
+Plan: 0 of 4 - Ready to start 07-01
+Status: Plans created, awaiting execution
+Last activity: 2026-01-20 — Phase 7 plans created
 
-Progress: ██████████████████████ 6/7 phases complete
+Progress: ██████████████████████ 6/7 phases complete (Phase 7 planned)
 
 ## What's Done
 
@@ -195,15 +195,20 @@ None
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Phase 6 complete (Plan 06-02)
-Resume with: Plan Phase 7 (System Upgrades)
-Next action: `/gsd:plan-phase 7`
+Stopped at: Phase 7 plans created (4 plans, 12 tasks)
+Resume with: Execute Plan 07-01 (System Upgrade Definitions)
+Next action: `/gsd:execute-plan .planning/phases/07-system-upgrades/07-01-PLAN.md`
 
-**Phase 6 complete:**
-- XP curve retuned (linear delta)
-- XP floor prevents zero-gain runs
-- Milestone infrastructure ready (10, 20, 30... 100)
-- 64 tests total
+**Phase 7 Plans:**
+- 07-01: System Upgrade Definitions (LASER, LIGHTS, CONTROLS)
+- 07-02: Upgrade Effects Implementation
+- 07-03: Upgrade UI Panel (has human verification checkpoint)
+- 07-04: Max-Level Minigame Effects (has human verification checkpoint)
+
+**Key decisions this session:**
+- New dedicated panel on console for upgrades (not existing UPGRADES button)
+- Replace generic upgrades with system-specific only
+- 5 levels per upgrade, 1 point each
 
 ## Quick Commands
 
