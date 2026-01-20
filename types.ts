@@ -161,6 +161,9 @@ export interface GameState {
   // HUD meters for complication feedback
   laserCapacitor: number;  // 0-100 (100 = full, 0 = empty/triggers LASER)
   controlsHeat: number;    // 0-100 (0 = cool, 100 = overheated/triggers CONTROLS)
+
+  // Cooldown timestamps: when each type can next trigger (0 = no cooldown)
+  complicationCooldowns: Record<ComplicationType, number>;
 }
 
 // --- Meta Progression Types ---
