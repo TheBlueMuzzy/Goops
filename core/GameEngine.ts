@@ -368,11 +368,17 @@ export class GameEngine {
 
         const penalty = remainingBlocks * 50;
         this.state.gameStats.penalty = penalty;
-        
+
         // 3. Apply Penalty
         this.state.score = Math.max(0, this.state.score - penalty);
 
-        // 4. Clear any active complications so they don't show on end screen
+        // 4. Apply XP floor: minimum XP = 100 * starting rank
+        // Prevents high-rank players from getting zero-gain runs
+        const startingRank = calculateRankDetails(this.initialTotalScore).rank;
+        const xpFloor = 100 * startingRank;
+        this.state.score = Math.max(xpFloor, this.state.score);
+
+        // 5. Clear any active complications so they don't show on end screen
         this.state.complications = [];
         this.state.activeComplicationId = null;
         this.state.primedGroups.clear();

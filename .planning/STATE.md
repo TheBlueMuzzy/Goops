@@ -19,12 +19,12 @@ See: .planning/PROJECT.md (updated 2026-01-19)
 
 ## Current Position
 
-Phase: 5 of 7 (HUD & Balance) - COMPLETE
-Plan: 4 of 4 - all complete
-Status: HUD meters, cooldowns, and rank unlocks all working
-Last activity: 2026-01-20 — Phase 5 complete, human verified
+Phase: 6 of 7 (Progression System) - IN PROGRESS
+Plan: 1 of 2 - 06-01 complete
+Status: XP curve retuned, XP floor implemented
+Last activity: 2026-01-20 — Plan 06-01 complete
 
-Progress: ████████████████████ 5/7 phases complete
+Progress: █████████████████████ 5.5/7 phases complete
 
 ## What's Done
 
@@ -100,6 +100,14 @@ Progress: ████████████████████ 5/7 phase
 - Bug fixes:
   - All rank checks use starting rank (not mid-run rank)
   - Operator rank selector disabled during game over screen
+
+### Phase 6: Progression System - IN PROGRESS
+- 06-01: XP Floor & Curve Retuning - COMPLETE
+  - New linear delta curve: `(rank-1) * (1000 + 250*rank)`
+  - Rank 2: 1,500 XP (was 5,000) — much smoother tutorial
+  - Rank 10: 31,500 XP | Rank 100: 2,574,000 XP
+  - XP floor: `max(100 * rank, score)` prevents zero-gain runs
+  - 14 new progression tests
 
 ## Approved Complication Specifications
 

@@ -1,28 +1,34 @@
 
 import { RankDetails } from '../types';
 
-// Curve approximation based on PRD:
-// Rank 1: 5,000
-// Rank 10: 100,000
-// Rank 100: 17,500,000
-// Using a power curve: Score = C * Rank^P
+// Linear Delta XP Curve
+// Each rank requires more XP than the last, but the INCREASE is linear (not exponential)
+// Formula: XP to next rank = 1500 + (rank - 1) * 500
+//
+// Rank 2: 1,500 XP | Rank 5: 9,000 XP | Rank 10: 31,500 XP | Rank 100: 2,574,000 XP
+//
+// This gives fast tutorial progression (ranks 1-5) while maintaining long-term goals
+
 const MAX_RANK = 100;
 
 // Returns the cumulative score required to REACH a specific rank
 export const getScoreForRank = (rank: number): number => {
   if (rank <= 1) return 0;
-  
-  // Custom curve fitting to match PRD milestones roughly
-  // Early game is linear-ish, Late game is exponential
-  // Rank 2 requires 5000 XP (Total 5000)
-  
-  // Formula: Base * (Rank^Exponent)
-  // Tuned to hit ~17.5M at Rank 100 and ~5k at Rank 2
-  const exponent = 1.8; 
-  const base = 5000; 
-  
-  // Offset to make Rank 1 start at 0
-  return Math.floor(base * Math.pow(rank - 1, exponent));
+
+  // Linear delta formula (closed form):
+  // Total XP = (rank - 1) * (1000 + 250 * rank)
+  //
+  // Derived from: sum of [1500 + (i-1) * 500] for i = 1 to (rank-1)
+  return (rank - 1) * (1000 + 250 * rank);
+};
+
+// Returns the XP needed to go from current rank to next rank
+export const getXpToNextRank = (rank: number): number => {
+  if (rank <= 0) return 1500;
+  if (rank >= MAX_RANK) return 0;
+
+  // XP to next = 1500 + (rank - 1) * 500
+  return 1500 + (rank - 1) * 500;
 };
 
 // Returns the score for 50% progress through a rank

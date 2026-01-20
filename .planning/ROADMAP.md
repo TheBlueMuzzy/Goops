@@ -18,7 +18,7 @@ None
 - [x] **Phase 2: Minigame Logic** - Puzzle rules for all three minigames
 - [x] **Phase 3: Complications** - Define complications and how they trigger during gameplay
 - [x] **Phase 4: Minigame-Complication Integration** - Connect minigame solutions to complications
-- [ ] **Phase 5: HUD & Balance** - Add complication meters to periscope, rewrite trigger mechanics, tune values
+- [x] **Phase 5: HUD & Balance** - Add complication meters to periscope, rewrite trigger mechanics, tune values
 - [ ] **Phase 6: Progression System** - XP floor, rank curve tuning, milestone unlocks
 - [ ] **Phase 7: System Upgrades** - Upgrade UI, effects, and costs
 
@@ -104,15 +104,15 @@ None
 ### Phase 6: Progression System
 **Goal**: Tune XP/rank curve, implement XP floor, prepare for milestone unlocks
 **Depends on**: Phase 5
-**Research**: Likely (XP curve math, milestone pacing)
-**Plans**: TBD
+**Research**: Complete (linear delta curve selected)
+**Plans**: 2 (01: XP Floor & Curve Retuning, 02: Milestone Infrastructure)
 
 **Key changes:**
 - Implement XP floor: `xpGained = max(100 * currentRank, finalScore)`
-- Tune rank XP requirements for good pacing
-- Ranks 0-5 should feel fast (tutorial/onboarding)
-- Ranks 6-10 should feel achievable with practice
-- Prepare infrastructure for milestone unlocks (rank 10, 20, 30...)
+- New "linear delta" curve: `XP to next rank = 1500 + (rank - 1) * 500`
+- Rank 2: 1,500 XP | Rank 5: 9,000 XP | Rank 10: 31,500 XP | Rank 100: 2,574,000 XP
+- Milestone infrastructure for ranks 10, 20, 30... (upgrade points)
+- No upgrade UI yet (Phase 7)
 
 ### Phase 7: System Upgrades
 **Goal**: Build upgrade UI and implement upgrade effects
@@ -143,6 +143,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 2. Minigame Logic | 3/3 | Complete | 2026-01-18 |
 | 3. Complications | 3/3 | Complete | 2026-01-19 |
 | 4. Minigame-Complication Integration | 4/4 | Complete | 2026-01-19 |
-| 5. HUD & Balance | 0/4 | Planned | - |
-| 6. Progression System | 0/? | Not Started | - |
+| 5. HUD & Balance | 4/4 | Complete | 2026-01-20 |
+| 6. Progression System | 1/2 | In Progress | - |
 | 7. System Upgrades | 0/? | Not Started | - |
