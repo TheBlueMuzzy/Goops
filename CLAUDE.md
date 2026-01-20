@@ -87,8 +87,7 @@ User can type these shortcuts and Claude will execute:
 | `<commands>` | Show this command list |
 | `<npm>` | Run `npm run dev -- --host` (dev server, mobile accessible) |
 | `<test>` | Run `npm run test:run` |
-| `<commit>` | Update STATE.md + relevant docs, then git add + commit |
-| `<push>` | Push current branch to remote |
+| `<commit>` | Update STATE.md + relevant docs, git add + commit + push |
 | `<merge>` | Merge current branch to master, push both |
 | `<status>` | Show git status + current project position from STATE.md |
 | `<handoff>` | Context handoff: update all docs, commit, push, instruct to start fresh session |
