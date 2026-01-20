@@ -31,7 +31,7 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 
 ### Active
 
-None — milestone complete, UAT passed (2026-01-20)
+- Complication value tweaking (trigger thresholds, effect intensity)
 
 ### Out of Scope
 

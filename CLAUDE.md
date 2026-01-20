@@ -106,7 +106,7 @@ Do NOT remove the `isMobile` checks without understanding why they exist.
   - **Reset Laser**: 4 sliders match indicator lights (left/right/both-on for center)
   - **Reset Lights**: Sequence memory (slider → watch 4-button sequence → repeat → slider)
   - **Reset Controls**: Dial alignment (align to 4 lit corners in sequence, tap to confirm)
-- Phase 3 & 4: Complications system complete (UAT passed 2026-01-20):
+- Phase 3 & 4: Complications system working (bugs fixed 2026-01-20):
   - **LASER** (rank 1+): Triggers on cumulative units popped (12-24), two-tap mechanic
   - **CONTROLS** (rank 2+): Triggers on 20 rotations in 3 seconds, double input + half hold speed
   - **LIGHTS** (rank 3+): Triggers 50% on piece lock when pressure 3-5 rows above goop, dims to 10%
@@ -115,6 +115,7 @@ Do NOT remove the `isMobile` checks without understanding why they exist.
 - **Dev Tool**: Operator Rank selector (0-100) in console footer for testing progression
 
 ### Next Up
+- Complication value tweaking (trigger thresholds, effect intensity)
 - Multi-color pieces (needs piece redesign first)
 
 ## Testing Philosophy

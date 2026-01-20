@@ -15,14 +15,14 @@
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** Milestone complete - all UAT passed
+**Current focus:** Phase 4 - tweaking complication values
 
 ## Current Position
 
-Phase: 4 of 4 (Minigame-Complication Integration) - COMPLETE
+Phase: 4 of 4 (Minigame-Complication Integration) - IN PROGRESS
 Plan: 4 of 4 (Documentation updates) - executed
-Status: UAT PASSED - All complications working, multiple can trigger simultaneously
-Last activity: 2026-01-20 — UAT bug fixes committed
+Status: Core functionality working, value tuning needed
+Last activity: 2026-01-20 — UAT bug fixes committed, awaiting value tweaks
 
 Progress: ████████████████████ 100% (All phases complete)
 
@@ -159,6 +159,6 @@ None
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: MILESTONE COMPLETE - All 4 phases done, UAT passed
-Resume with: Next milestone (multi-color pieces or new features)
+Stopped at: Phase 4 - core bugs fixed, value tweaking needed
+Resume with: Tweak complication trigger thresholds and effects
 Resume file: None needed - clean state
