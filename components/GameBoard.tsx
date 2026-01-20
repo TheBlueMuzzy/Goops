@@ -900,12 +900,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         )}
 
         {/* Malfunction Alert Overlay - shows pulsing red alert for active complications */}
+        {/* Multiple alerts stack vertically (oldest on top), group centered */}
         {state.complications.length > 0 && (
             <div
                 className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none"
-                style={{ gap: '2rem' }}
+                style={{ gap: '1.5rem' }}
             >
-                {state.complications.map(complication => {
+                {[...state.complications]
+                    .sort((a, b) => a.startTime - b.startTime) // Oldest first (on top)
+                    .map(complication => {
                     // Map ComplicationType to display name
                     const typeNames: Record<ComplicationType, string> = {
                         [ComplicationType.LIGHTS]: 'Lights',

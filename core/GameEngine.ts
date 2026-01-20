@@ -281,8 +281,9 @@ export class GameEngine {
         if (now - this.lastComplicationCheckTime < COMPLICATION_CHECK_INTERVAL) return;
         this.lastComplicationCheckTime = now;
 
-        // Don't spawn if there's already an active complication
-        if (this.state.complications.length > 0) return;
+        // Helper to check if a specific complication type is already active
+        const hasComplication = (type: ComplicationType) =>
+            this.state.complications.some(c => c.type === type);
 
         // Complications unlock progressively by rank:
         // Rank 1+: LASER only
@@ -291,17 +292,19 @@ export class GameEngine {
         const rank = calculateRankDetails(this.initialTotalScore + this.state.score).rank;
 
         // LASER: Triggered by units popped (rank 1+)
-        if (this.state.totalUnitsPopped >= this.state.complicationThresholds.laser) {
+        // Only spawn if LASER isn't already active
+        if (!hasComplication(ComplicationType.LASER) &&
+            this.state.totalUnitsPopped >= this.state.complicationThresholds.laser) {
             this.spawnComplication(ComplicationType.LASER);
             this.state.complicationThresholds.laser = this.randomThreshold(); // New random threshold for next trigger
-            return;
         }
 
         // CONTROLS: Triggered by 20+ rotations in 3 seconds (rank 2+)
-        if (rank >= 2 && this.state.rotationTimestamps.length >= 20) {
+        // Only spawn if CONTROLS isn't already active
+        if (!hasComplication(ComplicationType.CONTROLS) &&
+            rank >= 2 && this.state.rotationTimestamps.length >= 20) {
             this.spawnComplication(ComplicationType.CONTROLS);
             this.state.rotationTimestamps = []; // Clear timestamps after trigger
-            return;
         }
 
         // LIGHTS: Now triggered on piece lock (not here) - see tick() method

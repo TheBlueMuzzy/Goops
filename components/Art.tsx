@@ -289,12 +289,12 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
 
         // CONTROLS: Initialize if complication exists but minigame not active
         if (hasActiveComplication(ComplicationType.CONTROLS) && !controlsComplication.active && !controlsComplication.solved) {
-            // Pick a random starting corner
-            const randomCorner = CORNER_ANGLES[Math.floor(Math.random() * CORNER_ANGLES.length)];
+            // Pick a random starting corner INDEX (0-3), not the angle value
+            const randomCornerIndex = Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3;
             setControlsComplication({
                 active: true,
                 solved: false,
-                targetCorner: randomCorner,
+                targetCorner: randomCornerIndex,
                 completedCorners: 0
             });
         }
