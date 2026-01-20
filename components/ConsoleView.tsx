@@ -15,11 +15,11 @@ interface ConsoleViewProps {
     onOpenSettings?: () => void;
     onOpenHelp?: () => void;
     onOpenUpgrades?: () => void;
-    onWipe?: () => void;
+    onSetRank?: (rank: number) => void;
     onDismissGameOver?: () => void;
 }
 
-export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalScore, powerUpPoints, onOpenSettings, onOpenHelp, onOpenUpgrades, onWipe, onDismissGameOver }) => {
+export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalScore, powerUpPoints, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onDismissGameOver }) => {
     // Calculate Rank based on:
     // Engine's start-of-run total (which hasn't been updated with the run score yet if Game Over)
     // + Current run score.
@@ -161,10 +161,6 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalSc
         };
     }, [isDragging, dragY, isMonitorDragging, monitorDragY]);
 
-    const handleWipe = () => {
-        if (onWipe) onWipe();
-    };
-
     const handleAbort = () => {
         engine.abortRun();
     };
@@ -243,7 +239,7 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalSc
                         onSettingsClick={onOpenSettings}
                         onHelpClick={onOpenHelp}
                         onUpgradesClick={onOpenUpgrades}
-                        onWipeClick={handleWipe}
+                        onSetRank={onSetRank}
                         onAbortClick={handleAbort}
                         onBlueClick={() => console.log('Blue Click')}
                         onGreenClick={() => console.log('Green Click')}

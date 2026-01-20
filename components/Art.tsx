@@ -20,7 +20,7 @@ interface ConsoleLayoutProps {
     onUpgradesClick?: () => void;
     onSettingsClick?: () => void;
     onHelpClick?: () => void;
-    onWipeClick?: () => void;
+    onSetRank?: (rank: number) => void;
     onAbortClick?: () => void;
     upgradeCount: number;
     screenContent?: React.ReactNode;
@@ -113,7 +113,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     onUpgradesClick,
     onSettingsClick,
     onHelpClick,
-    onWipeClick,
+    onSetRank,
     onAbortClick,
     upgradeCount,
     screenContent,
@@ -131,7 +131,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     onResolveComplication
 }) => {
     const [pressedBtn, setPressedBtn] = useState<string | null>(null);
-    const [wipeConfirm, setWipeConfirm] = useState(false);
+    const [rankDropdownOpen, setRankDropdownOpen] = useState(false);
     const [abortConfirm, setAbortConfirm] = useState(false);
 
     // Track recently fixed complications for brief green "FIXED" text display
@@ -518,15 +518,14 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         }
     };
 
-    const handleWipeInteraction = (e: React.MouseEvent) => {
+    const handleRankClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (wipeConfirm) {
-            if (onWipeClick) onWipeClick();
-            setWipeConfirm(false);
-        } else {
-            setWipeConfirm(true);
-            setTimeout(() => setWipeConfirm(false), 3000);
-        }
+        setRankDropdownOpen(prev => !prev);
+    };
+
+    const handleRankSelect = (selectedRank: number) => {
+        if (onSetRank) onSetRank(selectedRank);
+        setRankDropdownOpen(false);
     };
 
     const handleAbortInteraction = (e: React.MouseEvent) => {
@@ -932,11 +931,12 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     const endGameTranslate = "translate(31.92, 399.44)";
 
     return (
-        <svg 
-            viewBox="0 827.84 648 1152" 
-            className="w-full h-full" 
+        <svg
+            viewBox="0 827.84 648 1152"
+            className="w-full h-full"
             preserveAspectRatio="xMidYMid slice"
             style={{ overflow: 'hidden' }}
+            onClick={() => { if (rankDropdownOpen) setRankDropdownOpen(false); }}
         >
             <defs>
                 <linearGradient id="console-gradient" x1="324" y1="1979.84" x2="324" y2="827.84" gradientUnits="userSpaceOnUse">
@@ -962,22 +962,15 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     <tspan>Muz</tspan><tspan letterSpacing="0em" x="29.67">z</tspan><tspan x="37.29">yMade @ 2026</tspan>
                 </text>
 
-                {/* Wipe Save Data - Made Interactive */}
-                <g 
-                    id="Wipe" 
-                    className="cursor-pointer hover:brightness-125 active:brightness-90 transition-all origin-center" 
-                    onClick={handleWipeInteraction}
+                {/* Operator Rank Selector - Dev Tool */}
+                <g
+                    id="RankSelector"
+                    className="cursor-pointer hover:brightness-125 active:brightness-90 transition-all origin-center"
+                    onClick={handleRankClick}
                 >
-                    {wipeConfirm ? (
-                        <text fill="#ef4444" fontFamily="'Amazon Ember'" fontSize="20.93" fontWeight="bold" transform="translate(259.17 1855.99)">
-                            ARE YOU SURE?
-                        </text>
-                    ) : (
-                        <text fill="#aad9d9" fontFamily="'Amazon Ember'" fontSize="20.93" transform="translate(259.17 1855.99)">
-                            <tspan>WIPE S</tspan><tspan letterSpacing="-.06em" x="61.36">A</tspan><tspan x="72.61">VE </tspan><tspan letterSpacing="-.04em" x="100.66">D</tspan><tspan letterSpacing="-.05em" x="113.22">AT</tspan><tspan x="134.62">A</tspan>
-                        </text>
-                    )}
-                    <path fill={wipeConfirm ? "#ef4444" : "#59acae"} d="M237.88,1840.61h14.55c.46.03.69.29.64.76-.31,4-.59,8.01-.9,12.01-.06.77-.07,1.57-.15,2.34-.11,1.05-.67,1.79-1.71,2.04-3.3.1-6.62.01-9.93.04-1.09-.07-1.91-.88-2.02-1.96-.27-3.77-.54-7.55-.81-11.32-.07-.99-.2-2.01-.24-3-.02-.48,0-.84.56-.9ZM240.87,1842.35c-.13.03-.32.22-.34.34-.06.31.02.81.02,1.13.07,2.82.18,5.63.27,8.45.03.82-.01,1.72.06,2.52.06.73.96.7,1.02.03.03-.37-.05-.93-.06-1.32-.09-3.11-.18-6.23-.3-9.34-.02-.43.03-1-.03-1.41-.05-.3-.35-.46-.64-.4ZM245.06,1842.35c-.23.04-.37.26-.38.49v11.98c.06.72,1.03.63,1.02-.06v-11.86c-.02-.37-.26-.61-.64-.55ZM249.34,1855.18s.11-.18.12-.22c.02-.1.03-.35.04-.47.12-2.38.11-4.77.18-7.16.04-1.46.15-2.94.15-4.4,0-.34-.17-.59-.53-.59-.64.01-.48.79-.49,1.22-.11,3.13-.19,6.27-.27,9.4-.01.58-.11,1.32-.06,1.89.04.44.56.63.86.33ZM240.61,1836.42c.1-1,1.08-1.87,2.08-1.9,1.7.08,3.5-.11,5.18,0,.98.06,2.11.92,2.11,1.96v.7s.08-.03.13-.03c.58-.01,1.22-.02,1.8,0,.74.02,1.37.09,1.77.81.26.46.44,1.47-.25,1.64h-16.41c-.8-.06-.59-1.21-.31-1.68.25-.42.8-.77,1.3-.77h2.55s.02.04.04.03c.02-.25-.02-.52,0-.76ZM234.2,780.05v-.64s-.09-.24-.11-.28c-.15-.27-.43-.41-.74-.43-1.65-.12-3.45.09-5.12,0-.28-.02-.77.41-.77.67v.67h6.74Z"/>
+                    <text fill={rankDropdownOpen ? "#5bbc70" : "#aad9d9"} fontFamily="'Amazon Ember'" fontSize="20.93" fontWeight={rankDropdownOpen ? "bold" : "normal"} transform="translate(259.17 1855.99)">
+                        OPERATOR RANK
+                    </text>
                 </g>
             </g>
 
@@ -1396,6 +1389,72 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     </>
                 )}
             </g>
+
+            {/* Rank Dropdown Overlay */}
+            {rankDropdownOpen && (
+                <foreignObject x="200" y="1550" width="250" height="300">
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            background: 'linear-gradient(180deg, #1d1d3a 0%, #0f1829 100%)',
+                            border: '2px solid #5bbc70',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <div
+                            style={{
+                                padding: '8px 12px',
+                                borderBottom: '1px solid #5bbc70',
+                                color: '#5bbc70',
+                                fontFamily: 'Amazon Ember, sans-serif',
+                                fontWeight: 'bold',
+                                fontSize: '14px',
+                                textAlign: 'center',
+                            }}
+                        >
+                            SELECT RANK
+                        </div>
+                        <div
+                            style={{
+                                flex: 1,
+                                overflowY: 'auto',
+                                padding: '4px',
+                            }}
+                        >
+                            {Array.from({ length: 101 }, (_, i) => (
+                                <div
+                                    key={i}
+                                    onClick={() => handleRankSelect(i)}
+                                    style={{
+                                        padding: '8px 12px',
+                                        color: i === 0 ? '#f87171' : i === rank ? '#5bbc70' : '#aad9d9',
+                                        fontFamily: 'Amazon Ember, sans-serif',
+                                        fontSize: '14px',
+                                        cursor: 'pointer',
+                                        borderRadius: '4px',
+                                        background: i === rank ? 'rgba(91, 188, 112, 0.2)' : 'transparent',
+                                        fontWeight: i === rank ? 'bold' : 'normal',
+                                        transition: 'background 0.15s',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (i !== rank) e.currentTarget.style.background = 'rgba(170, 217, 217, 0.1)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (i !== rank) e.currentTarget.style.background = 'transparent';
+                                    }}
+                                >
+                                    {i === 0 ? '0 - WIPE DATA' : `Rank ${i}`}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </foreignObject>
+            )}
 
         </svg>
     );

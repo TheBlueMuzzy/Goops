@@ -21,10 +21,10 @@ interface GameProps {
   onOpenSettings?: () => void;
   onOpenHelp?: () => void;
   onOpenUpgrades?: () => void;
-  onWipe?: () => void;
+  onSetRank?: (rank: number) => void;
 }
 
-const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, powerUpPoints, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onWipe }) => {
+const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, powerUpPoints, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank }) => {
   const { engine, gameState } = useGameEngine(initialTotalScore, powerUps, onRunComplete);
   const heldKeys = useRef<Set<string>>(new Set());
   const dragDirectionRef = useRef<number>(0);
@@ -252,7 +252,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             onOpenSettings={onOpenSettings}
             onOpenHelp={onOpenHelp}
             onOpenUpgrades={onOpenUpgrades}
-            onWipe={onWipe}
+            onSetRank={onSetRank}
             onDismissGameOver={() => engine.resetSession()}
           />
       </div>

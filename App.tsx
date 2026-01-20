@@ -6,7 +6,7 @@ import { Settings } from './components/Settings';
 import { HowToPlay } from './components/HowToPlay';
 import { SaveData } from './types';
 import { loadSaveData, saveGameData, wipeSaveData } from './utils/storage';
-import { calculateRankDetails } from './utils/progression';
+import { calculateRankDetails, getScoreForMidRank } from './utils/progression';
 import { audio } from './utils/audio';
 import { useAudioSubscription } from './hooks/useAudioSubscription';
 
@@ -64,11 +64,24 @@ const App: React.FC = () => {
     audio.updateSettings(newSettings);
   };
 
-  const handleWipeSave = () => {
-      const fresh = wipeSaveData();
-      setSaveData(fresh);
-      setGameKey(prev => prev + 1); // Force remount of Game to reset engine
-      audio.init(fresh.settings);
+  const handleSetRank = (rank: number) => {
+      if (rank === 0) {
+          // Wipe save data
+          const fresh = wipeSaveData();
+          setSaveData(fresh);
+          setGameKey(prev => prev + 1);
+          audio.init(fresh.settings);
+      } else {
+          // Set to specific rank
+          const newTotalScore = getScoreForMidRank(rank);
+          setSaveData(prev => ({
+              ...prev,
+              totalScore: newTotalScore,
+              rank: rank,
+              powerUpPoints: rank // Points = rank level
+          }));
+          setGameKey(prev => prev + 1); // Force remount to apply new score
+      }
   };
 
   return (
@@ -85,7 +98,7 @@ const App: React.FC = () => {
           onOpenSettings={() => setView('SETTINGS')}
           onOpenHelp={() => setView('HOW_TO_PLAY')}
           onOpenUpgrades={() => setView('UPGRADES')}
-          onWipe={handleWipeSave}
+          onSetRank={handleSetRank}
         />
       )}
 

@@ -25,6 +25,16 @@ export const getScoreForRank = (rank: number): number => {
   return Math.floor(base * Math.pow(rank - 1, exponent));
 };
 
+// Returns the score for 50% progress through a rank
+export const getScoreForMidRank = (rank: number): number => {
+  if (rank <= 0) return 0;
+  if (rank >= MAX_RANK) return getScoreForRank(MAX_RANK);
+
+  const currentBase = getScoreForRank(rank);
+  const nextBase = getScoreForRank(rank + 1);
+  return Math.floor(currentBase + (nextBase - currentBase) * 0.5);
+};
+
 export const calculateRankDetails = (totalScore: number): RankDetails => {
   let rank = 1;
   
