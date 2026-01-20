@@ -40,13 +40,18 @@ export class MoveBoardCommand implements Command {
             engine.state.activePiece = newPiece;
         }
 
-        // Track rotation timestamps for CONTROLS trigger
-        // Always track so multiple complications can trigger simultaneously
+        // Track rotation timestamps for CONTROLS heat detection
         const now = Date.now();
         engine.state.rotationTimestamps.push(now);
         // Prune timestamps older than 3 seconds
         const cutoff = now - 3000;
         engine.state.rotationTimestamps = engine.state.rotationTimestamps.filter(t => t > cutoff);
+
+        // CONTROLS heat buildup: builds when rotating (rank 3+)
+        const currentRank = calculateRankDetails(engine.initialTotalScore + engine.state.score).rank;
+        if (currentRank >= 3) {
+            engine.state.controlsHeat = Math.min(100, engine.state.controlsHeat + 5);
+        }
 
         gameEventBus.emit(GameEventType.PIECE_MOVED);
         engine.emitChange();

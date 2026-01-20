@@ -246,7 +246,8 @@ export class GameEngine {
                     this.state.primedGroups.clear(); // Clear primed groups when LASER fixed
                     break;
                 case ComplicationType.CONTROLS:
-                    this.state.rotationTimestamps = []; // Clear timestamps for fresh start
+                    this.state.controlsHeat = 0; // Cool down heat meter
+                    this.state.rotationTimestamps = []; // Clear timestamps
                     break;
                 case ComplicationType.LIGHTS:
                     // LIGHTS trigger is 50% chance on piece lock when pressure gap met
@@ -302,12 +303,11 @@ export class GameEngine {
             this.spawnComplication(ComplicationType.LASER);
         }
 
-        // CONTROLS: Triggered by 20+ rotations in 3 seconds (rank 2+)
+        // CONTROLS: Triggered when heat meter reaches 100 (rank 3+)
         // Only spawn if CONTROLS isn't already active
         if (!hasComplication(ComplicationType.CONTROLS) &&
-            rank >= 2 && this.state.rotationTimestamps.length >= 20) {
+            rank >= 3 && this.state.controlsHeat >= 100) {
             this.spawnComplication(ComplicationType.CONTROLS);
-            this.state.rotationTimestamps = []; // Clear timestamps after trigger
         }
 
         // LIGHTS: Now triggered on piece lock (not here) - see tick() method
@@ -452,6 +452,22 @@ export class GameEngine {
         }
         
         this.checkComplications(dt);
+
+        // CONTROLS heat dissipation: drains when NOT actively rotating (rank 3+)
+        const currentTickRank = calculateRankDetails(this.initialTotalScore + this.state.score).rank;
+        if (currentTickRank >= 3 && this.state.controlsHeat > 0) {
+            const now = Date.now();
+            const lastRotation = this.state.rotationTimestamps.length > 0
+                ? this.state.rotationTimestamps[this.state.rotationTimestamps.length - 1]
+                : 0;
+            const idleTime = now - lastRotation;
+
+            // Start draining if idle for 200ms
+            if (idleTime > 200) {
+                const drainRate = 50; // per second, so 2 seconds to drain from 100 to 0
+                this.state.controlsHeat = Math.max(0, this.state.controlsHeat - (drainRate * dt / 1000));
+            }
+        }
 
         const stabilityLevel = this.powerUps[UPGRADE_CONFIG.STABILITY.id] || 0;
         const stabilityMod = stabilityLevel * UPGRADE_CONFIG.STABILITY.effectPerLevel;
