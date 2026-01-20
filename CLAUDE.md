@@ -78,7 +78,22 @@ Offer `/gsd:progress` or other GSD commands at natural breakpoints:
 
 This avoids auto-compaction which loses context. User prefers clean handoffs between sessions.
 
-## Commands
+## Quick Commands
+
+User can type these shortcuts and Claude will execute:
+
+| Command | Action |
+|---------|--------|
+| `<commands>` | Show this command list |
+| `<npm>` | Run `npm run dev -- --host` (dev server, mobile accessible) |
+| `<test>` | Run `npm run test:run` |
+| `<commit>` | Update STATE.md + relevant docs, then git add + commit |
+| `<push>` | Push current branch to remote |
+| `<merge>` | Merge current branch to master, push both |
+| `<status>` | Show git status + current project position from STATE.md |
+| `<handoff>` | Context handoff: update all docs, commit, push, instruct to start fresh session |
+
+## Terminal Commands
 - `npm run dev -- --host` — Dev server (accessible from phone at local IP)
 - `npm run test:run` — Run tests once
 - `npm test` — Watch mode
@@ -96,37 +111,24 @@ Do NOT remove the `isMobile` checks without understanding why they exist.
 
 ## Current Status (as of Jan 2026)
 ### Complete
-- Core gameplay loop
-- Mobile performance optimization
-- Unit test infrastructure (36 tests)
-- Pre-commit hooks
-- GSD project initialization (`.planning/PROJECT.md`, codebase map)
-- Phase 1: Dial rotation (drag to spin, snap to 4 corners)
-- Phase 2: All 3 minigame puzzles working:
-  - **Reset Laser**: 4 sliders match indicator lights (left/right/both-on for center)
-  - **Reset Lights**: Sequence memory (slider → watch 4-button sequence → repeat → slider)
-  - **Reset Controls**: Dial alignment (align to 4 lit corners in sequence, tap to confirm)
-- Phase 3 & 4: Complications system working (bugs fixed 2026-01-20):
-  - **LASER** (rank 1+): Triggers on cumulative units popped (12-24), two-tap mechanic
-  - **CONTROLS** (rank 2+): Triggers on 20 rotations in 3 seconds, double input + half hold speed
-  - **LIGHTS** (rank 3+): Triggers 50% on piece lock when pressure 3-5 rows above goop, dims to 10%
-  - Multiple complications can be active simultaneously
-  - Minigame solutions resolve active complications
-- **Dev Tool**: Operator Rank selector (0-100) in console footer for testing progression
+- Core gameplay loop + mobile optimization (50 tests)
+- Phase 1-5: Dial rotation, minigames, complications, HUD meters
+- Phase 6 Plan 1: XP curve retuned (linear delta), XP floor implemented
 
-### Next Up (Phase 5: HUD & Balance)
-- Add Laser Capacitor Meter (left side of periscope) — drains as player pops
-- Add Controls Heat Meter (right side of periscope) — builds while rotating, drains when stopped
-- Rewrite LASER trigger: cumulative pops → capacitor drain meter
-- Rewrite CONTROLS trigger: 20 rotations/3s → heat meter at 100%
-- Implement complication cooldowns (same-type can't re-trigger for X seconds)
-- Shift rank unlocks: LASER → rank 1, LIGHTS → rank 2, CONTROLS → rank 3
-- Player starts at rank 0 (no complications)
-- Implement XP floor: `xpGained = max(100 * currentRank, finalScore)`
+### In Progress
+- **Phase 6: Progression System** (Plan 2 pending: Milestone Infrastructure)
 
-### New Key Documents
-- `.planning/DESIGN_VISION.md` — Synthesized design philosophy, balance framework, progression roadmap
-- `PRD.md` v3.0 — Updated with correct minigame descriptions, HUD meters, future progression
+### Key Systems
+- **Complications**: LASER@rank1, LIGHTS@rank2, CONTROLS@rank3
+- **HUD Meters**: Laser capacitor (drains on pop), Controls heat (builds on rotate)
+- **XP Curve**: `(rank-1) * (1000 + 250*rank)` — Rank 2 = 1,500 XP, Rank 10 = 31,500 XP
+- **XP Floor**: `max(100 * rank, score)` prevents zero-gain runs
+- **Dev Tool**: Operator Rank selector (0-100) in console footer
+
+### Key Documents
+- `.planning/STATE.md` — Current position and accumulated context
+- `.planning/ROADMAP.md` — Phase overview and progress
+- `PRD.md` — Full product requirements
 
 ## Testing Philosophy
 - Tests cover core game logic (collision, gravity, scoring, coordinates)
