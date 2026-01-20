@@ -883,18 +883,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                         value={laserCapacitor}
                         colorMode="drain"
                         x={vbX + 8}
-                        y={vbH * 0.1}
-                        height={vbH * 0.8}
-                        width={14}
+                        y={vbH * 0.04}
+                        height={vbH * 0.2}
+                        width={12}
                     />
                     {/* Right meter: Controls Heat (builds while rotating) */}
                     <HudMeter
                         value={controlsHeat}
                         colorMode="heat"
-                        x={vbX + vbW - 22}
-                        y={vbH * 0.1}
-                        height={vbH * 0.8}
-                        width={14}
+                        x={vbX + vbW - 20}
+                        y={vbH * 0.04}
+                        height={vbH * 0.2}
+                        width={12}
                     />
                 </>
             )}

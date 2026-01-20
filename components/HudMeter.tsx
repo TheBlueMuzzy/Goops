@@ -88,11 +88,11 @@ export const HudMeter: React.FC<HudMeterProps> = ({
         y={0}
         width={width}
         height={height}
-        rx={4}
-        ry={4}
+        rx={3}
+        ry={3}
         fill={bgColor}
         stroke={borderColor}
-        strokeWidth={2}
+        strokeWidth={1}
       />
 
       {/* Fill (from bottom) */}
