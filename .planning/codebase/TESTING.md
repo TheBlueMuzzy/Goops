@@ -14,7 +14,7 @@
 
 **Run Commands:**
 ```bash
-npm run test:run          # Run all tests once (36 tests)
+npm run test:run          # Run all tests once (110 tests)
 npm test                  # Watch mode
 npm test -- path/to/file  # Single file
 ```
@@ -29,12 +29,18 @@ npm test -- path/to/file  # Single file
 - `{module}.test.ts` format
 - `gameLogic.test.ts` - Game logic utilities
 - `coordinates.test.ts` - Coordinate system
+- `coordinateTransform.test.ts` - SVG coordinate transforms
+- `progression.test.ts` - Rank/XP calculations
+- `minigameLogic.test.ts` - Minigame constants and logic
 
 **Structure:**
 ```
 tests/
-  coordinates.test.ts    # 6 tests - coordinate wrapping
-  gameLogic.test.ts      # 30 tests - core game logic
+  coordinates.test.ts          # 6 tests - coordinate wrapping
+  coordinateTransform.test.ts  # 27 tests - SVG coordinate transforms
+  gameLogic.test.ts            # 30 tests - core game logic
+  minigameLogic.test.ts        # 18 tests - minigame constants
+  progression.test.ts          # 29 tests - rank/XP calculations
 ```
 
 ## Test Structure
@@ -106,6 +112,9 @@ const placeCell = (grid, x, y, color, groupId) => {
 **Current Coverage:**
 - `utils/gameLogic.ts` - Well tested (collision, groups, scoring)
 - `utils/coordinates.ts` - Tested (cylindrical wrapping)
+- `utils/coordinateTransform.ts` - Well tested (SVG coordinate conversions)
+- `utils/progression.ts` - Well tested (XP curve, rank calculations)
+- `complicationConfig.ts` - Tested (minigame constants and unlock logic)
 - React components - Not unit tested (manual visual testing)
 - GameEngine - Indirectly tested through utility functions
 
@@ -128,6 +137,31 @@ const placeCell = (grid, x, y, color, groupId) => {
 - Grid coordinate normalization
 - Cylindrical wrapping at boundaries
 - Edge cases at grid limits
+
+**What's Tested (from `coordinateTransform.test.ts`):**
+- VIEWBOX dimensions and constants
+- visXToScreenX/screenXToVisX conversions
+- clientToSvg coordinate transforms
+- svgToVisual coordinate transforms
+- visualToGrid coordinate transforms
+- gridToPercentage calculations
+- Edge cases at grid boundaries and wrap points
+
+**What's Tested (from `progression.test.ts`):**
+- XP curve calculations by rank
+- XP delta progression
+- Rank determination from total XP
+- XP floor calculations
+- Milestone thresholds
+- Edge cases for rank boundaries
+
+**What's Tested (from `minigameLogic.test.ts`):**
+- Complication config structure
+- Unlock rank requirements (LASER@1, LIGHTS@2, CONTROLS@3)
+- Cooldown calculations
+- Duration calculations
+- Score multipliers
+- Configuration consistency
 
 **Integration Tests:**
 - Not currently used
@@ -182,4 +216,4 @@ it('should find group across wrapped boundary', () => {
 ---
 
 *Testing analysis: 2026-01-18*
-*Update when test patterns change*
+*Updated 2026-01-21 for v1.1 refactor*
