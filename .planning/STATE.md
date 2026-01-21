@@ -112,7 +112,15 @@ None — all UAT issues resolved.
 
 Last session: 2026-01-21
 Stopped at: Plan 10-03 Task 3 (UAT) — **3 BUGS BLOCKING APPROVAL**
-Resume with: Fix the bugs below, then re-test
+
+### Resume Instructions
+
+1. Read this STATE.md section for full bug context
+2. Fix Bug 2 first (useInputHandlers.ts) — it's the clearest fix
+3. Fix Bug 3 by REVERTING ControlsPanel.tsx changes, then fix in the hook instead
+4. Investigate Bug 1 (shake) — may need browser devtools to debug
+5. Run `npm run dev -- --host`, test all 3 fixes
+6. When UAT passes, complete Plan 10-03 (create SUMMARY, update ROADMAP, commit)
 
 ### UAT Bugs to Fix (Plan 10-03)
 
@@ -161,6 +169,12 @@ These changes have bugs and should be reviewed/reverted:
 4. Cleaned up unused imports in GameBoard.tsx
 5. Added section comments for organization
 6. GameBoard.tsx: 1,031 → 604 lines (41% reduction across Phase 10)
+
+### Workflow Decisions Made This Session
+
+- **`/clear` usage**: Use between plans, when context < 15%, or after phase completion
+- **`<handoff>` improved**: Now has explicit 5-point checklist in CLAUDE.md
+- **No need for new terminal**: `/clear` is sufficient for fresh context
 
 ## Quick Commands
 
