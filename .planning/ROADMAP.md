@@ -56,7 +56,7 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 **Goal**: Fix critical issues with minimal risk - memory leaks, hard-coded values, memoization
 **Depends on**: v1.0 complete
 **Research**: Unlikely (internal patterns)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Tasks:
 - Extract hard-coded values to constants.ts
@@ -66,7 +66,7 @@ Tasks:
 - Create coordinateTransform.ts (testable functions)
 
 Plans:
-- [ ] 08-01: TBD (run /gsd:plan-phase 8 to break down)
+- [ ] 08-01: Quick Wins & Memory Fixes (all tasks in single plan)
 
 #### Phase 9: Art.tsx Decomposition
 

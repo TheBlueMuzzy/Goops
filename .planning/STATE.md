@@ -20,9 +20,9 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 ## Current Position
 
 Phase: 8 of 13 (Quick Wins & Memory Fixes)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-01-21 — Milestone v1.1 created
+Plan: 08-01 ready
+Status: Ready to execute
+Last activity: 2026-01-21 — Phase 8 plan created
 
 Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░ 0/6 phases (0%)
 
@@ -95,8 +95,8 @@ None — all UAT issues resolved.
 
 Last session: 2026-01-21
 Stopped at: Milestone v1.1 initialization
-Resume with: `/gsd:plan-phase 8`
-Next action: Create feature branch, then plan Phase 8
+Resume with: `/gsd:execute-plan 8`
+Next action: Create feature branch `refactor-v1.1`, then execute plan 08-01
 
 ## Quick Commands
 
