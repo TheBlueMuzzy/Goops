@@ -8,7 +8,7 @@
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- `refactor-v1.1` — v1.1 Architecture Refactor (Phase 8 complete)
+- `refactor-v1.1` — v1.1 Architecture Refactor (Phase 9 complete)
 
 ## Project Reference
 
@@ -19,12 +19,12 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 
 ## Current Position
 
-Phase: 9 of 13 (Art.tsx Decomposition)
-Plan: 09-02 complete, ready for 09-03
-Status: Executing phase
-Last activity: 2026-01-21 — Plan 09-02 complete (useControlsMinigame + 4 panel components)
+Phase: 9 of 13 (Art.tsx Decomposition) - COMPLETE
+Plan: All 3 plans complete
+Status: Ready for Phase 10
+Last activity: 2026-01-21 — Phase 9 complete (Art.tsx 1,478 → 581 lines)
 
-Progress: ████░░░░░░░░░░░░░░░░░░░░░ 1/6 phases (17%)
+Progress: ████████░░░░░░░░░░░░░░░░░ 2/6 phases (33%)
 
 ## v1.1 Architecture Refactor
 
@@ -32,7 +32,7 @@ Progress: ████░░░░░░░░░░░░░░░░░░░�
 
 **Phases:**
 - ✅ Phase 8: Quick Wins & Memory Fixes (2026-01-21)
-- Phase 9: Art.tsx Decomposition
+- ✅ Phase 9: Art.tsx Decomposition (2026-01-21)
 - Phase 10: GameBoard.tsx Decomposition
 - Phase 11: GameEngine Refactor
 - Phase 12: State Management & Events
@@ -55,10 +55,27 @@ Progress: ████░░░░░░░░░░░░░░░░░░░�
 
 All 7 phases complete. See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 
+### Phase 9: Art.tsx Decomposition (2026-01-21)
+
+Art.tsx reduced from 1,478 to 581 lines (61% reduction):
+- Extracted 3 minigame state machine hooks
+- Extracted 4 panel components for minigame rendering
+- Created central types/minigames.ts
+
+**Files created:**
+- types/minigames.ts (137 lines) — central minigame types
+- hooks/useLaserMinigame.ts (226 lines) — LASER state machine
+- hooks/useLightsMinigame.ts (375 lines) — LIGHTS state machine
+- hooks/useControlsMinigame.ts (452 lines) — CONTROLS dial state machine
+- components/MiniGames/ArcadeButton.tsx (63 lines) — reusable button
+- components/MiniGames/LaserPanel.tsx (90 lines) — LASER SVG
+- components/MiniGames/LightsPanel.tsx (135 lines) — LIGHTS SVG
+- components/MiniGames/ControlsPanel.tsx (141 lines) — CONTROLS SVG
+
 ## Audit Findings (from discuss-milestone)
 
 **Critical Issues:**
-- Art.tsx: 1,478 lines (3 minigames in 1 file)
+- ~~Art.tsx: 1,478 lines~~ ✅ Fixed in Phase 9 (581 lines)
 - GameBoard.tsx: 1,052 lines (rendering + input + math mixed)
 - ~~rotationTimestamps memory leak~~ ✅ Fixed in Phase 8 (circular buffer)
 
@@ -94,21 +111,9 @@ None — all UAT issues resolved.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Phase 9 Plan 02 complete (useControlsMinigame + 4 panel components)
-Resume with: `/gsd:execute-plan .planning/phases/09-art-decomposition/09-03-PLAN.md`
-Next action: Execute Plan 09-03 (integrate hooks + components into Art.tsx)
-
-**Files created this session:**
-- types/minigames.ts (137 lines) — central minigame types
-- hooks/useLaserMinigame.ts (226 lines) — LASER state machine
-- hooks/useLightsMinigame.ts (375 lines) — LIGHTS state machine
-- hooks/useControlsMinigame.ts (450 lines) — CONTROLS dial state machine
-- components/MiniGames/ArcadeButton.tsx (63 lines) — reusable button
-- components/MiniGames/LaserPanel.tsx (90 lines) — LASER SVG
-- components/MiniGames/LightsPanel.tsx (135 lines) — LIGHTS SVG
-- components/MiniGames/ControlsPanel.tsx (141 lines) — CONTROLS SVG
-
-**Note:** User installed Vercel skill for React best practices checking. Used it to validate hook patterns before implementation.
+Stopped at: Phase 9 complete
+Resume with: `/gsd:progress` or `/gsd:plan-phase` for Phase 10
+Next action: Plan Phase 10 (GameBoard.tsx Decomposition)
 
 ## Quick Commands
 
