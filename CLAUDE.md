@@ -120,7 +120,7 @@ Do NOT remove the `isMobile` checks without understanding why they exist.
 ### Key Systems
 - **Complications**: LASER@rank1, LIGHTS@rank2, CONTROLS@rank3
 - **HUD Meters**: Laser capacitor (drains on pop), Controls heat (builds on rotate)
-- **XP Curve**: `(rank-1) * (1000 + 250*rank)` — Rank 2 = 1,500 XP, Rank 10 = 31,500 XP
+- **XP Curve**: `(rank+2) * (1750 + 250*rank)` — Rank 1 = 6,000 XP, Rank 10 = 51,000 XP
 - **XP Floor**: `max(100 * rank, score)` prevents zero-gain runs
 - **Dev Tool**: Operator Rank selector (0-100) in console footer
 

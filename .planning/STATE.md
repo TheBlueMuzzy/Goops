@@ -103,9 +103,9 @@ Progress: ███████████████████████�
 
 ### Phase 6: Progression System - COMPLETE
 - 06-01: XP Floor & Curve Retuning - COMPLETE
-  - New linear delta curve: `(rank-1) * (1000 + 250*rank)`
-  - Rank 2: 1,500 XP (was 5,000) — much smoother tutorial
-  - Rank 10: 31,500 XP | Rank 100: 2,574,000 XP
+  - Tutorial-extended curve (Jan 2026 rebalance): `(rank+2) * (1750 + 250*rank)`
+  - Rank 1: 6,000 XP | Rank 2: 9,000 XP | Rank 3: 12,500 XP
+  - Rank 10: 51,000 XP | Rank 100: 2,728,500 XP
   - XP floor: `max(100 * rank, score)` prevents zero-gain runs
 - 06-02: Milestone Infrastructure - COMPLETE
   - Milestones at ranks 10, 20, 30... 100
