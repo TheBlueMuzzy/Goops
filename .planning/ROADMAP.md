@@ -10,7 +10,8 @@ None
 
 ## Milestones
 
-- [v1.0 MVP](milestones/v1.0-ROADMAP.md) — Phases 1-7 (shipped 2026-01-21)
+- ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) — Phases 1-7 (shipped 2026-01-21)
+- 🚧 **v1.1 Architecture Refactor** — Phases 8-13 (in progress)
 
 ## Completed Milestones
 
@@ -31,6 +32,125 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 
 </details>
 
+---
+
+### 🚧 v1.1 Architecture Refactor (In Progress)
+
+**Milestone Goal:** Solidify codebase foundation before adding new gameplay features. Fix memory leaks, split large files, centralize state management, expand test coverage.
+
+**Constraints:**
+- Must maintain all 65 existing tests passing throughout refactor
+- Mobile performance optimizations must be preserved
+- No gameplay changes - purely structural refactor
+- Each phase should be independently deployable
+
+**Success Criteria:**
+- No files over 400 lines
+- All hard-coded values in constants.ts
+- GameEngine.tick() under 50 lines
+- Test coverage for coordinate transforms and minigames
+- Event-based communication replaces prop drilling
+
+#### Phase 8: Quick Wins & Memory Fixes
+
+**Goal**: Fix critical issues with minimal risk - memory leaks, hard-coded values, memoization
+**Depends on**: v1.0 complete
+**Research**: Unlikely (internal patterns)
+**Plans**: TBD
+
+Tasks:
+- Extract hard-coded values to constants.ts
+- Fix rotationTimestamps memory leak (circular buffer)
+- Create complicationConfig.ts (single source of truth)
+- Fix vbX/vbY/vbW/vbH memoization
+- Create coordinateTransform.ts (testable functions)
+
+Plans:
+- [ ] 08-01: TBD (run /gsd:plan-phase 8 to break down)
+
+#### Phase 9: Art.tsx Decomposition
+
+**Goal**: Split 1,478-line Art.tsx into focused minigame components
+**Depends on**: Phase 8
+**Research**: Unlikely (internal refactor)
+**Plans**: TBD
+
+Tasks:
+- Extract LaserMinigame.tsx
+- Extract LightsMinigame.tsx
+- Extract ControlsMinigame.tsx
+- Create ConsoleLayout.tsx (remaining SVG structure)
+- Extract useMinigameState() hooks
+
+Plans:
+- [ ] 09-01: TBD
+
+#### Phase 10: GameBoard.tsx Decomposition
+
+**Goal**: Split 1,052-line GameBoard.tsx into focused modules
+**Depends on**: Phase 9
+**Research**: Unlikely (internal refactor)
+**Plans**: TBD
+
+Tasks:
+- Extract useInputHandlers.ts hook
+- Extract coordinateTransform.ts utilities
+- Extract rendering helpers (useGroupRenderer.ts)
+- Simplify main GameBoard component
+
+Plans:
+- [ ] 10-01: TBD
+
+#### Phase 11: GameEngine Refactor
+
+**Goal**: Split GameEngine.tick() and extract focused managers
+**Depends on**: Phase 10
+**Research**: Unlikely (internal refactor)
+**Plans**: TBD
+
+Tasks:
+- Split tick() into tickGoals(), tickComplications(), tickHeat(), tickFallingBlocks(), tickActivePiece()
+- Extract ComplicationManager
+- Extract GoalManager
+- Encapsulate public properties with setter methods
+
+Plans:
+- [ ] 11-01: TBD
+
+#### Phase 12: State Management & Events
+
+**Goal**: Centralize state and expand event system to reduce prop drilling
+**Depends on**: Phase 11
+**Research**: Unlikely (internal patterns)
+**Plans**: TBD
+
+Tasks:
+- Create GameStateManager interface
+- Centralize state updates
+- Expand GameEventBus with input events
+- Remove prop drilling from Game.tsx → GameBoard
+
+Plans:
+- [ ] 12-01: TBD
+
+#### Phase 13: Testing & Documentation
+
+**Goal**: Add test coverage for refactored code and update docs
+**Depends on**: Phase 12
+**Research**: Unlikely (internal work)
+**Plans**: TBD
+
+Tasks:
+- Coordinate transform edge case tests
+- Minigame state machine tests
+- Command execution order tests
+- Update architecture documentation
+
+Plans:
+- [ ] 13-01: TBD
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -42,3 +162,9 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 | 5. HUD & Balance | v1.0 | 4/4 | Complete | 2026-01-20 |
 | 6. Progression System | v1.0 | 2/2 | Complete | 2026-01-20 |
 | 7. System Upgrades | v1.0 | 4/4 | Complete | 2026-01-20 |
+| 8. Quick Wins & Memory Fixes | v1.1 | 0/? | Not started | - |
+| 9. Art.tsx Decomposition | v1.1 | 0/? | Not started | - |
+| 10. GameBoard.tsx Decomposition | v1.1 | 0/? | Not started | - |
+| 11. GameEngine Refactor | v1.1 | 0/? | Not started | - |
+| 12. State Management & Events | v1.1 | 0/? | Not started | - |
+| 13. Testing & Documentation | v1.1 | 0/? | Not started | - |
