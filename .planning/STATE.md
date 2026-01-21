@@ -20,9 +20,9 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 ## Current Position
 
 Phase: 9 of 13 (Art.tsx Decomposition)
-Plan: 09-01 complete, ready for 09-02
+Plan: 09-02 complete, ready for 09-03
 Status: Executing phase
-Last activity: 2026-01-21 — Plan 09-01 complete (types + 2 hooks extracted)
+Last activity: 2026-01-21 — Plan 09-02 complete (useControlsMinigame + 4 panel components)
 
 Progress: ████░░░░░░░░░░░░░░░░░░░░░ 1/6 phases (17%)
 
@@ -94,14 +94,19 @@ None — all UAT issues resolved.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Phase 9 Plan 01 complete (types/minigames.ts, useLaserMinigame, useLightsMinigame)
-Resume with: `/gsd:execute-plan .planning/phases/09-art-decomposition/09-02-PLAN.md`
-Next action: Execute Plan 09-02 (useControlsMinigame + panel components)
+Stopped at: Phase 9 Plan 02 complete (useControlsMinigame + 4 panel components)
+Resume with: `/gsd:execute-plan .planning/phases/09-art-decomposition/09-03-PLAN.md`
+Next action: Execute Plan 09-03 (integrate hooks + components into Art.tsx)
 
 **Files created this session:**
 - types/minigames.ts (137 lines) — central minigame types
 - hooks/useLaserMinigame.ts (226 lines) — LASER state machine
 - hooks/useLightsMinigame.ts (375 lines) — LIGHTS state machine
+- hooks/useControlsMinigame.ts (450 lines) — CONTROLS dial state machine
+- components/MiniGames/ArcadeButton.tsx (63 lines) — reusable button
+- components/MiniGames/LaserPanel.tsx (90 lines) — LASER SVG
+- components/MiniGames/LightsPanel.tsx (135 lines) — LIGHTS SVG
+- components/MiniGames/ControlsPanel.tsx (141 lines) — CONTROLS SVG
 
 **Note:** User installed Vercel skill for React best practices checking. Used it to validate hook patterns before implementation.
 
