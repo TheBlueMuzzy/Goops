@@ -32,12 +32,20 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      {/* SVG Monitor Container - matches EndGameScreen structure */}
-      <svg
-        viewBox="0 0 583.67 910"
-        className="w-[90%] max-w-md h-auto"
-        style={{ maxHeight: '85vh' }}
+      {/* Container matches ConsoleView 9:16 aspect ratio */}
+      <div
+        className="relative"
+        style={{
+          width: 'min(100vw, 100dvh * 0.5625)',
+          height: 'min(100dvh, 100vw * 1.7778)',
+        }}
       >
+        {/* SVG Monitor Container - matches EndGameScreen structure */}
+        <svg
+          viewBox="0 0 583.67 910"
+          className="w-full h-full"
+          preserveAspectRatio="xMidYMid meet"
+        >
         {/* Monitor Body - Orange */}
         <path fill="#f2a743" d="M16.86,32.56h549.95c9.31,0,16.86,7.55,16.86,16.86v847.89c0,6.78-5.5,12.28-12.28,12.28H12.28c-6.78,0-12.28-5.5-12.28-12.28V49.42c0-9.31,7.55-16.86,16.86-16.86Z"/>
         <path fill="#d36b28" d="M574.73,37.21H8.94c-3.39,0-5.14-4.05-2.82-6.52L25.37,10.16C31.46,3.68,39.96,0,48.85,0h485.98c8.89,0,17.39,3.68,23.47,10.16l19.25,20.52c2.32,2.47.57,6.52-2.82,6.52Z"/>
@@ -196,7 +204,8 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
         <text fill="#59acae" fontFamily="'Amazon Ember'" fontSize="14" transform="translate(291.5 870)" textAnchor="middle">
           Earn 1 PWR per rank gained
         </text>
-      </svg>
+        </svg>
+      </div>
     </div>
   );
 };
