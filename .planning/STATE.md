@@ -20,11 +20,11 @@ See: .planning/PROJECT.md (updated 2026-01-19)
 ## Current Position
 
 Phase: 7 of 7 (System Upgrades) - IN PROGRESS
-Plan: 3 of 4 complete (07-03 UAT issues fixed)
-Status: Executing Phase 7
-Last activity: 2026-01-20 — Completed 07-03-FIX.md
+Plan: 4 of 4 (07-04 code complete, awaiting UAT)
+Status: Human verification checkpoint
+Last activity: 2026-01-20 — 07-04 tasks 1-4 complete, awaiting UAT
 
-Progress: █████████████████████████ 21/22 plans complete (95%)
+Progress: █████████████████████████ 22/22 plans complete (100% code)
 
 ## What's Done
 
@@ -212,15 +212,26 @@ All 4 issues resolved in 07-03-FIX.md:
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: 07-03-FIX complete
-Resume with: Execute 07-04 (Max-Level Minigame Effects)
-Next action: `/gsd:execute-plan .planning/phases/07-system-upgrades/07-04-PLAN.md`
+Stopped at: 07-04 checkpoint - awaiting human verification
+Resume with: Complete UAT then finish 07-04 summary
+Next action: Test max-level effects then type "approved" (or describe issues)
 
 **Phase 7 Plans:**
 - 07-01: System Upgrade Definitions - COMPLETE
 - 07-02: Upgrade Effects Implementation - COMPLETE
 - 07-03: Upgrade UI Panel - COMPLETE (UAT issues fixed)
-- 07-04: Max-Level Minigame Effects (has human verification checkpoint)
+- 07-04: Max-Level Minigame Effects - CODE COMPLETE, AWAITING UAT
+
+**07-04 UAT Checkpoint:**
+Test max-level (level 5) upgrade effects on minigames:
+1. Use dev rank selector to get 15+ points
+2. Max out LASER, LIGHTS, CONTROLS upgrades (5 points each)
+3. Trigger each complication and verify:
+   - LASER: No center targets (only left/right positions)
+   - LIGHTS: 3-button sequence (not 4)
+   - CONTROLS: 3 dial alignments (not 4)
+
+After UAT: Type "approved" to create summary and complete Phase 7
 
 **Key decisions this session:**
 - Two upgrade types: Passives (always-on) and Actives (equippable, charged by crack-goop)
