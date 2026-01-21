@@ -202,19 +202,23 @@ Apply filter to game content only, keeping alerts exempt:
 
 ### Deferred Issues
 
-None
+**07-03 UAT Issues (2026-01-20):**
+1. Upgrade panel shows all 3 upgrades regardless of rank - should filter by unlockRank (LASER@1, LIGHTS@2, CONTROLS@3)
+2. At rank 0, upgrades button still shows - should hide or show empty panel
+3. Dev rank selector doesn't reset powerUps - changing rank should wipe upgrades and give fresh points equal to rank
+4. Styling: Panel should match end-game screen style (same background, fonts, grid/rectangle structures, font sizes)
 
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Completed 07-02 upgrade effects implementation
-Resume with: Build upgrade UI panel in console mode
-Next action: `/gsd:execute-plan .planning/phases/07-system-upgrades/07-03-PLAN.md`
+Stopped at: 07-03 checkpoint - UAT issues found
+Resume with: Fix 07-03 UAT issues (rank filtering, dev reset, styling)
+Next action: `/gsd:plan-fix 07-03` or manually fix issues listed above
 
 **Phase 7 Plans:**
 - 07-01: System Upgrade Definitions - COMPLETE
 - 07-02: Upgrade Effects Implementation - COMPLETE
-- 07-03: Upgrade UI Panel - NEXT (has human verification checkpoint)
+- 07-03: Upgrade UI Panel - UAT ISSUES (4 items to fix)
 - 07-04: Max-Level Minigame Effects (has human verification checkpoint)
 
 **Key decisions this session:**
