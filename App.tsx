@@ -82,13 +82,14 @@ const App: React.FC = () => {
           setGameKey(prev => prev + 1);
           audio.init(fresh.settings);
       } else {
-          // Set to specific rank
+          // Set to specific rank - reset powerUps so player can test fresh
           const newTotalScore = getScoreForMidRank(rank);
           setSaveData(prev => ({
               ...prev,
               totalScore: newTotalScore,
               rank: rank,
-              powerUpPoints: rank // Points = rank level
+              powerUpPoints: rank, // Points = rank level
+              powerUps: {} // Reset all purchased upgrades
           }));
           setGameKey(prev => prev + 1); // Force remount to apply new score
       }

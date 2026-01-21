@@ -279,6 +279,7 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalSc
                 <UpgradePanel
                     powerUpPoints={powerUpPoints}
                     upgrades={powerUps}
+                    rank={rankInfo.rank}
                     onPurchase={(id) => onPurchaseUpgrade?.(id)}
                     onClose={() => setShowSystemUpgrades(false)}
                 />
