@@ -7,7 +7,7 @@ import { ConsoleView } from './components/ConsoleView';
 import { useGameEngine } from './hooks/useGameEngine';
 import { Play, Home } from 'lucide-react';
 import { gameEventBus } from './core/events/EventBus';
-import { GameEventType, RotatePayload, DragPayload, SoftDropPayload, BlockTapPayload } from './core/events/GameEvents';
+import { GameEventType, RotatePayload, DragPayload, SoftDropPayload, BlockTapPayload, SwapHoldPayload } from './core/events/GameEvents';
 import { calculateRankDetails } from './utils/progression';
 import { MoveBoardCommand, RotatePieceCommand, SetSoftDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, BlockTapCommand } from './core/commands/actions';
 
@@ -45,6 +45,12 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   const animationFrameRef = useRef<number | null>(null);
   const isLoopRunningRef = useRef(false);
 
+  // Keyboard hold-to-swap (R key) - matches touch behavior
+  const swapHoldStartRef = useRef<number | null>(null);
+  const swapHoldIntervalRef = useRef<number | null>(null);
+  const SWAP_HOLD_DELAY = 250;    // 0.25s before timer starts
+  const SWAP_HOLD_DURATION = 1000; // 1.0s to complete swap
+
   // CONTROLS complication: requires 2 inputs per move, halves hold speed
   const controlsComplication = gameState.complications.find(c => c.type === ComplicationType.CONTROLS);
   const controlsInputCountRef = useRef(0); // Track pending inputs for double-tap requirement
@@ -73,6 +79,40 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           animationFrameRef.current = null;
       }
   }, []);
+
+  // Keyboard hold-to-swap functions
+  const clearSwapHold = useCallback(() => {
+      if (swapHoldIntervalRef.current) {
+          clearInterval(swapHoldIntervalRef.current);
+          swapHoldIntervalRef.current = null;
+      }
+      swapHoldStartRef.current = null;
+      gameEventBus.emit(GameEventType.INPUT_SWAP_HOLD, { progress: -1 } as SwapHoldPayload);
+  }, []);
+
+  const startSwapHold = useCallback(() => {
+      if (swapHoldIntervalRef.current) return; // Already holding
+      swapHoldStartRef.current = Date.now();
+      gameEventBus.emit(GameEventType.INPUT_SWAP_HOLD, { progress: 0 } as SwapHoldPayload);
+
+      swapHoldIntervalRef.current = window.setInterval(() => {
+          if (!swapHoldStartRef.current) return;
+          const elapsed = Date.now() - swapHoldStartRef.current;
+
+          // Don't progress until delay has passed
+          if (elapsed < SWAP_HOLD_DELAY) return;
+
+          const effectiveElapsed = elapsed - SWAP_HOLD_DELAY;
+          const progress = Math.min(100, (effectiveElapsed / SWAP_HOLD_DURATION) * 100);
+          gameEventBus.emit(GameEventType.INPUT_SWAP_HOLD, { progress } as SwapHoldPayload);
+
+          if (progress >= 100) {
+              // Trigger swap
+              gameEventBus.emit(GameEventType.INPUT_SWAP);
+              clearSwapHold();
+          }
+      }, 16);
+  }, [clearSwapHold]);
 
   const startMovementLoop = useCallback(() => {
       if (isLoopRunningRef.current) return;
@@ -159,7 +199,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
                   case 'KeyS': engine.execute(new SetSoftDropCommand(true)); break;
                   case 'Space': engine.execute(new SetPhaseCommand(GamePhase.CONSOLE)); break;
                   case 'KeyW': engine.execute(new SetPhaseCommand(GamePhase.CONSOLE)); break;
-                  case 'KeyR': engine.execute(new SwapPieceCommand()); break;
+                  case 'KeyR': startSwapHold(); break;
               }
           }
       };
@@ -168,14 +208,17 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           heldKeys.current.delete(e.code);
           if (gameState.phase === GamePhase.PERISCOPE) {
               switch(e.code) {
-                  case 'KeyS': 
+                  case 'KeyS':
                       engine.execute(new SetSoftDropCommand(false));
                       break;
+                  case 'KeyR':
+                      clearSwapHold();
+                      break;
                   case 'ArrowLeft': case 'KeyA': case 'ArrowRight': case 'KeyD':
-                      const stillHolding = 
-                          heldKeys.current.has('ArrowLeft') || 
-                          heldKeys.current.has('ArrowRight') || 
-                          heldKeys.current.has('KeyA') || 
+                      const stillHolding =
+                          heldKeys.current.has('ArrowLeft') ||
+                          heldKeys.current.has('ArrowRight') ||
+                          heldKeys.current.has('KeyA') ||
                           heldKeys.current.has('KeyD');
                       if (!stillHolding && dragDirectionRef.current === 0) {
                           stopMovementLoop();
@@ -200,8 +243,9 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           window.removeEventListener('keyup', handleKeyUp);
           window.removeEventListener('wheel', handleWheel);
           stopMovementLoop();
+          clearSwapHold();
       };
-  }, [engine, gameState.phase, gameState.gameOver, startMovementLoop, stopMovementLoop, directionMultiplier]);
+  }, [engine, gameState.phase, gameState.gameOver, startMovementLoop, stopMovementLoop, startSwapHold, clearSwapHold, directionMultiplier]);
 
   // Subscribe to input events from EventBus (replaces callback prop drilling)
   useEffect(() => {

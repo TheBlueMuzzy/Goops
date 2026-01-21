@@ -32,7 +32,8 @@ export enum GameEventType {
     INPUT_SWIPE_UP = 'INPUT_SWIPE_UP',
     INPUT_SOFT_DROP = 'INPUT_SOFT_DROP',
     INPUT_SWAP = 'INPUT_SWAP',
-    INPUT_BLOCK_TAP = 'INPUT_BLOCK_TAP'
+    INPUT_BLOCK_TAP = 'INPUT_BLOCK_TAP',
+    INPUT_SWAP_HOLD = 'INPUT_SWAP_HOLD'  // Keyboard hold-to-swap progress
 }
 
 export interface PopPayload {
@@ -64,4 +65,8 @@ export interface SoftDropPayload {
 export interface BlockTapPayload {
     x: number;
     y: number;
+}
+
+export interface SwapHoldPayload {
+    progress: number;  // 0-100, or -1 to indicate cancelled/inactive
 }

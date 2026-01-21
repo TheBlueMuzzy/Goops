@@ -1,5 +1,5 @@
 // --- Imports ---
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { GameState, PieceState, ComplicationType, GamePhase } from '../types';
 import { VISIBLE_WIDTH, VISIBLE_HEIGHT, COLORS, TOTAL_WIDTH, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 import { normalizeX, getGhostY, getPaletteForRank } from '../utils/gameLogic';
@@ -8,6 +8,8 @@ import { HudMeter } from './HudMeter';
 import { VIEWBOX, BLOCK_SIZE, visXToScreenX } from '../utils/coordinateTransform';
 import { useInputHandlers } from '../hooks/useInputHandlers';
 import { getBlobPath, getContourPath, buildRenderableGroups } from '../utils/goopRenderer';
+import { gameEventBus } from '../core/events/EventBus';
+import { GameEventType, SwapHoldPayload } from '../core/events/GameEvents';
 import './GameBoard.css';
 
 // --- Props Interface ---
@@ -71,6 +73,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       grid,
       pressureRatio
   });
+
+  // --- KEYBOARD SWAP HOLD (via EventBus) ---
+  // Keyboard R key hold emits events from Game.tsx, we show the visual here
+  const [keyboardSwapProgress, setKeyboardSwapProgress] = useState(-1);
+  useEffect(() => {
+      const unsub = gameEventBus.on<SwapHoldPayload>(GameEventType.INPUT_SWAP_HOLD, (p) => {
+          setKeyboardSwapProgress(p?.progress ?? -1);
+      });
+      return unsub;
+  }, []);
 
   const now = Date.now();
 
@@ -481,7 +493,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             )}
         </svg>
 
-        {/* Hold-to-Swap Visual Indicator */}
+        {/* Hold-to-Swap Visual Indicator (Touch) */}
         {holdState.position && holdState.progress > 0 && (
             <div
                 className="absolute z-50 pointer-events-none"
@@ -501,6 +513,33 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                         stroke="white"
                         strokeWidth="4"
                         strokeDasharray={`${(holdState.progress / 100) * 125.6} 125.6`} // 2*PI*r approx 125.6
+                        transform="rotate(-90 30 30)"
+                        strokeLinecap="round"
+                    />
+                </svg>
+            </div>
+        )}
+
+        {/* Hold-to-Swap Visual Indicator (Keyboard R key) */}
+        {keyboardSwapProgress >= 0 && (
+            <div
+                className="absolute z-50 pointer-events-none"
+                style={{
+                    left: '50%',
+                    bottom: '15%',
+                    transform: 'translate(-50%, 0)'
+                }}
+            >
+                <svg width="60" height="60" viewBox="0 0 60 60">
+                    {/* Track */}
+                    <circle cx="30" cy="30" r="20" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="4" />
+                    {/* Filling Arc */}
+                    <circle
+                        cx="30" cy="30" r="20"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="4"
+                        strokeDasharray={`${(keyboardSwapProgress / 100) * 125.6} 125.6`}
                         transform="rotate(-90 30 30)"
                         strokeLinecap="round"
                     />
