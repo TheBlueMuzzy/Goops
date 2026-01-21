@@ -116,7 +116,7 @@ Tasks:
 - Extract GoalManager
 
 Plans:
-- [ ] 11-01: Split tick() into focused methods (target: under 50 lines)
+- [x] 11-01: Split tick() into focused methods (22 lines achieved)
 - [ ] 11-02: Extract ComplicationManager and GoalManager
 
 #### Phase 12: State Management & Events
@@ -167,6 +167,6 @@ Plans:
 | 8. Quick Wins & Memory Fixes | v1.1 | 1/1 | Complete | 2026-01-21 |
 | 9. Art.tsx Decomposition | v1.1 | 3/3 | Complete | 2026-01-21 |
 | 10. GameBoard.tsx Decomposition | v1.1 | 3/3 | Complete | 2026-01-21 |
-| 11. GameEngine Refactor | v1.1 | 0/2 | Not started | - |
+| 11. GameEngine Refactor | v1.1 | 1/2 | In progress | - |
 | 12. State Management & Events | v1.1 | 0/? | Not started | - |
 | 13. Testing & Documentation | v1.1 | 0/? | Not started | - |

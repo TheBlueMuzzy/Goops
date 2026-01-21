@@ -456,19 +456,24 @@ export class GameEngine {
         });
     }
 
-    // --- Main Loop ---
+    // --- Tick Sub-Methods ---
 
-    public tick(dt: number) {
-        if (!this.isSessionActive || this.state.gameOver || this.state.isPaused) return;
-        
-        // Always run timers if not paused
+    /**
+     * Handle timer countdown. Returns false if game ended (caller should stop processing).
+     */
+    private tickTimer(dt: number): boolean {
         this.state.timeLeft = Math.max(0, this.state.timeLeft - dt);
         if (this.state.timeLeft <= 0) {
             this.finalizeGame();
-            return;
+            return false;
         }
+        return true;
+    }
 
-        // Goals Spawn
+    /**
+     * Spawn goal marks at regular intervals.
+     */
+    private tickGoals(): void {
         if (this.state.goalsCleared < this.state.goalsTarget) {
             if (Date.now() - this.lastGoalSpawnTime > GOAL_SPAWN_INTERVAL) {
                 const currentRank = calculateRankDetails(this.initialTotalScore + this.state.score).rank;
@@ -480,12 +485,15 @@ export class GameEngine {
                 this.lastGoalSpawnTime = Date.now();
             }
         }
-        
-        this.checkComplications(dt);
+    }
 
-        // CONTROLS heat dissipation: drains when NOT actively rotating
+    /**
+     * Handle CONTROLS heat dissipation when not actively rotating.
+     */
+    private tickHeat(dt: number): void {
         const startingRank = calculateRankDetails(this.initialTotalScore).rank;
         const ctrlConfig = COMPLICATION_CONFIG[ComplicationType.CONTROLS];
+
         if (isComplicationUnlocked(ComplicationType.CONTROLS, startingRank) && this.state.controlsHeat > 0) {
             const now = Date.now();
             const lastRotation = this.state.rotationTimestamps.length > 0
@@ -499,123 +507,167 @@ export class GameEngine {
                 this.state.controlsHeat = Math.max(0, this.state.controlsHeat - (drainRate * dt / 1000));
             }
         }
+    }
 
-        // Stability upgrade removed - use base INITIAL_SPEED
+    /**
+     * Update falling blocks (gravity after pop).
+     */
+    private tickFallingBlocks(dt: number): void {
+        if (this.state.fallingBlocks.length === 0) return;
+
         const gameSpeed = INITIAL_SPEED;
+        const { active, landed } = updateFallingBlocks(this.state.fallingBlocks, this.state.grid, dt, gameSpeed);
 
-        // Falling Blocks
-        if (this.state.fallingBlocks.length > 0) {
-            const { active, landed } = updateFallingBlocks(this.state.fallingBlocks, this.state.grid, dt, gameSpeed);
-            
-            if (landed.length > 0) {
-                gameEventBus.emit(GameEventType.PIECE_DROPPED);
-                const newGrid = this.state.grid.map(row => [...row]);
-                let landUpdates = false;
-                
-                landed.forEach(b => {
-                    if (b.y >= 0 && b.y < TOTAL_HEIGHT) {
-                        newGrid[Math.floor(b.y)][b.x] = { ...b.data, timestamp: Date.now() }; 
-                        landUpdates = true;
-                    }
-                });
+        if (landed.length > 0) {
+            gameEventBus.emit(GameEventType.PIECE_DROPPED);
+            const newGrid = this.state.grid.map(row => [...row]);
+            let landUpdates = false;
 
-                if (landUpdates) {
-                     this.state.grid = updateGroups(newGrid);
-                     this.state.fallingBlocks = active;
-                } else {
-                     this.state.fallingBlocks = active;
+            landed.forEach(b => {
+                if (b.y >= 0 && b.y < TOTAL_HEIGHT) {
+                    newGrid[Math.floor(b.y)][b.x] = { ...b.data, timestamp: Date.now() };
+                    landUpdates = true;
                 }
-            } else {
-                this.state.fallingBlocks = active;
+            });
+
+            if (landUpdates) {
+                this.state.grid = updateGroups(newGrid);
             }
+            this.state.fallingBlocks = active;
+        } else {
+            this.state.fallingBlocks = active;
+        }
+    }
+
+    /**
+     * Handle active piece gravity, locking, and LIGHTS complication trigger.
+     */
+    private tickActivePiece(dt: number): void {
+        if (!this.state.activePiece) return;
+
+        const gameSpeed = INITIAL_SPEED;
+        const gravitySpeed = this.isSoftDropping
+            ? gameSpeed / SOFT_DROP_FACTOR
+            : gameSpeed;
+
+        const moveAmount = dt / gravitySpeed;
+        const nextY = this.state.activePiece.y + moveAmount;
+
+        // Maintain Grid X based on Screen X and Board Offset
+        const currentGridX = getGridX(this.state.activePiece.screenX, this.state.boardOffset);
+        const nextPiece = { ...this.state.activePiece, y: nextY, x: currentGridX };
+
+        if (checkCollision(this.state.grid, nextPiece, this.state.boardOffset)) {
+            if (this.lockStartTime === null) {
+                this.lockStartTime = Date.now();
+            }
+
+            const lockedTime = Date.now() - this.lockStartTime;
+            const effectiveLockDelay = this.isSoftDropping ? 50 : LOCK_DELAY_MS;
+
+            if (lockedTime > effectiveLockDelay) {
+                this.lockActivePiece();
+            }
+        } else {
+            this.state.activePiece = nextPiece;
+            this.lockStartTime = null;
+        }
+    }
+
+    /**
+     * Lock the active piece, handle goals, check LIGHTS trigger, spawn new piece.
+     */
+    private lockActivePiece(): void {
+        if (!this.state.activePiece) return;
+
+        const y = getGhostY(this.state.grid, this.state.activePiece, this.state.boardOffset);
+        const finalPiece = { ...this.state.activePiece, y };
+
+        const { grid: newGrid, consumedGoals, destroyedGoals } = mergePiece(this.state.grid, finalPiece, this.state.goalMarks);
+
+        if (consumedGoals.length > 0 || destroyedGoals.length > 0) {
+            this.handleGoals(consumedGoals, destroyedGoals, finalPiece);
         }
 
-        // Active Piece Gravity
-        if (this.state.activePiece) {
-            const gravitySpeed = this.isSoftDropping 
-                ? gameSpeed / SOFT_DROP_FACTOR 
-                : gameSpeed;
-                
-            const moveAmount = dt / gravitySpeed;
-            const nextY = this.state.activePiece.y + moveAmount;
-            
-            // Maintain Grid X based on Screen X and Board Offset
-            // This ensures if board moved during tick (via commands), piece stays screen-static
-            const currentGridX = getGridX(this.state.activePiece.screenX, this.state.boardOffset);
-            
-            const nextPiece = { ...this.state.activePiece, y: nextY, x: currentGridX };
-            
-            if (checkCollision(this.state.grid, nextPiece, this.state.boardOffset)) {
-                if (this.lockStartTime === null) {
-                    this.lockStartTime = Date.now();
-                }
+        // LIGHTS complication trigger
+        this.checkLightsTrigger(newGrid);
 
-                const lockedTime = Date.now() - this.lockStartTime;
-                const effectiveLockDelay = this.isSoftDropping ? 50 : LOCK_DELAY_MS;
+        gameEventBus.emit(GameEventType.PIECE_DROPPED);
+        this.state.grid = newGrid;
 
-                if (lockedTime > effectiveLockDelay) {
-                    // Lock it
-                    const y = getGhostY(this.state.grid, this.state.activePiece, this.state.boardOffset);
-                    const finalPiece = { ...this.state.activePiece, y };
-                    
-                    const { grid: newGrid, consumedGoals, destroyedGoals } = mergePiece(this.state.grid, finalPiece, this.state.goalMarks);
-                    
-                    if (consumedGoals.length > 0 || destroyedGoals.length > 0) {
-                        this.handleGoals(consumedGoals, destroyedGoals, finalPiece);
-                    }
+        this.spawnNewPiece(undefined, newGrid);
+        this.state.combo = 0;
+        this.isSoftDropping = false;
+    }
 
-                    // LIGHTS complication trigger
-                    const lightsStartingRank = calculateRankDetails(this.initialTotalScore).rank;
-                    const hasLightsActive = this.state.complications.some(c => c.type === ComplicationType.LIGHTS);
-                    const lightsOnCooldown = Date.now() < this.state.complicationCooldowns[ComplicationType.LIGHTS];
-                    const lightsConfig = COMPLICATION_CONFIG[ComplicationType.LIGHTS];
+    /**
+     * Check if LIGHTS complication should trigger on piece lock.
+     */
+    private checkLightsTrigger(newGrid: GridCell[][]): void {
+        const lightsStartingRank = calculateRankDetails(this.initialTotalScore).rank;
+        const hasLightsActive = this.state.complications.some(c => c.type === ComplicationType.LIGHTS);
+        const lightsOnCooldown = Date.now() < this.state.complicationCooldowns[ComplicationType.LIGHTS];
+        const lightsConfig = COMPLICATION_CONFIG[ComplicationType.LIGHTS];
 
-                    if (isComplicationUnlocked(ComplicationType.LIGHTS, lightsStartingRank) && !hasLightsActive && !lightsOnCooldown) {
-                        // Find highest goop row (lowest Y value with any block)
-                        let highestGoopY = TOTAL_HEIGHT;
-                        for (let y = 0; y < TOTAL_HEIGHT; y++) {
-                            for (let x = 0; x < TOTAL_WIDTH; x++) {
-                                if (newGrid[y][x]) {
-                                    highestGoopY = y;
-                                    break;
-                                }
-                            }
-                            if (highestGoopY < TOTAL_HEIGHT) break;
-                        }
-
-                        // Calculate pressure line Y position
-                        const pressureRatio = Math.max(0, 1 - (this.state.timeLeft / this.maxTime));
-                        const waterHeightBlocks = 1 + (pressureRatio * (VISIBLE_HEIGHT - 1));
-                        const pressureLineY = BUFFER_HEIGHT + (VISIBLE_HEIGHT - waterHeightBlocks);
-
-                        // Gap = rows between pressure line and highest goop
-                        const gap = highestGoopY - pressureLineY;
-
-                        // Random threshold from config range
-                        const gapRange = lightsConfig.pressureGapMax - lightsConfig.pressureGapMin + 1;
-                        const gapThreshold = Math.floor(Math.random() * gapRange) + lightsConfig.pressureGapMin;
-
-                        // Trigger chance with upgrade modifier
-                        const lightsLevel = this.powerUps['LIGHTS'] || 0;
-                        const triggerChance = lightsConfig.triggerChanceBase - (lightsConfig.triggerUpgradeEffect * lightsLevel);
-                        if (gap >= gapThreshold && Math.random() < triggerChance) {
-                            this.spawnComplication(ComplicationType.LIGHTS);
-                        }
-                    }
-
-                    gameEventBus.emit(GameEventType.PIECE_DROPPED);
-                    this.state.grid = newGrid;
-
-                    this.spawnNewPiece(undefined, newGrid);
-                    this.state.combo = 0;
-                    this.isSoftDropping = false;
-                }
-            } else {
-                this.state.activePiece = nextPiece;
-                this.lockStartTime = null; 
-            }
+        if (!isComplicationUnlocked(ComplicationType.LIGHTS, lightsStartingRank) || hasLightsActive || lightsOnCooldown) {
+            return;
         }
-        
+
+        // Find highest goop row (lowest Y value with any block)
+        let highestGoopY = TOTAL_HEIGHT;
+        for (let y = 0; y < TOTAL_HEIGHT; y++) {
+            for (let x = 0; x < TOTAL_WIDTH; x++) {
+                if (newGrid[y][x]) {
+                    highestGoopY = y;
+                    break;
+                }
+            }
+            if (highestGoopY < TOTAL_HEIGHT) break;
+        }
+
+        // Calculate pressure line Y position
+        const pressureRatio = Math.max(0, 1 - (this.state.timeLeft / this.maxTime));
+        const waterHeightBlocks = 1 + (pressureRatio * (VISIBLE_HEIGHT - 1));
+        const pressureLineY = BUFFER_HEIGHT + (VISIBLE_HEIGHT - waterHeightBlocks);
+
+        // Gap = rows between pressure line and highest goop
+        const gap = highestGoopY - pressureLineY;
+
+        // Random threshold from config range
+        const gapRange = lightsConfig.pressureGapMax - lightsConfig.pressureGapMin + 1;
+        const gapThreshold = Math.floor(Math.random() * gapRange) + lightsConfig.pressureGapMin;
+
+        // Trigger chance with upgrade modifier
+        const lightsLevel = this.powerUps['LIGHTS'] || 0;
+        const triggerChance = lightsConfig.triggerChanceBase - (lightsConfig.triggerUpgradeEffect * lightsLevel);
+        if (gap >= gapThreshold && Math.random() < triggerChance) {
+            this.spawnComplication(ComplicationType.LIGHTS);
+        }
+    }
+
+    // --- Main Loop ---
+
+    public tick(dt: number) {
+        if (!this.isSessionActive || this.state.gameOver || this.state.isPaused) return;
+
+        // Timer - stop if game ended
+        if (!this.tickTimer(dt)) return;
+
+        // Goals
+        this.tickGoals();
+
+        // Complications check
+        this.checkComplications(dt);
+
+        // Heat dissipation
+        this.tickHeat(dt);
+
+        // Falling blocks
+        this.tickFallingBlocks(dt);
+
+        // Active piece gravity
+        this.tickActivePiece(dt);
+
         this.emitChange();
     }
 }
