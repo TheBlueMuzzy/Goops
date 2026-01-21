@@ -126,4 +126,89 @@ describe('coordinateTransform', () => {
       expect(isInVisibleRange(100)).toBe(false);
     });
   });
+
+  // ============================================================================
+  // Edge case tests added in Phase 13 for comprehensive coverage
+  // ============================================================================
+
+  describe('visualToGrid edge cases', () => {
+    it('handles offset exactly at TOTAL_WIDTH boundary', () => {
+      const { col } = visualToGrid(5, 10, TOTAL_WIDTH);
+      // 5 + 30 = 35, wrapped to TOTAL_WIDTH (30) = 5
+      expect(col).toBe(5);
+    });
+
+    it('handles large negative offset (-30)', () => {
+      const { col } = visualToGrid(5, 10, -30);
+      // 5 + (-30) = -25, wrapped: ((-25 % 30) + 30) % 30 = 5
+      expect(col).toBe(5);
+    });
+
+    it('handles large negative offset (-60)', () => {
+      const { col } = visualToGrid(5, 10, -60);
+      // 5 + (-60) = -55, wrapped: ((-55 % 30) + 30) % 30 = 5
+      expect(col).toBe(5);
+    });
+
+    it('handles large positive offset (60)', () => {
+      const { col } = visualToGrid(5, 10, 60);
+      // 5 + 60 = 65, wrapped to 30 = 5
+      expect(col).toBe(5);
+    });
+
+    it('handles large positive offset (90)', () => {
+      const { col } = visualToGrid(5, 10, 90);
+      // 5 + 90 = 95, wrapped to 30 = 5
+      expect(col).toBe(5);
+    });
+  });
+
+  describe('svgToVisual edge cases', () => {
+    it('handles SVG x at left VIEWBOX boundary', () => {
+      const { visX } = svgToVisual(VIEWBOX.x, 0);
+      // At left edge, visX should be approximately 0
+      expect(visX).toBeGreaterThanOrEqual(-0.5);
+      expect(visX).toBeLessThan(1);
+    });
+
+    it('handles SVG x at right VIEWBOX boundary', () => {
+      const { visX } = svgToVisual(VIEWBOX.x + VIEWBOX.w, 0);
+      // At right edge, visX should be approximately VISIBLE_WIDTH
+      expect(visX).toBeGreaterThan(VISIBLE_WIDTH - 1);
+      expect(visX).toBeLessThanOrEqual(VISIBLE_WIDTH + 0.5);
+    });
+
+    it('handles SVG y at top bound (y=0)', () => {
+      const { visY } = svgToVisual(0, 0);
+      // y=0 maps to BUFFER_HEIGHT
+      expect(visY).toBe(BUFFER_HEIGHT);
+    });
+
+    it('handles SVG y at bottom bound', () => {
+      const { visY } = svgToVisual(0, VIEWBOX.h);
+      // y at max height maps to BUFFER_HEIGHT + visible rows
+      expect(visY).toBeCloseTo(BUFFER_HEIGHT + VIEWBOX.h / 30, 1);
+    });
+  });
+
+  describe('precision tests', () => {
+    it('maintains precision for fractional column values', () => {
+      const fractionalValues = [0.25, 0.5, 0.75, 3.33, 6.67, 9.99];
+      for (const visX of fractionalValues) {
+        const screenX = visXToScreenX(visX);
+        const recovered = screenXToVisX(screenX);
+        expect(Math.abs(recovered - visX)).toBeLessThan(0.001);
+      }
+    });
+
+    it('maintains precision at extreme screen X values', () => {
+      // Test values near the edges
+      const edgeValues = [0.001, 0.01, VISIBLE_WIDTH - 0.01, VISIBLE_WIDTH - 0.001];
+      for (const visX of edgeValues) {
+        const screenX = visXToScreenX(visX);
+        const recovered = screenXToVisX(screenX);
+        expect(Math.abs(recovered - visX)).toBeLessThan(0.001);
+      }
+    });
+  });
 });
