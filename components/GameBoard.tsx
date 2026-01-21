@@ -1,13 +1,12 @@
 
-import React, { useMemo, useCallback, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { GameState, FallingBlock, GridCell, PieceState, ComplicationType, GamePhase } from '../types';
 import { VISIBLE_WIDTH, VISIBLE_HEIGHT, COLORS, TOTAL_WIDTH, TOTAL_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 import { normalizeX, getGhostY, getPaletteForRank } from '../utils/gameLogic';
-import { gameEventBus } from '../core/events/EventBus';
-import { GameEventType } from '../core/events/GameEvents';
 import { isMobile } from '../utils/device';
 import { HudMeter } from './HudMeter';
-import { VIEWBOX, BLOCK_SIZE, ANGLE_PER_COL, CYL_RADIUS, visXToScreenX, screenXToVisX } from '../utils/coordinateTransform';
+import { VIEWBOX, BLOCK_SIZE, visXToScreenX } from '../utils/coordinateTransform';
+import { useInputHandlers } from '../hooks/useInputHandlers';
 
 interface GameBoardProps {
   state: GameState;
@@ -26,9 +25,7 @@ interface GameBoardProps {
   complicationCooldowns?: Record<ComplicationType, number>;  // Cooldown timestamps
 }
 
-const RADIUS = 8; 
-const HOLD_DURATION = 1000; // 1.0s for hold-to-swap
-const HOLD_DELAY = 250;     // 0.25s delay before hold starts
+const RADIUS = 8;
 
 // Helper interface for renderable items
 interface RenderableCell {
@@ -49,12 +46,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     laserCapacitor = 100, controlsHeat = 0, complicationCooldowns
 }) => {
   const { grid, boardOffset, activePiece, fallingBlocks, floatingTexts, timeLeft, goalMarks } = state;
-  const [highlightedGroupId, setHighlightedGroupId] = useState<string | null>(null);
-  const [shakingGroupId, setShakingGroupId] = useState<string | null>(null);
-  
-  // Hold-to-Swap Visual State
-  const [holdProgress, setHoldProgress] = useState(0);
-  const [holdPosition, setHoldPosition] = useState<{x: number, y: number} | null>(null);
 
   const palette = useMemo(() => getPaletteForRank(rank), [rank]);
 
@@ -64,8 +55,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     return Math.max(0, 1 - (timeLeft / maxTime));
   }, [timeLeft, maxTime]);
 
-  const pressureHue = Math.max(0, 120 * (1 - pressureRatio)); 
-  const pressureColor = `hsla(${pressureHue}, 100%, 50%, 0.15)`; 
+  const pressureHue = Math.max(0, 120 * (1 - pressureRatio));
+  const pressureColor = `hsla(${pressureHue}, 100%, 50%, 0.15)`;
 
   const waterHeightBlocks = 1 + (pressureRatio * (VISIBLE_HEIGHT - 1));
 
@@ -90,249 +81,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       return { x: pctX, y: pctY };
   }, [boardOffset]); // Only boardOffset changes - vbX/vbY/vbW/vbH are constants
 
-  // --- UNIFIED INPUT HANDLING ---
-  const pointerRef = useRef<{
-      startX: number;
-      startY: number;
-      startTime: number;
-      isDragLocked: boolean;
-      lockedAxis: 'H' | 'V' | null;
-      activePointerId: number;
-      actionConsumed: boolean; // True if hold-swap triggered
-  } | null>(null);
-  
-  const holdIntervalRef = useRef<number | null>(null);
-
-  // Helper to normalize input to Viewport Coords for block picking
-  const getViewportCoords = (clientX: number, clientY: number, target: Element) => {
-      const container = target as HTMLElement;
-      const rect = container.getBoundingClientRect();
-      const borderLeft = container.clientLeft || 0;
-      const borderTop = container.clientTop || 0;
-
-      const relX = clientX - rect.left - borderLeft;
-      const relY = clientY - rect.top - borderTop;
-      
-      const contentW = container.clientWidth;
-      const contentH = container.clientHeight;
-      
-      const scaleX = contentW / vbW;
-      const scaleY = contentH / vbH;
-      const scale = Math.min(scaleX, scaleY);
-      const renderedW = vbW * scale;
-      const offsetX = (contentW - renderedW) / 2;
-      
-      const svgX = vbX + (relX - offsetX) / scale;
-      const svgY = vbY + relY / scale;
-
-      const rawVisX = screenXToVisX(svgX);
-      const rawVisY = svgY / BLOCK_SIZE + BUFFER_HEIGHT;
-
-      return { vx: rawVisX, vy: rawVisY, svgX, svgY, relX, contentW, relY };
-  };
-
-  const getHitData = (vx: number, vy: number) => {
-      if (vx >= 0 && vx < VISIBLE_WIDTH) {
-          const visX = Math.floor(vx);
-          const gridX = normalizeX(visX + boardOffset);
-          const gridY = Math.floor(vy);
-          if (gridY >= 0 && gridY < TOTAL_HEIGHT) {
-              const cell = grid[gridY][gridX];
-              return { type: 'BLOCK', x: gridX, y: gridY, cell };
-          }
-      }
-      return { type: 'EMPTY' };
-  };
-
-  const clearHold = () => {
-      if (holdIntervalRef.current) {
-          clearInterval(holdIntervalRef.current);
-          holdIntervalRef.current = null;
-      }
-      setHoldProgress(0);
-      setHoldPosition(null);
-  };
-
-  // Cleanup hold interval on unmount to prevent memory leak
-  useEffect(() => {
-      return () => {
-          if (holdIntervalRef.current) {
-              clearInterval(holdIntervalRef.current);
-          }
-      };
-  }, []);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-      if (pointerRef.current) return; // Ignore multitouch for gameplay controls
-      e.currentTarget.setPointerCapture(e.pointerId);
-      
-      const { relX, relY, vx, vy } = getViewportCoords(e.clientX, e.clientY, e.currentTarget);
-
-      pointerRef.current = {
-          startX: e.clientX,
-          startY: e.clientY,
-          startTime: Date.now(),
-          isDragLocked: false,
-          lockedAxis: null,
-          activePointerId: e.pointerId,
-          actionConsumed: false
-      };
-
-      // Start Hold Timer
-      setHoldPosition({ x: relX, y: relY });
-      setHoldProgress(0);
-      
-      const startHoldTime = Date.now();
-      holdIntervalRef.current = window.setInterval(() => {
-          const now = Date.now();
-          const totalElapsed = now - startHoldTime;
-
-          // Don't start filling/logic until delay has passed
-          if (totalElapsed < HOLD_DELAY) return;
-
-          const effectiveElapsed = totalElapsed - HOLD_DELAY;
-          const progress = Math.min(100, (effectiveElapsed / HOLD_DURATION) * 100);
-          setHoldProgress(progress);
-
-          if (progress >= 100) {
-              // Trigger Swap
-              if (pointerRef.current) pointerRef.current.actionConsumed = true;
-              onSwap();
-              clearHold();
-              // Haptic feedback if available
-              if (navigator.vibrate) navigator.vibrate(50);
-          }
-      }, 16);
-
-      // Visual feedback for tapping blocks
-      const hit = getHitData(vx, vy);
-      
-      if (hit.type === 'BLOCK' && hit.cell) {
-          const totalDuration = hit.cell.groupSize * PER_BLOCK_DURATION;
-          const elapsed = Date.now() - hit.cell.timestamp;
-          const thresholdY = (TOTAL_HEIGHT - 1) - (pressureRatio * (VISIBLE_HEIGHT - 1));
-          
-          if (hit.cell.groupMinY < thresholdY) {
-              setShakingGroupId(hit.cell.groupId);
-              gameEventBus.emit(GameEventType.ACTION_REJECTED);
-              setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.groupId ? null : prev), 300);
-          } else if (elapsed < totalDuration) {
-              setShakingGroupId(hit.cell.groupId);
-              gameEventBus.emit(GameEventType.ACTION_REJECTED);
-              setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.groupId ? null : prev), 300);
-          } else {
-              setHighlightedGroupId(hit.cell.groupId);
-          }
-      }
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-      if (!pointerRef.current || pointerRef.current.activePointerId !== e.pointerId) return;
-      
-      const { startX, startY, isDragLocked } = pointerRef.current;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      const absDx = Math.abs(dx);
-      const absDy = Math.abs(dy);
-
-      // Thresholds
-      const DRAG_LOCK_THRESHOLD = 10;
-      
-      if (!isDragLocked) {
-          if (absDx > DRAG_LOCK_THRESHOLD || absDy > DRAG_LOCK_THRESHOLD) {
-              // Movement detected: Cancel Hold-to-Swap
-              clearHold();
-              pointerRef.current.isDragLocked = true;
-              setHighlightedGroupId(null); // Cancel click highlight
-              
-              if (absDx > absDy) {
-                  pointerRef.current.lockedAxis = 'H';
-              } else {
-                  pointerRef.current.lockedAxis = 'V';
-                  // Vertical Drag Start
-                  if (dy > 0) {
-                      onSoftDrop(true); // Drag Down = Continuous Drop
-                  }
-              }
-          }
-      }
-
-      if (pointerRef.current.isDragLocked) {
-          const axis = pointerRef.current.lockedAxis;
-          
-          if (axis === 'H') {
-              // Horizontal Drag (Joystick)
-              if (dx < -20) {
-                  onDragInput(1);
-              } else if (dx > 20) {
-                  onDragInput(-1);
-              } else {
-                  onDragInput(0); // Deadzone
-              }
-          } else if (axis === 'V') {
-              // Vertical Drag
-              if (dy > 20) {
-                  onSoftDrop(true);
-              } else {
-                  onSoftDrop(false);
-              }
-          }
-      }
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-      if (!pointerRef.current || pointerRef.current.activePointerId !== e.pointerId) return;
-      
-      const { startTime, isDragLocked, actionConsumed } = pointerRef.current;
-      const dt = Date.now() - startTime;
-      const dx = e.clientX - pointerRef.current.startX;
-      const dy = e.clientY - pointerRef.current.startY;
-      
-      // Cleanup
-      clearHold();
-      onSoftDrop(false);
-      onDragInput(0);
-      setHighlightedGroupId(null);
-      pointerRef.current = null;
-      e.currentTarget.releasePointerCapture(e.pointerId);
-
-      // If hold action triggered swap, ignore tap logic
-      if (actionConsumed) return;
-
-      // Gesture Resolution
-      if (!isDragLocked) {
-          // TAP (Hit nothing or movement < threshold)
-          const { vx, vy, relX, contentW } = getViewportCoords(e.clientX, e.clientY, e.currentTarget);
-          const hit = getHitData(vx, vy);
-
-          if (hit.type === 'BLOCK' && hit.cell) {
-              onBlockTap(hit.x!, hit.y!);
-          } else {
-              // Empty Space Logic
-              // Left half = Rotate CCW (same as Q)
-              // Right half = Rotate CW (same as E)
-              if (relX < contentW / 2) {
-                  onRotate(-1); 
-              } else {
-                  onRotate(1);
-              }
-          }
-      } else {
-          // SWIPE (Quick movement)
-          if (dt < 300) {
-              if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
-                  if (dy < 0) {
-                      // Swipe Up -> Console
-                      onSwipeUp();
-                  } else {
-                      // Swipe Down -> Fast Drop Pulse
-                      onSoftDrop(true);
-                      setTimeout(() => onSoftDrop(false), 150);
-                  }
-              }
-          }
-      }
-  };
+  // --- INPUT HANDLING (via hook) ---
+  const { handlers, holdState, highlightedGroupId, shakingGroupId } = useInputHandlers({
+      callbacks: { onBlockTap, onRotate, onDragInput, onSwipeUp, onSoftDrop, onSwap },
+      boardOffset,
+      grid,
+      pressureRatio
+  });
 
   // OPTIMIZATION: Simplify animations based on isMobile
   const style = useMemo(() => `
@@ -542,10 +297,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         // OPTIMIZATION: 'contain: strict' improves paint performance by isolating the board
         className="w-full h-full bg-slate-950 relative shadow-2xl border-x-4 border-slate-900 overflow-hidden select-none touch-none"
         style={{ touchAction: 'none', contain: 'strict' }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
+        onPointerDown={handlers.onPointerDown}
+        onPointerMove={handlers.onPointerMove}
+        onPointerUp={handlers.onPointerUp}
+        onPointerLeave={handlers.onPointerUp}
     >
         {/* OPTIMIZATION: CRT Scanline disabled on mobile */}
         {!isMobile && (
@@ -914,12 +669,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         </svg>
 
         {/* Hold-to-Swap Visual Indicator */}
-        {holdPosition && holdProgress > 0 && (
+        {holdState.position && holdState.progress > 0 && (
             <div
                 className="absolute z-50 pointer-events-none"
                 style={{
-                    left: holdPosition.x,
-                    top: holdPosition.y,
+                    left: holdState.position.x,
+                    top: holdState.position.y,
                     transform: 'translate(-50%, -50%)'
                 }}
             >
@@ -932,7 +687,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                         fill="none"
                         stroke="white"
                         strokeWidth="4"
-                        strokeDasharray={`${(holdProgress / 100) * 125.6} 125.6`} // 2*PI*r approx 125.6
+                        strokeDasharray={`${(holdState.progress / 100) * 125.6} 125.6`} // 2*PI*r approx 125.6
                         transform="rotate(-90 30 30)"
                         strokeLinecap="round"
                     />
