@@ -207,21 +207,32 @@ None
 ## Session Continuity
 
 Last session: 2026-01-20
-Stopped at: Completed 07-01-PLAN.md + Band System design
-Resume with: Execute Plan 07-02 (Upgrade Effects Implementation)
+Stopped at: Completed 07-01 upgrade system redesign (passives + actives)
+Resume with: Wire passive upgrade effects into gameplay
 Next action: `/gsd:execute-plan .planning/phases/07-system-upgrades/07-02-PLAN.md`
 
 **Phase 7 Plans:**
-- 07-01: System Upgrade Definitions - COMPLETE
-- 07-02: Upgrade Effects Implementation - NEXT
+- 07-01: System Upgrade Definitions - COMPLETE (redesigned with passives/actives)
+- 07-02: Upgrade Effects Implementation - NEXT (needs update for new upgrade IDs)
 - 07-03: Upgrade UI Panel (has human verification checkpoint)
 - 07-04: Max-Level Minigame Effects (has human verification checkpoint)
 
 **Key decisions this session:**
-- SYSTEM_UPGRADE_CONFIG with LASER/LIGHTS/CONTROLS definitions
-- Rank Band System designed (see PRD.md for full details)
-- Focus on ranks 0-20 for now
-- Future upgrade idea: Goop Penalty Reduction (reduces end-of-session penalty)
+- Two upgrade types: Passives (always-on) and Actives (equippable, charged by crack-goop)
+- Upgrades revealed every 5 ranks: passives at X0-X4, actives at X5
+- Rank 1-4: Complication passives (LASER, LIGHTS, CONTROLS, AUTO_POPPER)
+- Rank 5: First active (COOLDOWN_BOOSTER - extends malfunction cooldowns)
+- Rank 10: JUNK_UNIFORMITY passive (Band 1)
+- Rank 15: GOOPER active (drops same-color junk)
+- Rank 20: ACTIVE_SLOT_2 passive (equip 2 actives)
+- Active abilities charge via crack-goop pops (glowing units)
+- Active HUD buttons go on right side of periscope, below heat meter
+
+**Infrastructure added:**
+- types.ts: UpgradeType, UpgradeConfig, equippedActives, activeCharges
+- constants.ts: UPGRADES object with 8 upgrades defined
+- storage.ts: SaveData migration for new fields
+- GameEngine.ts: activeCharges, crackGoopPopped in GameState
 
 ## Quick Commands
 
