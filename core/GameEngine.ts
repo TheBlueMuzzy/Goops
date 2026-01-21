@@ -7,24 +7,23 @@ import {
 } from '../constants';
 import { COMPLICATION_CONFIG, isComplicationUnlocked } from '../complicationConfig';
 import {
-    spawnPiece, checkCollision, mergePiece, getRotatedCells, normalizeX, findContiguousGroup,
+    spawnPiece, checkCollision, mergePiece, getRotatedCells, findContiguousGroup,
     updateGroups, getGhostY, updateFallingBlocks, getFloatingBlocks,
     calculateHeightBonus, calculateOffScreenBonus, calculateMultiplier, calculateAdjacencyBonus, createInitialGrid,
-    spawnGoalMark, spawnGoalBurst, getPaletteForRank
+    getPaletteForRank
 } from '../utils/gameLogic';
 import { getGridX } from '../utils/coordinates';
 import { calculateRankDetails } from '../utils/progression';
 import { gameEventBus } from './events/EventBus';
 import { GameEventType } from './events/GameEvents';
-import { audio } from '../utils/audio';
 import { Command } from './commands/Command';
 import { complicationManager } from './ComplicationManager';
+import { goalManager } from './GoalManager';
 
 const INITIAL_SPEED = 800; // ms per block
 const MIN_SPEED = 100;
 const SOFT_DROP_FACTOR = 6; // Reduced from 20 to make it feel less like a hard drop
 const LOCK_DELAY_MS = 500;
-const GOAL_SPAWN_INTERVAL = 5000;
 
 export class GameEngine {
     public state: GameState;
@@ -375,26 +374,13 @@ export class GameEngine {
     }
 
     public handleGoals(consumed: string[], destroyed: string[], piece: ActivePiece) {
-        const goalsToRemove = [...consumed, ...destroyed];
-        this.state.goalMarks = this.state.goalMarks.filter(g => !goalsToRemove.includes(g.id));
-
-        consumed.forEach(id => {
-            const cx = normalizeX(piece.x); 
-            const cy = Math.floor(piece.y);
-            const textId = Math.random().toString(36).substr(2, 9);
-            this.state.floatingTexts.push({
-                id: textId, text: 'CAPTURED!', x: cx, y: cy, life: 1, color: '#facc15'
-            });
-            setTimeout(() => {
-                this.state.floatingTexts = this.state.floatingTexts.filter(ft => ft.id !== textId);
-                this.emitChange();
-            }, 1000);
-            gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });
-        });
-
-        destroyed.forEach(id => {
-            gameEventBus.emit(GameEventType.ACTION_REJECTED);
-        });
+        goalManager.handleGoals(
+            this.state,
+            consumed,
+            destroyed,
+            piece,
+            () => this.emitChange()
+        );
     }
 
     // --- Tick Sub-Methods ---
@@ -415,16 +401,19 @@ export class GameEngine {
      * Spawn goal marks at regular intervals.
      */
     private tickGoals(): void {
-        if (this.state.goalsCleared < this.state.goalsTarget) {
-            if (Date.now() - this.lastGoalSpawnTime > GOAL_SPAWN_INTERVAL) {
-                const currentRank = calculateRankDetails(this.initialTotalScore + this.state.score).rank;
-                const newGoal = spawnGoalMark(this.state.grid, this.state.goalMarks, currentRank, this.state.timeLeft, this.maxTime);
-                if (newGoal) {
-                    this.state.goalMarks.push(newGoal);
-                    audio.playPop(1);
-                }
-                this.lastGoalSpawnTime = Date.now();
-            }
+        const { goal, newLastSpawnTime } = goalManager.trySpawnGoal(
+            this.state,
+            this.state.grid,
+            this.initialTotalScore,
+            this.state.timeLeft,
+            this.maxTime,
+            this.lastGoalSpawnTime
+        );
+
+        this.lastGoalSpawnTime = newLastSpawnTime;
+
+        if (goal) {
+            this.state.goalMarks.push(goal);
         }
     }
 
