@@ -11,6 +11,16 @@ import { GameEventType, RotatePayload, DragPayload, SoftDropPayload, BlockTapPay
 import { calculateRankDetails } from './utils/progression';
 import { MoveBoardCommand, RotatePieceCommand, SetSoftDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, BlockTapCommand } from './core/commands/actions';
 
+// STATE ARCHITECTURE:
+// - Game state flows down: useGameEngine → state prop → child components
+// - Input events flow up: useInputHandlers → EventBus → Game.tsx → Commands
+// - UI callbacks go to App.tsx: onOpenSettings, onSetRank, etc. (parent control)
+//
+// Prop patterns:
+// - GameBoard: receives state only, no callbacks (events via EventBus)
+// - ConsoleView: receives state + engine + App.tsx callbacks (appropriate)
+// - Controls: receives minimal state for HUD display
+
 interface GameProps {
   onExit: () => void;
   onRunComplete: (score: number) => void;
