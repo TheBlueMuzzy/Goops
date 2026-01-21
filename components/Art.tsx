@@ -1,8 +1,21 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { EndGameScreen } from './EndGameScreen';
-import { ConsoleSlider } from './ConsoleSlider';
-import { GameStats, Complication, ComplicationType } from '../types';
+import { GameStats, Complication } from '../types';
+
+// Minigame hooks
+import { useLaserMinigame } from '../hooks/useLaserMinigame';
+import { useLightsMinigame } from '../hooks/useLightsMinigame';
+import { useControlsMinigame } from '../hooks/useControlsMinigame';
+
+// Minigame panel components
+import { LaserPanel } from './MiniGames/LaserPanel';
+import { LightsPanel } from './MiniGames/LightsPanel';
+import { ControlsPanel } from './MiniGames/ControlsPanel';
+
+// Constants for CONTROLS dial (used for coord-reference and PRESS text positioning)
+const DIAL_CENTER_X = 194.32;
+const DIAL_CENTER_Y = 1586.66;
 
 interface ConsoleLayoutProps {
     dialRotation: number;
@@ -47,59 +60,6 @@ interface ConsoleLayoutProps {
     upgradeLevels?: Record<string, number>;
 }
 
-const ArcadeButton = ({ 
-    x, y, 
-    colorBody, colorTop, 
-    isPressed, 
-    onPress,
-    onRelease
-}: { 
-    x: number, y: number, 
-    colorBody: string, colorTop: string, 
-    isPressed: boolean, 
-    onPress: () => void,
-    onRelease: () => void
-}) => {
-    // Up Paths (from Btn_*-Up.svg)
-    const upBase = "M42.31,73.62C18.58,73.62,0,59.79,0,42.13S18.58,10.65,42.31,10.65s42.31,13.83,42.31,31.48-18.59,31.48-42.31,31.48Z";
-    const upBody = "M74.5,41.03c0,11.84-14.45,21.44-32.27,21.44S9.97,52.87,9.97,41.03c0-8.74.25-20.68.25-20.68h64.43s-.15,13.21-.15,20.68Z";
-    const upTopCy = 21.44;
-
-    // Down Paths (from Btn_*-Down.svg)
-    const downBase = "M42.31,62.97C18.58,62.97,0,49.14,0,31.48S18.58,0,42.31,0s42.31,13.83,42.31,31.48-18.59,31.48-42.31,31.48Z";
-    const downBody = "M74.5,30.38c0,11.84-14.45,21.44-32.27,21.44S9.97,42.22,9.97,30.38c0-8.74.25-8.47.25-8.47h64.43s-.15.99-.15,8.47Z";
-    const downTopCy = 23.01;
-    
-    // Shift Down state to align bases (Up base starts at y=10.65, Down base starts at y=0)
-    const shiftY = 10.65;
-
-    return (
-        <g 
-            transform={`translate(${x}, ${y})`} 
-            style={{ cursor: 'pointer' }}
-            onMouseDown={(e) => { e.stopPropagation(); onPress(); }}
-            onMouseUp={(e) => { e.stopPropagation(); onRelease(); }}
-            onMouseLeave={() => { if (isPressed) onRelease(); }}
-            onTouchStart={(e) => { e.stopPropagation(); onPress(); }}
-            onTouchEnd={(e) => { e.stopPropagation(); onRelease(); }}
-        >
-            {isPressed ? (
-                <g transform={`translate(0, ${shiftY})`}>
-                    <path fill="#0d1a19" d={downBase} />
-                    <path fill={colorBody} fillRule="evenodd" d={downBody} />
-                    <ellipse fill={colorTop} cx="42.31" cy={downTopCy} rx="32.27" ry="21.44" />
-                </g>
-            ) : (
-                <g>
-                    <path fill="#0d1a19" d={upBase} />
-                    <path fill={colorBody} fillRule="evenodd" d={upBody} />
-                    <ellipse fill={colorTop} cx="42.31" cy={upTopCy} rx="32.27" ry="21.44" />
-                </g>
-            )}
-        </g>
-    );
-};
-
 export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     dialRotation,
     monitorOffset,
@@ -138,340 +98,64 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     const isLaserMaxed = (upgradeLevels['LASER'] || 0) >= 5;
     const isLightsMaxed = (upgradeLevels['LIGHTS'] || 0) >= 5;
     const isControlsMaxed = (upgradeLevels['CONTROLS'] || 0) >= 5;
+
+    // UI state
     const [pressedBtn, setPressedBtn] = useState<string | null>(null);
     const [rankDropdownOpen, setRankDropdownOpen] = useState(false);
     const [abortConfirm, setAbortConfirm] = useState(false);
 
-    // Track recently fixed complications for brief green "FIXED" text display
-    const [recentlyFixed, setRecentlyFixed] = useState<Set<ComplicationType>>(new Set());
-    const prevComplicationsRef = useRef<Complication[]>([]);
+    // ===== MINIGAME HOOKS =====
+    // All minigame state and logic is now encapsulated in custom hooks
 
-    // Detect when complications are removed and mark them as "recently fixed"
-    useEffect(() => {
-        const prevTypes = new Set(prevComplicationsRef.current.map(c => c.type));
-        const currentTypes = new Set(complications.map(c => c.type));
-
-        // Find which types were removed (were in prev but not in current)
-        prevTypes.forEach(type => {
-            if (!currentTypes.has(type)) {
-                // This complication was just fixed
-                setRecentlyFixed(prev => new Set(prev).add(type));
-                // Clear "recently fixed" state after 2.5 seconds
-                setTimeout(() => {
-                    setRecentlyFixed(prev => {
-                        const next = new Set(prev);
-                        next.delete(type);
-                        return next;
-                    });
-                }, 2500);
-            }
-        });
-
-        prevComplicationsRef.current = complications;
-    }, [complications]);
-
-    // Helper to check if a complication type is currently active
-    const hasActiveComplication = (type: ComplicationType): boolean => {
-        return complications.some(c => c.type === type);
-    };
-
-    // Local state for visual sliders (functional but not yet tied to game logic)
-    const [laserSliders, setLaserSliders] = useState<(-1|0|1)[]>([0, 0, 0, 0]);
-    const [lightSlider, setLightSlider] = useState<-1|0|1>(0);
-
-    // Reset Laser complication state
-    interface LaserComplication {
-        active: boolean;
-        solved: boolean;
-        targets: (-1 | 0 | 1)[]; // 4 target positions: -1=left, 0=center, 1=right
-    }
-    const [laserComplication, setLaserComplication] = useState<LaserComplication>({
-        active: false,
-        solved: false,
-        targets: [0, 0, 0, 0]
+    const {
+        laserSliders,
+        updateLaserSlider,
+        shakingSlider,
+        getLaserLightColors,
+        getLaserTextState,
+        recentlyFixed: laserRecentlyFixed,
+    } = useLaserMinigame({
+        complications,
+        isLaserMaxed,
+        onResolveComplication,
     });
 
-    // Track which slider is shaking (for wrong position feedback)
-    const [shakingSlider, setShakingSlider] = useState<number | null>(null);
-
-    // Reset Lights complication state (sequence memory puzzle)
-    // Flow: slider1 → showing sequence → input sequence → slider2 → solved
-    type LightsPhase = 'inactive' | 'slider1' | 'showing' | 'input' | 'slider2' | 'solved';
-    interface LightsComplication {
-        phase: LightsPhase;
-        slider1Target: 1 | -1;        // First slider target (random)
-        sequence: (0 | 1 | 2)[];      // 4-button sequence (0=blue, 1=green, 2=purple)
-        inputIndex: number;           // How many correct inputs so far (0-4)
-        showingIndex: number;         // Which light in sequence is showing (-1 = none)
-    }
-    const [lightsComplication, setLightsComplication] = useState<LightsComplication>({
-        phase: 'inactive',
-        slider1Target: 1,
-        sequence: [],
-        inputIndex: 0,
-        showingIndex: -1
+    const {
+        lightsComplication,
+        lightSlider,
+        handleLightsButton,
+        handleLightsSliderChange,
+        lightsSliderShaking,
+        getLightsButtonLightColor,
+        getLightsSliderLightColors,
+        getLightsTextState,
+        recentlyFixed: lightsRecentlyFixed,
+    } = useLightsMinigame({
+        complications,
+        isLightsMaxed,
+        pressedBtn,
+        onResolveComplication,
     });
 
-    // Track if Reset Lights slider is shaking
-    const [lightsSliderShaking, setLightsSliderShaking] = useState(false);
-
-    // Reset Controls complication state (dial alignment puzzle)
-    // Flow: align dial to lit corner → press → repeat 4 times → solved
-    interface ControlsComplication {
-        active: boolean;
-        solved: boolean;
-        targetCorner: 0 | 1 | 2 | 3 | null; // Which corner is lit (0=TR 45°, 1=TL 315°, 2=BL 225°, 3=BR 135°)
-        completedCorners: number; // 0-4 count of completed alignments
-    }
-    // Based on testing: dial arrow at 45° points visually top-right
-    // 45°=TR, 315°=TL, 225°=BL, 135°=BR
-    const CORNER_ANGLES = [45, 315, 225, 135]; // TR, TL, BL, BR
-
-    const [controlsComplication, setControlsComplication] = useState<ControlsComplication>({
-        active: false,
-        solved: false,
-        targetCorner: null,
-        completedCorners: 0
+    const {
+        localDialRotation,
+        isDialDragging,
+        dialShaking,
+        dialPressed,
+        handleDialStart,
+        handleDialMove,
+        handleDialEnd,
+        handleDialPress,
+        getControlsCornerLightColor,
+        getControlsTextState,
+        recentlyFixed: controlsRecentlyFixed,
+        isDialAligned,
+        isComplicationActive: controlsComplicationActive,
+    } = useControlsMinigame({
+        complications,
+        isControlsMaxed,
+        onResolveComplication,
     });
-
-    // Track if dial is shaking (wrong press feedback)
-    const [dialShaking, setDialShaking] = useState(false);
-    const [dialPressed, setDialPressed] = useState(false);
-
-    // Local state for dial rotation (drag-based, replaces prop)
-    const [localDialRotation, setLocalDialRotation] = useState(0);
-    const [isDialDragging, setIsDialDragging] = useState(false);
-
-    // Initialize minigames when complications exist in GameState but minigame isn't active
-    // Reset minigame state when complication is removed so it's fresh for next trigger
-    useEffect(() => {
-        // LASER: Reset if no complication but minigame was active/solved
-        if (!hasActiveComplication(ComplicationType.LASER) && (laserComplication.active || laserComplication.solved)) {
-            setLaserComplication({ active: false, solved: false, targets: [0, 0, 0, 0] });
-            setLaserSliders([0, 0, 0, 0]);
-        }
-        // LIGHTS: Reset if no complication but minigame was active
-        if (!hasActiveComplication(ComplicationType.LIGHTS) && lightsComplication.phase !== 'inactive') {
-            setLightsComplication({ phase: 'inactive', slider1Target: 1, sequence: [], inputIndex: 0, showingIndex: -1 });
-            setLightSlider(0);
-        }
-        // CONTROLS: Reset if no complication but minigame was active/solved
-        if (!hasActiveComplication(ComplicationType.CONTROLS) && (controlsComplication.active || controlsComplication.solved)) {
-            setControlsComplication({ active: false, solved: false, targetCorner: null, completedCorners: 0 });
-        }
-
-        // LASER: Initialize if complication exists but minigame not active
-        if (hasActiveComplication(ComplicationType.LASER) && !laserComplication.active && !laserComplication.solved) {
-            // Generate random targets
-            // Max-level effect: no center targets (only -1 or 1)
-            // Normal: any of -1, 0, 1
-            const allPositions: (-1 | 0 | 1)[] = isLaserMaxed ? [-1, 1] : [-1, 0, 1];
-            const targets = [0, 1, 2, 3].map(() => {
-                return allPositions[Math.floor(Math.random() * allPositions.length)];
-            }) as (-1 | 0 | 1)[];
-
-            // Set sliders to wrong positions (one of the two that ISN'T the target)
-            const wrongPositions = targets.map(target => {
-                const options = allPositions.filter(v => v !== target);
-                return options[Math.floor(Math.random() * 2)];
-            }) as (-1 | 0 | 1)[];
-
-            setLaserSliders(wrongPositions);
-            setLaserComplication({
-                active: true,
-                solved: false,
-                targets: targets
-            });
-        }
-
-        // LIGHTS: Initialize if complication exists but minigame inactive
-        // Matches Phase 2 toggle behavior exactly
-        if (hasActiveComplication(ComplicationType.LIGHTS) && lightsComplication.phase === 'inactive') {
-            setLightsComplication({
-                phase: 'slider1',
-                slider1Target: Math.random() > 0.5 ? 1 : -1,
-                sequence: generateLightsSequence(),
-                inputIndex: 0,
-                showingIndex: -1
-            });
-            setLightSlider(0);
-        }
-
-        // CONTROLS: Initialize if complication exists but minigame not active
-        if (hasActiveComplication(ComplicationType.CONTROLS) && !controlsComplication.active && !controlsComplication.solved) {
-            // Pick a random starting corner INDEX (0-3), not the angle value
-            const randomCornerIndex = Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3;
-            setControlsComplication({
-                active: true,
-                solved: false,
-                targetCorner: randomCornerIndex,
-                completedCorners: 0
-            });
-        }
-    }, [complications, laserComplication.active, laserComplication.solved, lightsComplication.phase, controlsComplication.active, controlsComplication.solved]);
-
-    // Dial center in SVG coordinates
-    const DIAL_CENTER_X = 194.32;
-    const DIAL_CENTER_Y = 1586.66;
-    const DIAL_RADIUS = 86.84;
-    // Touch zone: allow touches from 40% of radius out to 130% (extra padding for finger imprecision)
-    const DIAL_TOUCH_INNER = DIAL_RADIUS * 0.4; // ~35 - includes the chevron arrows
-    const DIAL_TOUCH_OUTER = DIAL_RADIUS * 1.3; // ~113 - padding beyond visual edge
-    // Curved arrow angular range (in degrees, where 90° is down in SVG coords)
-    // Widened to 0° to 180° to cover the entire bottom half of the dial
-    const DIAL_ARROW_ANGLE_MIN = 0;
-    const DIAL_ARROW_ANGLE_MAX = 180;
-
-    // Get dial center in screen coordinates
-    const getDialScreenCenter = (): { x: number; y: number } | null => {
-        const svg = document.querySelector('svg');
-        if (!svg) return null;
-        const rect = svg.getBoundingClientRect();
-        const viewBox = { x: 0, y: 827.84, width: 648, height: 1152 };
-        return {
-            x: rect.left + ((DIAL_CENTER_X - viewBox.x) / viewBox.width) * rect.width,
-            y: rect.top + ((DIAL_CENTER_Y - viewBox.y) / viewBox.height) * rect.height
-        };
-    };
-
-    // Vector approach: rotate dial so line from center through grab point aims at cursor
-    // All refs to avoid stale closure issues in event handlers
-    const isDraggingRef = useRef(false);
-    const grabAngleRef = useRef(0);      // Angle of initial grab point from center
-    const rotationAtGrabRef = useRef(0); // Dial rotation when grab started
-    const currentRotationRef = useRef(0); // Current rotation (ref version for snap calculation)
-    const justDraggedRef = useRef(false); // Track if we just finished a drag (to ignore click)
-    const hasMovedRef = useRef(false); // Track if dial actually moved during drag
-
-    // Convert screen coordinates to SVG coordinates
-    // Use a NON-ROTATING reference element for clean CTM
-    const screenToSvg = (clientX: number, clientY: number): { x: number; y: number } | null => {
-        try {
-            // Use the hidden reference point that doesn't rotate
-            const refPoint = document.getElementById('coord-reference') as SVGCircleElement | null;
-            if (!refPoint) return null;
-
-            const svg = refPoint.ownerSVGElement;
-            if (!svg) return null;
-
-            const point = svg.createSVGPoint();
-            point.x = clientX;
-            point.y = clientY;
-
-            const ctm = refPoint.getScreenCTM();
-            if (!ctm) return null;
-
-            const svgPoint = point.matrixTransform(ctm.inverse());
-            return { x: svgPoint.x, y: svgPoint.y };
-        } catch (e) {
-            return null;
-        }
-    };
-
-    const handleDialStart = (clientX: number, clientY: number) => {
-        // Convert touch to SVG coordinates (fixes aspect ratio distortion!)
-        const touchSvg = screenToSvg(clientX, clientY);
-        if (!touchSvg) return;
-
-        // Calculate distance and angle in SVG space
-        const dx = touchSvg.x - DIAL_CENTER_X;
-        const dy = touchSvg.y - DIAL_CENTER_Y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // Check touch zone in SVG space
-        if (distance > DIAL_TOUCH_OUTER) return;
-
-        // Store grab angle (in SVG coordinates) and current rotation
-        grabAngleRef.current = Math.atan2(dy, dx) * (180 / Math.PI);
-        rotationAtGrabRef.current = localDialRotation;
-        isDraggingRef.current = true;
-        hasMovedRef.current = false; // Reset movement tracking
-        setIsDialDragging(true);
-    };
-
-    const handleDialMove = (clientX: number, clientY: number) => {
-        if (!isDraggingRef.current) return;
-
-        // Convert to SVG coordinates (fixes aspect ratio!)
-        const cursorSvg = screenToSvg(clientX, clientY);
-        if (!cursorSvg) return;
-
-        const dx = cursorSvg.x - DIAL_CENTER_X;
-        const dy = cursorSvg.y - DIAL_CENTER_Y;
-
-        // Current cursor angle from center (in SVG space)
-        const cursorAngle = Math.atan2(dy, dx) * (180 / Math.PI);
-
-        // Vector approach: rotate dial so grab point aims at cursor
-        // newRotation = cursorAngle - grabAngle + rotationAtGrab
-        const newRotation = cursorAngle - grabAngleRef.current + rotationAtGrabRef.current;
-        currentRotationRef.current = newRotation; // Keep ref in sync for snap calculation
-        hasMovedRef.current = true; // Mark that we actually dragged
-        setLocalDialRotation(newRotation);
-    };
-
-    // Snap positions: 4 corners at 45°, 135°, 225°, 315°
-    const DIAL_SNAP_POSITIONS = [45, 135, 225, 315];
-
-    const handleDialEnd = () => {
-        if (!isDraggingRef.current) return;
-        isDraggingRef.current = false;
-        // Only mark as "just dragged" if there was actual movement (not a simple tap)
-        justDraggedRef.current = hasMovedRef.current;
-        setIsDialDragging(false);
-
-        // Only snap if there was actual movement (not a simple tap)
-        if (!hasMovedRef.current) return;
-
-        // Use ref value (not state) to avoid stale closure issues
-        const currentRotation = currentRotationRef.current;
-
-        // Snap to nearest corner position (45°, 135°, 225°, 315°)
-        // Must find the snap angle that's closest to current rotation to avoid
-        // the CSS transition animating the "long way around"
-
-        // Normalize to find which base snap position we're closest to
-        let normalized = currentRotation % 360;
-        if (normalized < 0) normalized += 360;
-
-        // Find closest snap position in 0-360 space
-        let closestBaseSnap = DIAL_SNAP_POSITIONS[0];
-        let minDiff = Infinity;
-
-        for (const snap of DIAL_SNAP_POSITIONS) {
-            const diff = Math.min(
-                Math.abs(normalized - snap),
-                Math.abs(normalized - snap + 360),
-                Math.abs(normalized - snap - 360)
-            );
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestBaseSnap = snap;
-            }
-        }
-
-        // Now find the equivalent of closestBaseSnap that's actually closest
-        // to the current rotation (handles multi-revolution rotations)
-        const base = Math.floor(currentRotation / 360) * 360;
-        const candidates = [
-            base + closestBaseSnap - 360,
-            base + closestBaseSnap,
-            base + closestBaseSnap + 360
-        ];
-
-        let finalSnap = candidates[0];
-        let minFinalDiff = Math.abs(currentRotation - candidates[0]);
-        for (const c of candidates) {
-            const diff = Math.abs(currentRotation - c);
-            if (diff < minFinalDiff) {
-                minFinalDiff = diff;
-                finalSnap = c;
-            }
-        }
-
-        currentRotationRef.current = finalSnap; // Keep ref in sync
-        setLocalDialRotation(finalSnap);
-    };
 
     // Global event listeners for dial drag (follows periscope pattern)
     useEffect(() => {
@@ -547,375 +231,6 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
             setAbortConfirm(true);
             // Auto-reset after 3s if no confirmation
             setTimeout(() => setAbortConfirm(false), 3000);
-        }
-    };
-
-    const updateLaserSlider = (index: number, val: -1|0|1) => {
-        const next = [...laserSliders];
-        next[index] = val;
-        setLaserSliders(next);
-
-        // Check if this slider matches its target (when LASER complication is active in GameState)
-        const laserComp = complications.find(c => c.type === ComplicationType.LASER);
-        if (laserComp && !laserComplication.solved) {
-            const target = laserComplication.targets[index];
-            if (val !== target) {
-                // Wrong position - trigger shake
-                setShakingSlider(index);
-                setTimeout(() => setShakingSlider(null), 300);
-            } else {
-                // Check if all sliders now match their targets
-                const allMatch = next.every((sliderVal, i) => sliderVal === laserComplication.targets[i]);
-                if (allMatch) {
-                    // Mark minigame as solved
-                    setLaserComplication(prev => ({ ...prev, solved: true }));
-                    // Reset sliders to center
-                    setLaserSliders([0, 0, 0, 0]);
-                    // Resolve the complication in GameState
-                    if (onResolveComplication) {
-                        onResolveComplication(laserComp.id);
-                    }
-                }
-            }
-        }
-    };
-
-    // Generate button sequence with max 2 of any single button
-    // Max-level effect: 3-button sequence instead of 4
-    const generateLightsSequence = (): (0 | 1 | 2)[] => {
-        const sequence: (0 | 1 | 2)[] = [];
-        const counts = [0, 0, 0]; // Track how many times each button is used
-        const sequenceLength = isLightsMaxed ? 3 : 4;
-
-        for (let i = 0; i < sequenceLength; i++) {
-            // Get available buttons (those used less than 2 times)
-            const available: (0 | 1 | 2)[] = [];
-            if (counts[0] < 2) available.push(0);
-            if (counts[1] < 2) available.push(1);
-            if (counts[2] < 2) available.push(2);
-
-            const choice = available[Math.floor(Math.random() * available.length)];
-            sequence.push(choice);
-            counts[choice]++;
-        }
-
-        return sequence;
-    };
-
-    // Start showing the sequence with timed light flashes
-    const startShowingSequence = (sequence: (0 | 1 | 2)[]) => {
-        const FLASH_DURATION = 400; // ms each light stays on
-        const GAP_DURATION = 200;   // ms between flashes
-        const BEAT_DURATION = 500;  // ms pause after sequence before input
-
-        let delay = 300; // Initial delay before starting
-
-        sequence.forEach((buttonIndex, i) => {
-            // Turn on this light
-            setTimeout(() => {
-                setLightsComplication(prev => ({ ...prev, showingIndex: buttonIndex }));
-            }, delay);
-
-            // Turn off this light
-            setTimeout(() => {
-                setLightsComplication(prev => ({ ...prev, showingIndex: -1 }));
-            }, delay + FLASH_DURATION);
-
-            delay += FLASH_DURATION + GAP_DURATION;
-        });
-
-        // After sequence complete + 1 beat, transition to input phase
-        setTimeout(() => {
-            setLightsComplication(prev => ({
-                ...prev,
-                phase: 'input',
-                showingIndex: -1,
-                inputIndex: 0
-            }));
-        }, delay + BEAT_DURATION);
-    };
-
-    // Button colors for sequence display
-    const BUTTON_COLORS = {
-        0: '#96d7dd', // Blue button top color
-        1: '#f6f081', // Green button top color
-        2: '#cb8abc'  // Purple button top color
-    };
-
-    // Helper to get Reset Lights button indicator light color
-    // During 'showing' phase: flash in button color when it's that button's turn
-    // During 'input' phase: light up when player is pressing that button
-    const getLightsButtonLightColor = (lightIndex: 0 | 1 | 2): string => {
-        const OFF = "#231f20";
-
-        // Only show lights if there's a real LIGHTS complication
-        if (!hasActiveComplication(ComplicationType.LIGHTS)) return OFF;
-        if (lightsComplication.phase === 'inactive') return OFF;
-
-        // During showing phase, light up when this button is being shown
-        if (lightsComplication.phase === 'showing' && lightsComplication.showingIndex === lightIndex) {
-            return BUTTON_COLORS[lightIndex];
-        }
-
-        // During input phase, light up when player is pressing this button
-        if (lightsComplication.phase === 'input') {
-            const buttonNames = ['blue', 'green', 'purple'];
-            if (pressedBtn === buttonNames[lightIndex]) {
-                return BUTTON_COLORS[lightIndex];
-            }
-        }
-
-        return OFF;
-    };
-
-    // Helper to get Reset Lights slider indicator light colors
-    const getLightsSliderLightColors = (): { top: string; bottom: string } => {
-        const OFF = "#231f20";
-        const ON = "#d8672b";
-        const { phase, slider1Target } = lightsComplication;
-
-        // Only show lights if there's a real LIGHTS complication
-        if (!hasActiveComplication(ComplicationType.LIGHTS)) {
-            return { top: OFF, bottom: OFF };
-        }
-
-        if (phase === 'inactive') {
-            return { top: OFF, bottom: OFF };
-        }
-
-        if (phase === 'slider1') {
-            // Show first target (slider rotated 90°: value 1 = bottom, value -1 = top)
-            return slider1Target === 1 ? { top: OFF, bottom: ON } : { top: ON, bottom: OFF };
-        }
-
-        if (phase === 'slider2') {
-            // Show opposite of first target
-            return slider1Target === 1 ? { top: ON, bottom: OFF } : { top: OFF, bottom: ON };
-        }
-
-        // During showing/input phases, no slider lights
-        return { top: OFF, bottom: OFF };
-    };
-
-    // Handle button press during input phase
-    const handleLightsButton = (buttonIndex: 0 | 1 | 2) => {
-        if (lightsComplication.phase !== 'input') return;
-
-        const expectedButton = lightsComplication.sequence[lightsComplication.inputIndex];
-
-        if (buttonIndex === expectedButton) {
-            // Correct!
-            const newInputIndex = lightsComplication.inputIndex + 1;
-
-            if (newInputIndex >= lightsComplication.sequence.length) {
-                // Sequence complete - move to slider2
-                setLightsComplication(prev => ({
-                    ...prev,
-                    phase: 'slider2',
-                    inputIndex: 0
-                }));
-            } else {
-                // Continue sequence
-                setLightsComplication(prev => ({
-                    ...prev,
-                    inputIndex: newInputIndex
-                }));
-            }
-        } else {
-            // Wrong! Replay sequence
-            setLightsComplication(prev => ({
-                ...prev,
-                phase: 'showing',
-                inputIndex: 0,
-                showingIndex: -1
-            }));
-            // Start showing after a brief pause
-            setTimeout(() => {
-                startShowingSequence(lightsComplication.sequence);
-            }, 300);
-        }
-    };
-
-    // Handle light slider changes
-    const handleLightsSliderChange = (newValue: -1 | 0 | 1) => {
-        const { phase, slider1Target } = lightsComplication;
-
-        if (phase === 'slider1') {
-            if (newValue === slider1Target) {
-                // Correct! Move to showing phase
-                setLightSlider(newValue);
-                setLightsComplication(prev => ({ ...prev, phase: 'showing' }));
-                startShowingSequence(lightsComplication.sequence);
-            } else if (newValue !== 0) {
-                // Wrong direction - shake and return to center
-                setLightsSliderShaking(true);
-                setTimeout(() => {
-                    setLightsSliderShaking(false);
-                    setLightSlider(0);
-                }, 400);
-            } else {
-                setLightSlider(newValue);
-            }
-        } else if (phase === 'slider2') {
-            const slider2Target = slider1Target === 1 ? -1 : 1; // Opposite of first
-            setLightSlider(newValue);
-            if (newValue === slider2Target) {
-                // Solved!
-                setLightsComplication(prev => ({ ...prev, phase: 'solved' }));
-                // Reset slider to center
-                setLightSlider(0);
-                // Resolve the complication in GameState
-                const lightsComp = complications.find(c => c.type === ComplicationType.LIGHTS);
-                if (lightsComp && onResolveComplication) {
-                    onResolveComplication(lightsComp.id);
-                }
-            }
-            // No shake for slider2 - just need to reach the target
-        } else {
-            // Other phases - just update slider visually
-            setLightSlider(newValue);
-        }
-    };
-
-    // Helper to get Reset Laser text and color based on real complication state
-    const getLaserTextState = (): { text: string; color: string } => {
-        const TEAL = "#14b8a6";  // Idle
-        const RED = "#ef4444";   // Active
-        const GREEN = "#22c55e"; // Recently fixed
-
-        if (hasActiveComplication(ComplicationType.LASER)) {
-            return { text: "RESET LASER", color: RED };
-        }
-        if (recentlyFixed.has(ComplicationType.LASER)) {
-            return { text: "LASER FIXED", color: GREEN };
-        }
-        return { text: "RESET LASER", color: TEAL };
-    };
-
-    // Helper to get Reset Lights text and color based on real complication state
-    const getLightsTextState = (): { text: string; color: string } => {
-        const TEAL = "#14b8a6";  // Idle
-        const RED = "#ef4444";   // Active
-        const GREEN = "#22c55e"; // Recently fixed
-
-        if (hasActiveComplication(ComplicationType.LIGHTS)) {
-            return { text: "RESET LIGHTS", color: RED };
-        }
-        if (recentlyFixed.has(ComplicationType.LIGHTS)) {
-            return { text: "LIGHTS FIXED", color: GREEN };
-        }
-        return { text: "RESET LIGHTS", color: TEAL };
-    };
-
-    // Helper to get Reset Controls corner light color
-    // cornerIndex: 0=TR (45°), 1=TL (315°), 2=BL (225°), 3=BR (135°)
-    const getControlsCornerLightColor = (cornerIndex: 0 | 1 | 2 | 3): string => {
-        const OFF = "#231f20";
-        const ON = "#d8672b";
-
-        // Only show lights if there's a real CONTROLS complication in GameState
-        if (!hasActiveComplication(ComplicationType.CONTROLS)) return OFF;
-        if (controlsComplication.solved) return OFF;
-
-        return controlsComplication.targetCorner === cornerIndex ? ON : OFF;
-    };
-
-    // Check if dial is aligned with target corner
-    const isDialAligned = (): boolean => {
-        if (controlsComplication.targetCorner === null) return false;
-
-        const targetAngle = CORNER_ANGLES[controlsComplication.targetCorner];
-        const currentAngle = ((localDialRotation % 360) + 360) % 360;
-        const diff = Math.abs(currentAngle - targetAngle);
-        const normalizedDiff = Math.min(diff, 360 - diff);
-
-        return normalizedDiff < 15; // 15° tolerance
-    };
-
-    // Trigger dial shake animation
-    const triggerDialShake = () => {
-        setDialShaking(true);
-        setTimeout(() => setDialShaking(false), 300);
-    };
-
-    // Handle dial press during controls complication
-    const handleDialPress = () => {
-        if (!hasActiveComplication(ComplicationType.CONTROLS) || controlsComplication.solved) return;
-        if (isDialDragging) return; // Don't trigger on drag end
-
-        if (isDialAligned()) {
-            // Success - advance to next corner
-            const newCompleted = controlsComplication.completedCorners + 1;
-
-            // Max-level effect: 3 alignments instead of 4
-            const requiredAlignments = isControlsMaxed ? 3 : 4;
-            if (newCompleted >= requiredAlignments) {
-                // Solved!
-                setControlsComplication(prev => ({
-                    ...prev,
-                    solved: true,
-                    targetCorner: null,
-                    completedCorners: 4
-                }));
-                // Resolve the complication in GameState
-                const controlsComp = complications.find(c => c.type === ComplicationType.CONTROLS);
-                if (controlsComp && onResolveComplication) {
-                    onResolveComplication(controlsComp.id);
-                }
-            } else {
-                // Pick next random corner (not same as current)
-                const availableCorners = ([0, 1, 2, 3] as const).filter(
-                    c => c !== controlsComplication.targetCorner
-                );
-                const nextCorner = availableCorners[
-                    Math.floor(Math.random() * availableCorners.length)
-                ];
-
-                setControlsComplication(prev => ({
-                    ...prev,
-                    targetCorner: nextCorner,
-                    completedCorners: newCompleted
-                }));
-            }
-        } else {
-            // Wrong - shake the dial
-            triggerDialShake();
-        }
-    };
-
-    // Helper to get Reset Controls text and color based on real complication state
-    const getControlsTextState = (): { text: string; color: string } => {
-        const TEAL = "#14b8a6";  // Idle
-        const RED = "#ef4444";   // Active
-        const GREEN = "#22c55e"; // Recently fixed
-
-        if (hasActiveComplication(ComplicationType.CONTROLS)) {
-            return { text: "RESET CONTROLS", color: RED };
-        }
-        if (recentlyFixed.has(ComplicationType.CONTROLS)) {
-            return { text: "CONTROLS FIXED", color: GREEN };
-        }
-        return { text: "RESET CONTROLS", color: TEAL };
-    };
-
-    // Helper to get laser slider indicator light colors
-    // Lights only on when real LASER complication is active in GameState
-    const getLaserLightColors = (sliderIndex: number): { left: string; right: string } => {
-        const OFF = "#231f20";
-        const ON = "#d8672b";
-
-        // Only show lights if there's a real LASER complication
-        if (!hasActiveComplication(ComplicationType.LASER)) {
-            return { left: OFF, right: OFF };
-        }
-
-        const target = laserComplication.targets[sliderIndex];
-        if (target === -1) {
-            return { left: ON, right: OFF }; // Target is left
-        } else if (target === 1) {
-            return { left: OFF, right: ON }; // Target is right
-        } else {
-            return { left: ON, right: ON }; // Target is center (both lights on)
         }
     };
 
@@ -1024,258 +339,46 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     </text>
                 </g>
 
-                {/* 3. Reset Laser (Tracks + Functional Sliders) */}
-                <g id="Reset_Laser_Top">
-                    {/* Background Texture (Zig-Zags) - Static */}
-                    <g pointerEvents="none">
-                        {/* Top Left */}
-                        <path fill="none" stroke="#d8672b" strokeWidth="3" strokeMiterlimit="10" opacity="0.25" d="M157.91,233.16h-4.24l-18.69-18.69c-3.62-3.62-3.62-9.52,0-13.14l18.69-18.69h4.24l-20.81,20.81c-2.45,2.45-2.45,6.44,0-8.89l20.81,20.81ZM111.51,212.35c-2.45-2.45-2.45-6.44,0-8.89l20.81-20.81h-4.24l-18.69,18.69c-1.75,1.75-2.72,4.09-2.72,6.57s.97,4.81,2.72,6.57l18.69,18.69h4.24l-20.81-20.81ZM107.64,182.65h-4.24l-18.68,18.68v13.15l18.68,18.68h4.24l-20.81-20.81c-2.45-2.45-2.45-6.44,0-8.89l20.81-20.81ZM235.4,214.47c3.62-3.62,3.62-9.52,0-13.14l-18.69-18.69h-4.24l20.81,20.81c2.45,2.45,2.45,6.44,0,8.89l-20.81,20.81h4.24l18.69-18.69ZM186.88,233.16h4.24l18.69-18.69c1.75-1.75,2.72-4.09,2.72-6.57s-.97-4.81-2.72-6.57l-18.69-18.69h-4.24l20.81,20.81c2.45,2.45,2.45,6.44,0,8.89l-20.81,20.81h4.24l18.69-18.69ZM260.08,214.47c.17-.17.33-.36.49-.54v-12.05c-.16-.19-.32-.37-.49-.54l-18.69-18.69h-4.24l20.81,20.81c2.45,2.45,2.45,6.44,0,8.89l-20.81,20.81h4.24l18.69-18.69Z"/>
-                        {/* Bot Left */}
-                        <path fill="none" stroke="#d8672b" strokeWidth="3" strokeMiterlimit="10" opacity="0.25" d="M132.32,324.04h-4.24l-18.69-18.69c-1.75-1.75-2.72-4.09-2.72-6.57s.97-4.81,2.72-6.57l18.69-18.69h4.24l-20.81,20.81c-2.45,2.45-2.45,6.44,0,8.89l20.81,20.81ZM137.1,303.23c-2.45-2.45-2.45-6.44,0-8.89l20.81-20.81h-4.24l-18.69,18.69c-3.62,3.62-3.62-9.52,0,13.14l18.69,18.69h4.24l-20.81-20.81ZM107.64,273.53h-4.24l-18.68,18.68v13.15l18.68,18.68h4.24l-20.81-20.81c-2.45-2.45-2.45-6.44,0-8.89l20.81-20.81ZM260.08,305.35c.18-.18.34-.36.49-.55v-12.04c-.16-.19-.32-.37-.49-.55l-18.69-18.69h-4.24l20.81,20.81c2.45,2.45,2.45,6.44,0,8.89l-20.81,20.81h4.24l18.69-18.69ZM186.88,324.04h4.24l18.69-18.69c3.62-3.62,3.62-9.52,0-13.14l-18.69-18.69h-4.24l20.81,20.81c1.19,1.19,1.84,2.77,1.84,4.45s-.65,3.26-1.84,4.45l-20.81,20.81ZM235.4,305.35c3.62-3.62,3.62-9.52,0-13.14l-18.69-18.69h-4.24l20.81,20.81c2.45,2.45,2.45,6.44,0,8.89l-20.81,20.81h4.24l18.69-18.69Z"/>
-                        {/* Top Right - REMOVED TO FIX ARTIFACTS */}
-                        {/* Bot Right - REMOVED TO FIX ARTIFACTS */}
-                    </g>
-
-                    {/* Functional Sliders */}
-                    <ConsoleSlider x={172.65} y={207.9} value={laserSliders[0]} onChange={(v) => updateLaserSlider(0, v)} className={shakingSlider === 0 ? "shake-anim" : ""} />
-                    <ConsoleSlider x={172.65} y={298.78} value={laserSliders[1]} onChange={(v) => updateLaserSlider(1, v)} className={shakingSlider === 1 ? "shake-anim" : ""} />
-                    <ConsoleSlider x={445.24} y={207.9} value={laserSliders[2]} onChange={(v) => updateLaserSlider(2, v)} className={shakingSlider === 2 ? "shake-anim" : ""} />
-                    <ConsoleSlider x={445.24} y={298.78} value={laserSliders[3]} onChange={(v) => updateLaserSlider(3, v)} className={shakingSlider === 3 ? "shake-anim" : ""} />
-
-                    {/* Slider Lights (Top Left = Slider 0) */}
-                    <g>
-                        {/* Right light */}
-                        <path fill={getLaserLightColors(0).right} fillRule="evenodd" d="M280.92,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
-                        <path fill="#1f1f38" fillRule="evenodd" d="M280.93,197.87c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M280.93,194.87h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                        {/* Left light */}
-                        <path fill={getLaserLightColors(0).left} fillRule="evenodd" d="M63.6,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
-                        <path fill="#1f1f38" fillRule="evenodd" d="M63.61,197.87c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M63.61,194.87h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                    </g>
-                    {/* Slider Lights (Bot Left = Slider 1) */}
-                    <g>
-                        {/* Right light */}
-                        <path fill={getLaserLightColors(1).right} fillRule="evenodd" d="M280.92,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
-                        <path fill="#1f1f38" fillRule="evenodd" d="M280.93,288.75c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M280.93,285.75h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                        {/* Left light */}
-                        <path fill={getLaserLightColors(1).left} fillRule="evenodd" d="M63.6,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
-                        <path fill="#1f1f38" fillRule="evenodd" d="M63.61,288.75c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M63.61,285.75h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                    </g>
-                    {/* Slider Lights (Top Right = Slider 2) */}
-                    <g>
-                        {/* Left light */}
-                        <path fill={getLaserLightColors(2).left} fillRule="evenodd" d="M336.96,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
-                        <path fill="#1f1f38" fillRule="evenodd" d="M336.97,197.87c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M336.97,194.87h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                        {/* Right light */}
-                        <path fill={getLaserLightColors(2).right} fillRule="evenodd" d="M554.28,219.43c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
-                        <path fill="#1f1f38" fillRule="evenodd" d="M554.29,197.87c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M554.29,194.87h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                    </g>
-                    {/* Slider Lights (Bot Right = Slider 3) */}
-                    <g>
-                        {/* Left light */}
-                        <path fill={getLaserLightColors(3).left} fillRule="evenodd" d="M336.96,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
-                        <path fill="#1f1f38" fillRule="evenodd" d="M336.97,288.75c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M336.97,285.75h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                        {/* Right light */}
-                        <path fill={getLaserLightColors(3).right} fillRule="evenodd" d="M554.28,310.32c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.53,11.53-11.53,11.54,5.17,11.54,11.53-5.17,11.53-11.53,11.53h0Z"/>
-                        <path fill="#1f1f38" fillRule="evenodd" d="M554.29,288.75c5.54,0,10.03,4.49,10.03,10.03s-4.49,10.03-10.03,10.03h0c-5.54,0-10.03-4.49-10.03-10.03s4.49-10.03,10.03-10.03h0M554.29,285.75h0c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                    </g>
-
-                    {/* Reset Laser Text */}
-                    <text
-                        fill={getLaserTextState().color}
-                        fontFamily="'Amazon Ember'"
-                        fontSize="20.93"
-                        transform="translate(245.29 261.57)"
-                    >
-                        {getLaserTextState().text}
-                    </text>
-                </g>
+                {/* 3. Reset Laser Panel Component */}
+                <LaserPanel
+                    laserSliders={laserSliders}
+                    shakingSlider={shakingSlider}
+                    onSliderChange={updateLaserSlider}
+                    getLaserLightColors={getLaserLightColors}
+                    textState={getLaserTextState()}
+                />
             </g>
 
-            {/* Reset Lights (Right Panel) */}
-            <g id="Reset_Lights">
-                {/* Purple Base */}
-                <polygon fill="#45486c" points="608.7 1720.12 341.17 1720.12 341.17 1452.22 564.14 1452.22 608.7 1720.12"/>
-                <text
-                    fill={getLightsTextState().color}
-                    fontFamily="'Amazon Ember'"
-                    fontSize="20.93"
-                    transform="translate(414.68 1486.69)"
-                >
-                    {getLightsTextState().text}
-                </text>
-                
-                {/* Pattern (Behind Slider) */}
-                <g clipPath="url(#reset-lights-slider-clip)">
-                    <path fill="none" stroke="#d8672b" strokeWidth="3" strokeMiterlimit="10" opacity="0.25" d="M417.83,1530.35l-30.21-30.21c-3.04-3.04-7.97-3.04-11.02,0l-30.21,30.21M346.4,1555.03l30.21-30.21c3.04-3.04,7.97-3.04,11.02,0l30.21,30.21M346.4,1580.62l30.21-30.21c3.04-3.04,7.97-3.04,11.02,0l30.21,30.21M417.83,1643.18l-30.21,30.21c-3.04,3.04-7.97,3.04-11.02,0l-30.21-30.21M346.4,1618.5l30.21,30.21c3.04-3.04,7.97,3.04,11.02,0l30.21-30.21M346.4,1592.91l30.21,30.21c3.04-3.04,7.97,3.04,11.02,0l30.21-30.21"/>
-                </g>
-
-                {/* Functional Vertical Slider */}
-                <ConsoleSlider
-                    x={382.11}
-                    y={1587.01}
-                    rotation={90}
-                    value={lightSlider}
-                    onChange={handleLightsSliderChange}
-                    className={lightsSliderShaking ? 'shake' : ''}
-                />
-
-                {/* Slider Bottom Light (Off) */}
-                <g>
-                    <path fill={getLightsSliderLightColors().bottom} d="M382.12,1706.83c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M382.12,1685.25c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04s-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04M382.12,1682.25c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.03,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.04-13.03-13.04h0Z"/>
-                </g>
-                {/* Slider Top Light (On) */}
-                <g>
-                    <path fill={getLightsSliderLightColors().top} d="M382.12,1489.51c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M382.12,1467.94c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04s-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04M382.12,1464.94c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.03,13.04-5.85,13.04-13.03-5.85-13.03-13.03-13.03h0Z"/>
-                </g>
-
-                {/* Blue Button (Rear) */}
-                <ArcadeButton
-                    x={431.19} y={1495}
-                    colorBody="#3d8380" colorTop="#96d7dd"
-                    isPressed={pressedBtn === 'blue' || lightsComplication.phase === 'slider1' || lightsComplication.phase === 'showing'}
-                    onPress={() => handlePress('blue')}
-                    onRelease={() => handleRelease('blue', onBlueClick)}
-                />
-
-                {/* Light below Blue */}
-                <g>
-                    <path fill={getLightsButtonLightColor(0)} d="M546.19,1547c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M546.19,1525.42c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04s-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04M546.19,1522.42c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.04h0Z"/>
-                </g>
-
-                {/* Green Button (Middle) */}
-                <ArcadeButton
-                    x={437.5} y={1565}
-                    colorBody="#4c833c" colorTop="#f6f081"
-                    isPressed={pressedBtn === 'green' || lightsComplication.phase === 'slider1' || lightsComplication.phase === 'showing'}
-                    onPress={() => handlePress('green')}
-                    onRelease={() => handleRelease('green', onGreenClick)}
-                />
-                
-                {/* Light below Green */}
-                <g>
-                    <path fill={getLightsButtonLightColor(1)} d="M554.61,1616.4c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M554.61,1594.82c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04s-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04M554.61,1591.82c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.04h0Z"/>
-                </g>
-
-                {/* Purple Button (Front) */}
-                <ArcadeButton
-                    x={444.51} y={1635}
-                    colorBody="#803d83" colorTop="#cb8abc"
-                    isPressed={pressedBtn === 'purple' || lightsComplication.phase === 'slider1' || lightsComplication.phase === 'showing'}
-                    onPress={() => handlePress('purple')}
-                    onRelease={() => handleRelease('purple', onPurpleClick)}
-                />
-
-                {/* Light below Purple */}
-                <g>
-                    <path fill={getLightsButtonLightColor(2)} d="M565.12,1689.3c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M565.12,1667.73c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04h0c-5.54,0-10.03-4.49-10.03-10.04h0M565.12,1664.73c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.04h0Z"/>
-                </g>
-            </g>
+            {/* Reset Lights Panel Component */}
+            <LightsPanel
+                lightsComplication={lightsComplication}
+                lightSlider={lightSlider}
+                onSliderChange={handleLightsSliderChange}
+                onButtonPress={handlePress}
+                onButtonRelease={handleRelease}
+                getLightsButtonLightColor={getLightsButtonLightColor}
+                getLightsSliderLightColors={getLightsSliderLightColors}
+                textState={getLightsTextState()}
+                pressedBtn={pressedBtn}
+                sliderShaking={lightsSliderShaking}
+                onBlueClick={onBlueClick}
+                onGreenClick={onGreenClick}
+                onPurpleClick={onPurpleClick}
+            />
 
             {/* Reset Controls (Dial) */}
-            <g id="Reset_Controls">
-                {/* Dial Base Panel - Corrected Shape */}
-                <path fill="#45486c" d="M290.21,1663.73c10.78-17.3,17.01-37.73,17.01-59.61,0-23.97-7.48-46.2-20.22-64.48,7.77-.06,15.53-3.05,21.46-8.98,11.98-11.98,11.98-31.4,0-43.37-1.9-1.9-3.99-3.5-6.21-4.8-.5-17.51-14.85-31.56-32.48-31.56H121.34c-17.78,0-32.22,14.28-32.49,32-1.95,1.22-3.81,2.66-5.5,4.36-11.98,11.98-11.98,31.4,0,43.37,5.16,5.16,11.69,8.09,18.42,8.8-12.82,18.31-20.34,40.6-20.34,64.65,0,22.08,6.34,42.67,17.3,60.07-5.63,1.18-11,3.95-15.38,8.32-11.98,11.98-11.98,31.4,0,43.37,11.98,11.98,31.4,11.98,43.37,0,4.44-4.44,7.23-9.91,8.38-15.64,17.22,10.63,37.5,16.77,59.22,16.77,22.93,0,44.26-6.84,62.07-18.59.88,6.39,3.78,12.55,8.69,17.46,11.98,11.98,31.4,11.98,43.37,0,11.98-11.98,11.98-31.4,0-43.37-5.11-5.11-11.58-8.03-18.24-8.78Z"/>
-                
-                {/* Shadow Circle under Dial */}
-                <circle fill="#0d1a19" cx="194.32" cy="1604.12" r="97.6" opacity="0.3"/> 
-                
-                {/* Corner Light Indicators - TR=45°, TL=315°, BL=225°, BR=135° */}
-                {/* Top-Left Light (315°) */}
-                <g>
-                    <path fill={getControlsCornerLightColor(1)} d="M103.94,1519.68c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M103.94,1498.11c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04h0c-5.54,0-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04h0M103.94,1495.11c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.03h0Z"/>
-                </g>
-                {/* Top-Right Light (45°) */}
-                <g>
-                    <path fill={getControlsCornerLightColor(0)} d="M288.3,1519.68c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M288.3,1498.11c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04h0c-5.54,0-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04h0M288.3,1495.11c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.03h0Z"/>
-                </g>
-                {/* Bottom-Left Light (225°) */}
-                <g>
-                    <path fill={getControlsCornerLightColor(2)} d="M103.94,1708.16c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.54,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M103.94,1686.59c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04h0c-5.54,0-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04h0M103.94,1683.59c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.03h0Z"/>
-                </g>
-                {/* Bottom-Right Light (135°) */}
-                <g>
-                    <path fill={getControlsCornerLightColor(3)} d="M288.3,1708.16c-6.36,0-11.53-5.17-11.53-11.53s5.17-11.54,11.53-11.53,11.53,5.17,11.53,11.53-5.17,11.54-11.53,11.54Z"/>
-                    <path fill="#1f1f38" d="M288.3,1686.59c5.54,0,10.03,4.49,10.03,10.03h0c0,5.55-4.49,10.04-10.03,10.04h0c-5.54,0-10.03-4.49-10.03-10.03h0c0-5.55,4.49-10.04,10.03-10.04h0M288.3,1683.59c-7.19,0-13.03,5.85-13.03,13.03s5.85,13.04,13.03,13.04,13.03-5.85,13.03-13.03-5.85-13.04-13.03-13.03h0Z"/>
-                </g>
-
-                <text
-                    fill={getControlsTextState().color}
-                    fontFamily="'Amazon Ember'"
-                    fontSize="20.93"
-                    transform="translate(108.17 1480.38)"
-                >
-                    {getControlsTextState().text}
-                </text>
-                
-                {/* The Dial Itself - outer group for rotation/press, inner group for shake */}
-                <g
-                    transform={`translate(0 ${dialPressed ? 4 : 0}) rotate(${Math.round(localDialRotation)} ${DIAL_CENTER_X} ${DIAL_CENTER_Y})`}
-                    style={{
-                        cursor: isDialDragging ? 'grabbing' : 'grab'
-                    }}
-                    onMouseDown={(e) => handleDialStart(e.clientX, e.clientY)}
-                    onTouchStart={(e) => {
-                        if (e.touches.length > 0) {
-                            handleDialStart(e.touches[0].clientX, e.touches[0].clientY);
-                        }
-                    }}
-                    onClick={() => {
-                        // Ignore click if we just finished dragging
-                        if (justDraggedRef.current) {
-                            justDraggedRef.current = false;
-                            return;
-                        }
-                        // Only respond when CONTROLS complication is active in GameState and not solved
-                        if (!hasActiveComplication(ComplicationType.CONTROLS) || controlsComplication.solved) return;
-
-                        // Always show press animation on tap, then check alignment
-                        setDialPressed(true);
-                        setTimeout(() => {
-                            setDialPressed(false);
-                            handleDialPress(); // Will advance if aligned, shake if not
-                        }, 100);
-                    }}
-                >
-                    {/* Inner group for shake animation - keeps rotation intact */}
-                    <g className={dialShaking ? 'shake' : ''}>
-                        <circle fill="#d36b28" cx="194.32" cy="1586.66" r="86.84"/>
-                        {/* Inner Arc */}
-                        <path fill="none" stroke="#fff" strokeWidth="6" strokeMiterlimit="10" d="M238.98,1629.6c-11.27,11.72-27.11,19.01-44.65,19.01s-32.11-6.72-43.27-17.62"/>
-                        {/* Inner Arrows */}
-                        <g transform="translate(170.65 1623.1) rotate(135) scale(1.74)">
-                            <path fill="#fff" d="M21.05,1.52v.45l-.14.45c-2.77,3.62-5.81,7.05-8.67,10.61-.73.94-1.94,1.07-2.8.21L.54,3.02C.27,2.71.1,2.38,0,1.98c.01-.15-.02-.31,0-.45C.1.77.79.08,1.55,0h17.84c.82.02,1.56.72,1.66,1.52ZM19.57,7.83c-.69.84-1.38,1.67-2.07,2.49-1.14,1.37-2.32,2.78-3.45,4.18-.81,1.04-2.03,1.66-3.31,1.66-1.1,0-2.15-.45-2.96-1.27l-.05-.05L1.62,7.81h-.07c-.76.08-1.45.77-1.54,1.52-.02.14.01.31,0,.45.09.41.26.74.54,1.05l8.9,10.22c.86.87,2.06.73,2.8-.21,2.86-3.56,5.91-6.99,8.67-10.61l.14-.45v-.45c-.09-.74-.74-1.39-1.48-1.5Z"/>
-                        </g>
-                        <g transform="translate(219.09 1623.1) rotate(45) scale(1.74 -1.74)">
-                            <path fill="#fff" d="M21.05,1.52v.45l-.14.45c-2.77,3.62-5.81,7.05-8.67,10.61-.73.94-1.94,1.07-2.8.21L.54,3.02C.27,2.71.1,2.38,0,1.98c.01-.15-.02-.31,0-.45C.1.77.79.08,1.55,0h17.84c.82.02,1.56.72,1.66,1.52ZM19.57,7.83c-.69.84-1.38,1.67-2.07,2.49-1.14,1.37-2.32,2.78-3.45,4.18-.81,1.04-2.03,1.66-3.31,1.66-1.1,0-2.15-.45-2.96-1.27l-.05-.05L1.62,7.81h-.07c-.76.08-1.45.77-1.54,1.52-.02.14.01.31,0,.45.09.41.26.74.54,1.05l8.9,10.22c.86.87,2.06.73,2.8-.21,2.86-3.56,5.91-6.99,8.67-10.61l.14-.45v-.45c-.09-.74-.74-1.39-1.48-1.5Z"/>
-                        </g>
-                        <path fill="#fff" d="M169.51,1524.47l20.43-20.43c1.99-1.99,5.23-1.99,7.22,0l20.43,20.43c3.22,3.22.94,8.72-3.61,8.72h-40.86c-4.55,0-6.83-5.5-3.61-8.72Z"/>
-                    </g>
-                </g>
-
-                {/* PRESS text - shows when dial is aligned with target */}
-                {hasActiveComplication(ComplicationType.CONTROLS) && !controlsComplication.solved && isDialAligned() && (
-                    <text
-                        fill="#ffffff"
-                        fontFamily="'Amazon Ember'"
-                        fontSize="24"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                        x={DIAL_CENTER_X}
-                        y={DIAL_CENTER_Y + 8}
-                        style={{ pointerEvents: 'none' }}
-                    >
-                        PRESS
-                    </text>
-                )}
-            </g>
+            <ControlsPanel
+                localDialRotation={localDialRotation}
+                isDialDragging={isDialDragging}
+                dialShaking={dialShaking}
+                dialPressed={dialPressed}
+                onDialStart={handleDialStart}
+                onDialPress={handleDialPress}
+                getControlsCornerLightColor={getControlsCornerLightColor}
+                textState={getControlsTextState()}
+                isDialAligned={isDialAligned()}
+                isComplicationActive={controlsComplicationActive}
+            />
 
             {/* Hidden reference point for coordinate conversion - MUST be outside rotating groups */}
             <circle

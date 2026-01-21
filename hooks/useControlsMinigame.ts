@@ -42,6 +42,8 @@ interface UseControlsMinigameReturn {
   getControlsCornerLightColor: (cornerIndex: CornerIndex) => string;
   getControlsTextState: () => MinigameTextState;
   recentlyFixed: boolean;
+  isDialAligned: () => boolean;
+  isComplicationActive: boolean;
 }
 
 /**
@@ -446,5 +448,7 @@ export function useControlsMinigame({
     getControlsCornerLightColor,
     getControlsTextState,
     recentlyFixed,
+    isDialAligned,
+    isComplicationActive: hasActiveControls() && !controlsComplication.solved,
   };
 }
