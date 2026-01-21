@@ -15,7 +15,7 @@ import { VIEWBOX, BLOCK_SIZE, screenXToVisX } from '../utils/coordinateTransform
 import { VISIBLE_WIDTH, VISIBLE_HEIGHT, TOTAL_HEIGHT, TOTAL_WIDTH, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 import { normalizeX } from '../utils/gameLogic';
 import { gameEventBus } from '../core/events/EventBus';
-import { GameEventType } from '../core/events/GameEvents';
+import { GameEventType, RotatePayload, DragPayload, SoftDropPayload, BlockTapPayload } from '../core/events/GameEvents';
 
 // Input timing constants
 const HOLD_DURATION = 1000; // 1.0s for hold-to-swap
@@ -45,6 +45,7 @@ export function useInputHandlers({
     grid,
     pressureRatio
 }: UseInputHandlersParams): UseInputHandlersReturn {
+    // Destructure optional callbacks
     const { onBlockTap, onRotate, onDragInput, onSwipeUp, onSoftDrop, onSwap } = callbacks;
 
     // Visual state
@@ -167,7 +168,8 @@ export function useInputHandlers({
             if (progress >= 100) {
                 // Trigger Swap
                 if (pointerRef.current) pointerRef.current.actionConsumed = true;
-                onSwap();
+                gameEventBus.emit(GameEventType.INPUT_SWAP);
+                onSwap?.();
                 clearHold();
                 // Haptic feedback if available
                 if (navigator.vibrate) navigator.vibrate(50);
@@ -194,7 +196,7 @@ export function useInputHandlers({
                 setHighlightedGroupId(hit.cell.groupId);
             }
         }
-    }, [getViewportCoords, getHitData, pressureRatio, onSwap, clearHold]);
+    }, [getViewportCoords, getHitData, pressureRatio, clearHold]);
 
     /**
      * Handle pointer move - detect drag direction and apply input.
@@ -221,7 +223,8 @@ export function useInputHandlers({
                     pointerRef.current.lockedAxis = 'V';
                     // Vertical Drag Start
                     if (dy > 0) {
-                        onSoftDrop(true); // Drag Down = Continuous Drop
+                        gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: true } as SoftDropPayload);
+                        onSoftDrop?.(true); // Drag Down = Continuous Drop
                     }
                 }
             }
@@ -233,22 +236,27 @@ export function useInputHandlers({
             if (axis === 'H') {
                 // Horizontal Drag (Joystick)
                 if (dx < -HORIZONTAL_DRAG_THRESHOLD) {
-                    onDragInput(1);
+                    gameEventBus.emit(GameEventType.INPUT_DRAG, { direction: 1 } as DragPayload);
+                    onDragInput?.(1);
                 } else if (dx > HORIZONTAL_DRAG_THRESHOLD) {
-                    onDragInput(-1);
+                    gameEventBus.emit(GameEventType.INPUT_DRAG, { direction: -1 } as DragPayload);
+                    onDragInput?.(-1);
                 } else {
-                    onDragInput(0); // Deadzone
+                    gameEventBus.emit(GameEventType.INPUT_DRAG, { direction: 0 } as DragPayload);
+                    onDragInput?.(0); // Deadzone
                 }
             } else if (axis === 'V') {
                 // Vertical Drag
                 if (dy > HORIZONTAL_DRAG_THRESHOLD) {
-                    onSoftDrop(true);
+                    gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: true } as SoftDropPayload);
+                    onSoftDrop?.(true);
                 } else {
-                    onSoftDrop(false);
+                    gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: false } as SoftDropPayload);
+                    onSoftDrop?.(false);
                 }
             }
         }
-    }, [clearHold, onDragInput, onSoftDrop]);
+    }, [clearHold]);
 
     /**
      * Handle pointer up - resolve gesture (tap, swipe, or release).
@@ -263,8 +271,10 @@ export function useInputHandlers({
 
         // Cleanup
         clearHold();
-        onSoftDrop(false);
-        onDragInput(0);
+        gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: false } as SoftDropPayload);
+        onSoftDrop?.(false);
+        gameEventBus.emit(GameEventType.INPUT_DRAG, { direction: 0 } as DragPayload);
+        onDragInput?.(0);
         setHighlightedGroupId(null);
         pointerRef.current = null;
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -283,15 +293,18 @@ export function useInputHandlers({
             const hit = getHitData(vx, vy);
 
             if (hit.type === 'BLOCK' && hit.cell) {
-                onBlockTap(hit.x, hit.y);
+                gameEventBus.emit(GameEventType.INPUT_BLOCK_TAP, { x: hit.x, y: hit.y } as BlockTapPayload);
+                onBlockTap?.(hit.x, hit.y);
             } else {
                 // Empty Space Logic
                 // Left half = Rotate CCW (same as Q)
                 // Right half = Rotate CW (same as E)
                 if (relX < contentW / 2) {
-                    onRotate(-1);
+                    gameEventBus.emit(GameEventType.INPUT_ROTATE, { clockwise: false } as RotatePayload);
+                    onRotate?.(-1);
                 } else {
-                    onRotate(1);
+                    gameEventBus.emit(GameEventType.INPUT_ROTATE, { clockwise: true } as RotatePayload);
+                    onRotate?.(1);
                 }
             }
         } else {
@@ -300,16 +313,21 @@ export function useInputHandlers({
                 if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
                     if (dy < 0) {
                         // Swipe Up -> Console
-                        onSwipeUp();
+                        gameEventBus.emit(GameEventType.INPUT_SWIPE_UP);
+                        onSwipeUp?.();
                     } else {
                         // Swipe Down -> Fast Drop Pulse
-                        onSoftDrop(true);
-                        setTimeout(() => onSoftDrop(false), 150);
+                        gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: true } as SoftDropPayload);
+                        onSoftDrop?.(true);
+                        setTimeout(() => {
+                            gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: false } as SoftDropPayload);
+                            onSoftDrop?.(false);
+                        }, 150);
                     }
                 }
             }
         }
-    }, [clearHold, onSoftDrop, onDragInput, getViewportCoords, getHitData, onBlockTap, onRotate, onSwipeUp]);
+    }, [clearHold, getViewportCoords, getHitData]);
 
     return {
         handlers: {

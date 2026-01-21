@@ -15,14 +15,15 @@ export interface InputHandlers {
 
 /**
  * Callbacks for input actions (passed to useInputHandlers).
+ * All callbacks are optional - events are emitted via EventBus regardless.
  */
 export interface InputCallbacks {
-    onBlockTap: (x: number, y: number) => void;
-    onRotate: (dir: number) => void;
-    onDragInput: (dir: number) => void;
-    onSwipeUp: () => void;
-    onSoftDrop: (active: boolean) => void;
-    onSwap: () => void;
+    onBlockTap?: (x: number, y: number) => void;
+    onRotate?: (dir: number) => void;
+    onDragInput?: (dir: number) => void;
+    onSwipeUp?: () => void;
+    onSoftDrop?: (active: boolean) => void;
+    onSwap?: () => void;
 }
 
 /**
