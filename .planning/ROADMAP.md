@@ -103,21 +103,21 @@ Plans:
 - [x] 10-02: Extract goop rendering utilities (~131 lines extracted)
 - [x] 10-03: Extract CSS, final cleanup + UAT bug fixes
 
-#### Phase 11: GameEngine Refactor
+#### Phase 11: GameEngine Refactor ✅
 
 **Goal**: Split GameEngine.tick() and extract focused managers
 **Depends on**: Phase 10
 **Research**: Unlikely (internal refactor)
-**Plans**: 2
+**Plans**: 2/2 complete
 
 Tasks:
 - ✅ Split tick() into focused sub-methods (tickTimer, tickGoals, tickHeat, tickFallingBlocks, tickActivePiece)
-- Extract ComplicationManager
-- Extract GoalManager
+- ✅ Extract ComplicationManager
+- ✅ Extract GoalManager
 
 Plans:
 - [x] 11-01: Split tick() into focused methods (22 lines achieved)
-- [ ] 11-02: Extract ComplicationManager and GoalManager
+- [x] 11-02: Extract ComplicationManager and GoalManager
 
 #### Phase 12: State Management & Events
 
@@ -167,6 +167,6 @@ Plans:
 | 8. Quick Wins & Memory Fixes | v1.1 | 1/1 | Complete | 2026-01-21 |
 | 9. Art.tsx Decomposition | v1.1 | 3/3 | Complete | 2026-01-21 |
 | 10. GameBoard.tsx Decomposition | v1.1 | 3/3 | Complete | 2026-01-21 |
-| 11. GameEngine Refactor | v1.1 | 1/2 | In progress | - |
+| 11. GameEngine Refactor | v1.1 | 2/2 | Complete | 2026-01-21 |
 | 12. State Management & Events | v1.1 | 0/? | Not started | - |
 | 13. Testing & Documentation | v1.1 | 0/? | Not started | - |

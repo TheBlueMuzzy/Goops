@@ -19,12 +19,12 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 
 ## Current Position
 
-Phase: 11 of 13 (GameEngine Refactor) - IN PROGRESS
-Plan: 1/2 complete
-Status: **Plan 11-01 complete** — Ready for Plan 11-02
-Last activity: 2026-01-21 — Completed Plan 11-01 (tick() refactor)
+Phase: 11 of 13 (GameEngine Refactor) - COMPLETE
+Plan: 2/2 complete
+Status: **Phase 11 complete** — Ready for Phase 12
+Last activity: 2026-01-21 — Completed Plan 11-02 (ComplicationManager & GoalManager)
 
-Progress: ████████████████████░░░░░ 3.5/6 phases (58%)
+Progress: █████████████████████████ 4/6 phases (67%)
 
 ## v1.1 Architecture Refactor
 
@@ -34,7 +34,7 @@ Progress: ████████████████████░░░�
 - ✅ Phase 8: Quick Wins & Memory Fixes (2026-01-21)
 - ✅ Phase 9: Art.tsx Decomposition (2026-01-21)
 - ✅ Phase 10: GameBoard.tsx Decomposition (2026-01-21)
-- Phase 11: GameEngine Refactor
+- ✅ Phase 11: GameEngine Refactor (2026-01-21)
 - Phase 12: State Management & Events
 - Phase 13: Testing & Documentation
 
@@ -113,15 +113,17 @@ None — all UAT issues resolved.
 Last session: 2026-01-21
 Stopped at: Plan 11-01 complete, ready for Plan 11-02
 
-### Phase 11 Summary (In Progress)
+### Phase 11 Summary (Complete)
 
-GameEngine.tick() refactored from 159 lines to 22 lines (86% reduction):
-- Plan 11-01: Split tick() into 7 focused sub-methods ✅
+GameEngine refactored with improved separation of concerns:
+- Plan 11-01: Split tick() into 7 focused sub-methods (159 → 22 lines)
+- Plan 11-02: Extracted ComplicationManager (178 lines) and GoalManager (96 lines)
+- GameEngine.ts reduced from 811 → 576 lines (28% reduction)
 
 ### Next Steps
 
-1. Run `/gsd:execute-plan .planning/phases/11-gameengine-refactor/11-02-PLAN.md`
-2. Extract ComplicationManager and GoalManager classes
+1. Run `/gsd:plan-phase 12` to plan State Management & Events phase
+2. Or `/gsd:verify-work 11` to do UAT on Phase 11
 
 ## Quick Commands
 
