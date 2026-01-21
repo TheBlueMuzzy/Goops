@@ -8,6 +8,7 @@ import { HudMeter } from './HudMeter';
 import { VIEWBOX, BLOCK_SIZE, visXToScreenX } from '../utils/coordinateTransform';
 import { useInputHandlers } from '../hooks/useInputHandlers';
 import { getBlobPath, getContourPath, buildRenderableGroups, RenderableCell } from '../utils/goopRenderer';
+import './GameBoard.css';
 
 interface GameBoardProps {
   state: GameState;
@@ -75,59 +76,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       pressureRatio
   });
 
-  // OPTIMIZATION: Simplify animations based on isMobile
-  const style = useMemo(() => `
-    .glow-stroke {
-        stroke-width: 2px;
-        opacity: 0.9;
-        ${!isMobile ? `
-        filter: drop-shadow(0 0 3px currentColor);
-        animation: pulseGlow 2s infinite alternate;
-        ` : ''}
-    }
-    .super-glowing-stroke {
-        stroke-width: 3px;
-        opacity: 1;
-        ${!isMobile ? `
-        filter: drop-shadow(0 0 5px white);
-        animation: superGlowStroke 1.5s infinite alternate;
-        ` : ''}
-    }
-    /* Only apply heavy filters on non-mobile */
-    ${!isMobile ? `
-    @keyframes pulseGlow {
-        from { filter: drop-shadow(0 0 2px currentColor); }
-        to { filter: drop-shadow(0 0 6px currentColor); }
-    }
-    @keyframes superGlowStroke {
-        0%, 100% { filter: drop-shadow(0 0 4px white) drop-shadow(0 0 8px white); opacity: 0.8; stroke-width: 3px; }
-        50% { filter: drop-shadow(0 0 8px white) drop-shadow(0 0 15px white); opacity: 1; stroke-width: 4px; }
-    }
-    ` : ''}
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
-        20%, 40%, 60%, 80% { transform: translateX(2px); }
-    }
-    .shake-anim, .shake {
-        animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
-    }
-    @keyframes malfunctionPulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-    }
-    .malfunction-pulse {
-        animation: malfunctionPulse 0.5s ease-in-out infinite;
-    }
-    @keyframes lightsDimIn {
-        from { filter: brightness(1) grayscale(0); }
-        to { filter: brightness(0.1) grayscale(1); }
-    }
-    .lights-dimmed {
-        animation: lightsDimIn 1.5s ease-out forwards;
-    }
-  `, []);
-
   const now = Date.now();
 
   // --- Render Groups Preparation (via utility function) ---
@@ -180,8 +128,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 }} 
             />
         )}
-        
-        <style>{style}</style>
+
         <svg
             width="100%"
             height="100%"
