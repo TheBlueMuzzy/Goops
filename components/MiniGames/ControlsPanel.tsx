@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { CornerIndex, MinigameTextState } from '../../types/minigames';
 
 // Dial coordinate constants (in SVG space)
@@ -37,31 +37,6 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
   isDialAligned,
   isComplicationActive,
 }) => {
-  // Ref to track if we just finished dragging (to ignore click after drag)
-  const justDraggedRef = useRef(false);
-
-  const handleDialClick = () => {
-    // Ignore click if we just finished dragging
-    if (justDraggedRef.current) {
-      justDraggedRef.current = false;
-      return;
-    }
-    onDialPress();
-  };
-
-  // When drag ends (isDialDragging goes from true to false), mark as just dragged
-  // to prevent the subsequent click event from firing
-  const wasDraggingRef = useRef(false);
-  if (isDialDragging && !wasDraggingRef.current) {
-    wasDraggingRef.current = true;
-  }
-  if (!isDialDragging && wasDraggingRef.current) {
-    wasDraggingRef.current = false;
-    justDraggedRef.current = true;
-    // Reset after a short delay to allow normal clicks later
-    setTimeout(() => { justDraggedRef.current = false; }, 100);
-  }
-
   return (
     <g id="Reset_Controls">
       {/* Dial Base Panel - Corrected Shape */}
@@ -113,7 +88,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
             onDialStart(e.touches[0].clientX, e.touches[0].clientY);
           }
         }}
-        onClick={handleDialClick}
+        onClick={onDialPress}
       >
         {/* Inner group for shake animation - keeps rotation intact */}
         <g className={dialShaking ? 'shake' : ''}>

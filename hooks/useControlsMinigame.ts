@@ -85,6 +85,7 @@ export function useControlsMinigame({
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fixedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragBlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Drag refs - avoid stale closure issues in event handlers
   const isDraggingRef = useRef(false);
@@ -92,6 +93,7 @@ export function useControlsMinigame({
   const rotationAtGrabRef = useRef(0); // Dial rotation when grab started
   const currentRotationRef = useRef(0); // Current rotation (ref version for snap calculation)
   const hasMovedRef = useRef(false);    // Track if dial actually moved during drag
+  const justFinishedDraggingRef = useRef(false); // Block click after drag ends
 
   // Helper to check if CONTROLS complication is active
   const hasActiveControls = useCallback(() => {
@@ -175,6 +177,7 @@ export function useControlsMinigame({
       if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
       if (fixedTimeoutRef.current) clearTimeout(fixedTimeoutRef.current);
       if (pressedTimeoutRef.current) clearTimeout(pressedTimeoutRef.current);
+      if (dragBlockTimeoutRef.current) clearTimeout(dragBlockTimeoutRef.current);
     };
   }, []);
 
@@ -236,6 +239,15 @@ export function useControlsMinigame({
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
     setIsDialDragging(false);
+
+    // If there was actual movement, block the subsequent click event
+    if (hasMovedRef.current) {
+      justFinishedDraggingRef.current = true;
+      if (dragBlockTimeoutRef.current) clearTimeout(dragBlockTimeoutRef.current);
+      dragBlockTimeoutRef.current = setTimeout(() => {
+        justFinishedDraggingRef.current = false;
+      }, 100);
+    }
 
     // Only snap if there was actual movement (not a simple tap)
     if (!hasMovedRef.current) return;
@@ -353,6 +365,7 @@ export function useControlsMinigame({
   const handleDialPress = useCallback(() => {
     if (!hasActiveControls() || controlsComplication.solved) return;
     if (isDialDragging) return; // Don't trigger on drag end
+    if (justFinishedDraggingRef.current) return; // Block click after drag
 
     // Visual feedback
     setDialPressed(true);

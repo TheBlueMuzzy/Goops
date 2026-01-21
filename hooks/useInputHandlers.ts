@@ -12,7 +12,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { GridCell } from '../types';
 import { InputHandlers, InputCallbacks, HoldState, HitData, PointerState } from '../types/input';
 import { VIEWBOX, BLOCK_SIZE, screenXToVisX } from '../utils/coordinateTransform';
-import { VISIBLE_WIDTH, TOTAL_HEIGHT, TOTAL_WIDTH, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
+import { VISIBLE_WIDTH, VISIBLE_HEIGHT, TOTAL_HEIGHT, TOTAL_WIDTH, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 import { normalizeX } from '../utils/gameLogic';
 import { gameEventBus } from '../core/events/EventBus';
 import { GameEventType } from '../core/events/GameEvents';
@@ -271,6 +271,10 @@ export function useInputHandlers({
 
         // If hold action triggered swap, ignore tap logic
         if (actionConsumed) return;
+
+        // If hold was engaged (past HOLD_DELAY), don't trigger tap on release
+        // This prevents early swap-release from triggering rotate
+        if (dt >= HOLD_DELAY) return;
 
         // Gesture Resolution
         if (!isDragLocked) {

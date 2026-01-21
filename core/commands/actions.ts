@@ -144,18 +144,13 @@ export class SwapPieceCommand implements Command {
     execute(engine: GameEngine): void {
         if (engine.state.gameOver || engine.state.isPaused || !engine.state.activePiece || !engine.state.canSwap) return;
 
-        gameEventBus.emit(GameEventType.PIECE_ROTATED);
-
         const currentPiece = engine.state.activePiece;
         const currentDef = currentPiece.definition;
         const nextDef = engine.state.storedPiece;
 
-        engine.state.storedPiece = currentDef;
-        engine.lockStartTime = null;
-
         if (nextDef) {
-            // Swap: new piece appears at SAME position as current piece (trade places)
-            const newPiece: ActivePiece = {
+            // Check if stored piece can fit at current position BEFORE committing
+            const testPiece: ActivePiece = {
                 definition: nextDef,
                 cells: [...nextDef.cells],
                 rotation: 0,
@@ -167,20 +162,23 @@ export class SwapPieceCommand implements Command {
                 state: PieceState.FALLING
             };
 
-            // Check for collision at current position
-            if (checkCollision(engine.state.grid, newPiece, engine.state.boardOffset)) {
-                // If collision, spawn at top instead (fallback)
-                const spawnVisualX = Math.floor((VISIBLE_WIDTH - 1) / 2);
-                const spawnX = getGridX(spawnVisualX, engine.state.boardOffset);
-                newPiece.screenX = spawnVisualX;
-                newPiece.x = spawnX;
-                newPiece.y = 0;
-                newPiece.startSpawnY = 0;
+            if (checkCollision(engine.state.grid, testPiece, engine.state.boardOffset)) {
+                // Stored piece won't fit at current position - reject swap
+                gameEventBus.emit(GameEventType.ACTION_REJECTED);
+                return;
             }
 
-            engine.state.activePiece = newPiece;
+            // Swap succeeds - stored piece fits at current position
+            gameEventBus.emit(GameEventType.PIECE_ROTATED);
+            engine.state.storedPiece = currentDef;
+            engine.lockStartTime = null;
+            engine.state.activePiece = testPiece;
             engine.state.canSwap = false;
         } else {
+            // No stored piece - store current and spawn new
+            gameEventBus.emit(GameEventType.PIECE_ROTATED);
+            engine.state.storedPiece = currentDef;
+            engine.lockStartTime = null;
             engine.spawnNewPiece();
             engine.state.canSwap = false;
         }

@@ -24,6 +24,17 @@ Goops (Gooptris) is a puzzle-action game built with React/TypeScript/Vite. Playe
 4. Then tell user it's ready for manual testing
 5. Pre-commit hook also runs tests automatically
 
+### Version Numbers
+Version displayed in console footer (`components/Art.tsx`). Format: **X.Y.Z**
+
+| Segment | When to increment | Example |
+|---------|-------------------|---------|
+| **Z** (patch) | Each fix/change for user to test | 0.7.0 → 0.7.1 |
+| **Y** (minor) | Major milestone completion | 0.7.5 → 0.8.0 |
+| **X** (major) | Release to friends | 0.9.0 → 1.0.0 |
+
+**When presenting fixes for testing**, always state the version number so user can verify they're running the updated code.
+
 ### Git Workflow
 - **Feature branches**: All new work happens on feature branches, not master
   - `master` = stable, tested code only
