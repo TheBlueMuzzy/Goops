@@ -8,14 +8,14 @@
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- `refactor-v1.1` — v1.1 Architecture Refactor (SHIPPED, pending merge to master)
+- None — ready for v1.2 feature branch
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-01-21)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** v1.1 shipped — ready for Band 1 features (rank 10+) or new milestone
+**Current focus:** v1.2 progression system — ranks 0-39 with new upgrades and mechanics
 
 ## Current Position
 
@@ -104,20 +104,21 @@ None — all UAT issues resolved.
 
 ## Session Continuity
 
-Last session: 2026-01-21
-Stopped at: v1.1 milestone archived and tagged
+Last session: 2026-01-23
+Stopped at: v1.2 progression design captured in MILESTONE-CONTEXT.md
 
 ### Current Task State
 
 **Completed this session:**
-- Plan 13-01: Test Coverage Expansion (29 tests added)
-- Plan 13-02: Documentation Updates
-- v1.1 milestone: Archived to milestones/v1.1-ROADMAP.md
-- Git tag: v1.1 created
+- /gsd:discuss-milestone for v1.2
+- Full progression table defined (ranks 0-39)
+- 17 upgrades identified across 4 bands
+- Color schedule finalized: Orange@10, Purple@20, White@30
+- MILESTONE-CONTEXT.md written and committed
 
 ### Uncommitted Changes
 
-Milestone completion files (pending commit).
+None — all committed and pushed.
 
 ### Bugs/Blockers
 
@@ -125,9 +126,10 @@ None
 
 ### Next Steps
 
-1. **Merge to master**: Run `<merge>` to merge `refactor-v1.1` branch to master
-2. Push tag: `git push origin v1.1`
-3. Plan next milestone: Band 1 features (rank 10+) or new direction
+1. `/clear` — Fresh context window
+2. Define level effects for each upgrade (12 passives need scaling values)
+3. Explain intent behind each mechanic
+4. `/gsd:new-milestone` — Create v1.2 milestone with implementation phases
 
 ## Quick Commands
 
