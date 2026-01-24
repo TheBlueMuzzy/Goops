@@ -72,18 +72,30 @@ All three complications have player-driven triggers AND mitigations.
 
 ## Known Issues (Post v1.2)
 
-**RESEARCH REQUIRED - Tetris Movement Feel:**
-1. **Lock delay / last-moment sliding** - Research how Tetris achieves this feel.
-2. **Sideways movement into gaps** - Research Tetris collision logic for moving into gaps.
-
-⚠️ **WARNING for tasks 1-2:** Previous attempts "broke pretty badly". Approach with caution.
-
 **Fixed:**
 - Gravity pieces now interact with cracks (v1.1.27)
 - Non-matching color pieces no longer destroy cracks (they persist under goop)
 
-**Investigated (see INVESTIGATIONS.md):**
+**Researched (see INVESTIGATIONS.md):**
+- Tetris movement feel — research complete, ready for implementation
 - Pressure not rising bug — likely fixed in v1.1, cannot reproduce
+
+### Tetris Movement Feel Summary
+
+**Key Finding:** Lock delay and sideways-into-gaps are linked systems.
+
+| What Tetris Has | What Goops Has | Gap |
+|-----------------|----------------|-----|
+| Move Reset lock delay (resets timer on any move/rotate) | Fixed 500ms timer | **HIGH IMPACT** - add move reset |
+| 15-reset limit (prevents infinite spin) | No limit | Need to add with move reset |
+| SRS wall kicks (+1/+2 y-offsets for climbing) | Basic kicks (no upward) | **MEDIUM IMPACT** - add +y kicks |
+| Rotation-state-dependent kick tables | Same kicks for all states | Low priority |
+
+**Recommended Implementation:**
+1. Phase 1: Add move reset to lock delay (reset timer on rotation/board move, 15-reset cap)
+2. Phase 2: Add upward kick tests (+1 y-offset)
+
+⚠️ **CAUTION:** Previous attempts broke badly. Issues likely due to cylindrical coordinate wrapping and gridX/screenX/boardOffset sync.
 
 ## Session Continuity
 
