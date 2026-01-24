@@ -77,41 +77,72 @@ All three complications now have player-driven triggers AND mitigations.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 17-01-PLAN.md (Purple color + Active Expansion Slot)
-Resume command: `/gsd:execute-plan .planning/phases/17-mixer-band/17-02-PLAN.md`
-Phase 17 Status: 1/3 plans complete
+Stopped at: UI improvements, preparing task list for next session
+Phase 17 Status: 2/3 plans complete (17-01, 17-02 done)
+**Version:** 1.1.19
 
-### This Session Summary (2026-01-24)
+### This Session Summary (2026-01-24 Evening)
 
 **What was done:**
-1. Implemented lights brightness system (player-controlled via soft drop)
-2. Added grace period (5s base + 0.75s per CIRCUIT_STABILIZER level)
-3. Added warning flicker at end of grace period
-4. Added 5-second dim from 100% → 10%, then malfunction
-5. Added overflare (110% peak) visual feedback on recovery
-6. Updated CIRCUIT_STABILIZER to extend grace period instead of reduce trigger chance
-7. Removed crack color pool UI from top of screen
-8. Removed old random trigger logic entirely
-9. Fixed minigame completion to restart grace period
+1. Executed 17-02-PLAN (piece preview boxes) - commits up to 93b9ef0
+2. Fixed piece preview sizing/positioning (fixed 48x48 boxes, centered)
+3. Major UpgradePanel UI overhaul:
+   - +/- buttons instead of "UPGRADE" button
+   - Added Features section (GOOP_HOLD_VIEWER, GOOP_WINDOW, ACTIVE_EXPANSION_SLOT)
+   - Reordered: Actives → Features → Passives
+   - Fixed PRESSURE_CONTROL max level bug (was capped at 5, now uses correct maxLevel=8)
+4. Minigame pulsing improvements:
+   - Active: purple → red pulse (more noticeable)
+   - Text: white instead of red (contrast with red pulse)
+   - Solved: snap to green, fade to purple over 2s
+5. UpgradePanel: Current + Max on same line
 
-**Version:** 1.1.16
+### NEXT SESSION TASKS (Priority Order)
 
-**Files changed:** 9 files
-- types.ts (added lightsBrightness, lightsGraceStart, lightsFlickered to GameState)
-- core/GameEngine.ts (added tickLightsBrightness, removed checkLightsTrigger)
-- core/ComplicationManager.ts (updated resolveComplication, removed checkLightsTrigger)
-- core/events/GameEvents.ts (added LIGHTS_FLICKER event)
-- complicationConfig.ts (replaced random trigger config with brightness config)
-- constants.ts (updated CIRCUIT_STABILIZER description and effect)
-- components/GameBoard.tsx (inline brightness filter, removed crack color pool UI)
-- Game.tsx (pass lightsBrightness instead of lightsDimmed)
-- components/Art.tsx (version bump)
+**Quick UI Fixes:**
+1. UpgradePanel: Remove "ACTIVES (0/1 equipped)" text, replace with centered "Earn PWR by Increasing your Operator Rank" (Amazon Ember font, same size)
+2. Fix Max text for minigame upgrades to say "Easier Fixing Sequence" for all 3
 
-### Next Steps
+**Bugs to Investigate:**
+3. **Pressure not rising bug** - Sometimes pressure doesn't start rising for a long time. User couldn't reproduce consistently, may be related to timing/speed. Investigate anything connected to pressure rise timing/start conditions.
 
-1. Continue Phase 16 (Junk Band) — Junk Goop, GOOP_DUMP, SEALING_BONUS
-2. Or proceed to Phase 17 (Mixer Band) if Phase 16 is considered complete
-3. Full playtest of progression Rank 0 → 39
+4. **Falling pieces don't interact with cracks** - After clears, when pieces fall (gravity), they don't destroy cracks (different color) or consume them (same color). This is different from normal single-piece falling. Need to check sticky gravity / collision logic.
+
+**Feature: Goop Dump Rework:**
+5. GOOP_DUMP active should spawn units from TOP and fall down across board length (gives player reaction time). Units should:
+   - Move with the board (unlike main falling piece)
+   - Be "ghosts" until they lock (like main piece)
+   - Fall from top, not spawn in place
+
+**RESEARCH REQUIRED - Tetris Movement Feel:**
+6. **Lock delay / last-moment sliding** - In Tetris you can "slide" pieces at the last moment before locking. Research how Tetris achieves this feel. User wants this in game.
+
+7. **Sideways movement into gaps** - In Tetris, if there's a vertical wall with one unit missing, you can move a falling piece sideways INTO that gap. Currently not possible in this game. Research how Tetris handles this collision logic.
+
+⚠️ **WARNING for tasks 6-7:** User previously attempted these features and it "broke pretty badly" with cascading bugs. They reverted. Approach with caution:
+- Do thorough research first
+- Understand the existing collision/movement system deeply
+- Make small, testable changes
+- Test extensively after each change
+
+### Key Files for Investigation
+
+**Pressure rise timing:**
+- `core/GameEngine.ts` - tick() function, pressure calculation
+- `complicationConfig.ts` - CONTROLS complication config
+
+**Gravity/crack interaction:**
+- `core/GameEngine.ts` - applyGravity(), handleClearAndScore()
+- `utils/gameLogic.ts` - findConnectedGroup(), checkCollision()
+
+**Goop Dump:**
+- `core/commands/actions.ts` - ActivateAbilityCommand
+- `core/GameEngine.ts` - activateAbility()
+
+**Tetris movement feel:**
+- `core/GameEngine.ts` - movePiece(), lockPiece()
+- `utils/gameLogic.ts` - checkCollision()
+- Current lock mechanism needs understanding before modification
 
 ## Quick Commands
 
