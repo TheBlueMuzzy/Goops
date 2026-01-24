@@ -93,7 +93,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 16-01: TBD
+- [x] 16-01: JUNK_UNIFORMER + Orange verification — completed 2026-01-23
+- [ ] 16-02: TBD
 
 #### Phase 17: Mixer Band
 
@@ -136,6 +137,6 @@ Plans:
 | 13. Testing & Documentation | v1.1 | 2/2 | Complete | 2026-01-21 |
 | 14. Data Architecture | v1.2 | 2/2 | Complete | 2026-01-24 |
 | 15. Onboarding Band | v1.2 | 4/4 | Complete | 2026-01-24 |
-| 16. Junk Band | v1.2 | 0/? | Not started | - |
+| 16. Junk Band | v1.2 | 1/? | In progress | - |
 | 17. Mixer Band | v1.2 | 0/? | Not started | - |
 | 18. Cracked Band | v1.2 | 0/? | Not started | - |

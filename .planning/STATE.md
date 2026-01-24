@@ -19,12 +19,12 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 ## Current Position
 
-Phase: 15 of 18 (Onboarding Band)
-Plan: 4 of 4 complete
-Status: Complete
-Last activity: 2026-01-24 — Completed 15-04-PLAN.md (Phase 15 complete)
+Phase: 16 of 18 (Junk Band)
+Plan: 1 of ? in current phase
+Status: In progress
+Last activity: 2026-01-23 — Completed 16-01-PLAN.md
 
-Progress: ████░░░░░░ 22%
+Progress: ████░░░░░░ 24%
 
 ## v1.1 Architecture Refactor
 
@@ -104,51 +104,21 @@ None — all UAT issues resolved.
 
 ## Session Continuity
 
-Last session: 2026-01-24
-Stopped at: Documentation audit complete, all docs updated for Phase 15 completion
+Last session: 2026-01-23
+Stopped at: Completed 16-01-PLAN.md (JUNK_UNIFORMER + Orange verification)
 Resume file: None
-Phase 15 Status: COMPLETE — Ready for Phase 16 (Junk Band)
+Phase 16 Status: In progress — 1 plan complete
 
 ### This Session Summary
 
 **What was done:**
-1. Executed 15-04-PLAN.md (AUTO_POPPER + COOLDOWN_BOOSTER + Active Ability UI)
-2. Full documentation audit and update:
-   - PRD.md v4.0: Band system, 17 upgrades, active abilities, implementation status
-   - PROJECT.md: v1.2 progress, key decisions
-   - CLAUDE.md: Current status reflects Phase 15 complete
-   - MILESTONES.md: Added v1.2 milestone
+1. Executed 16-01-PLAN.md (JUNK_UNIFORMER + Orange color verification)
+   - Added powerUps parameter to createInitialGrid
+   - Implemented anchor-color bias system for JUNK_UNIFORMER
+   - Verified Orange color at rank 10+ (existing tests pass)
 
 **Commits this session:**
-- `e2ffe74` feat(15-04): implement AUTO_POPPER end-game mechanic
-- `bb0b3e2` feat(15-04): add COOLDOWN_BOOSTER effect function
-- `07b0255` feat(15-04): add active ability equip UI
-- `39de2f3` feat(15-04): implement active ability UI and charging system
-- `0d0f8b4` docs(15-04): complete auto-popper and active abilities plan
-- `5dfab33` docs: update documentation for v1.2 Phase 15 completion
-
-### Level Effects Decided This Session
-
-| Upgrade | Levels | Effect per Level |
-|---------|--------|------------------|
-| Circuit Stabilizer | 4 | -7.5% trigger chance |
-| Auto-Popper | 4 | -4% decay (from -20% base) |
-| Capacitor Efficiency | 4 | -6.25% drain |
-| Gear Lubrication | 4 | +12.5% dissipation |
-| Focus Mode | 4 | -10% time speed |
-| Dense Goop | 4 | +12.5% fall speed |
-| Pressure Control | 8 | +5 seconds |
-| Junk Uniformer | 4 | +10% same-color |
-| Goop Swap | 4 | -0.25s (1.5s→0.5s) |
-| Sealing Bonus | 4 | +5% (10% base) |
-| Slow Cracks | 4 | -5% growth offset |
-| Crack Matcher | 4 | +25% color bias |
-
-### Mechanic Redesigns Noted
-
-**Sealing Bonus:** Actives use cooldowns (not pop-counts). Sealing crack = 10% base cooldown reduction. Upgrade adds +5%/level. Implementation in later phases.
-
-**Slow Cracks:** Cracks grow every 5s from inception, % chance = current pressure. Upgrade offsets that chance.
+- `9f3d391` feat(16-01): add JUNK_UNIFORMER effect to createInitialGrid
 
 ### Uncommitted Changes
 
@@ -160,7 +130,7 @@ None
 
 ### Next Steps
 
-1. `/gsd:plan-phase 16` — Plan Phase 16: Junk Band (Junk Goop complication, Orange color, 4 new upgrades)
+1. Execute remaining Phase 16 plans (Junk Goop complication, GOOP_SWAP, GOOP_DUMP, SEALING_BONUS)
 
 ## Quick Commands
 
