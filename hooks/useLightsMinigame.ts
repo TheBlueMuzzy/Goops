@@ -12,7 +12,7 @@ import {
 
 // Color constants for text state
 const TEAL = "#14b8a6";  // Idle
-const RED = "#ef4444";   // Active
+const WHITE = "#ffffff"; // Active (white to contrast with red pulse)
 const GREEN = "#22c55e"; // Recently fixed
 
 // Color constants for lights
@@ -354,7 +354,7 @@ export function useLightsMinigame({
    */
   const getLightsTextState = useCallback((): MinigameTextState => {
     if (hasActiveLights()) {
-      return { text: "RESET LIGHTS", color: RED };
+      return { text: "RESET LIGHTS", color: WHITE };
     }
     if (recentlyFixed) {
       return { text: "LIGHTS FIXED", color: GREEN };

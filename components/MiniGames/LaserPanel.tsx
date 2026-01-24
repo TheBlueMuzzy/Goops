@@ -9,6 +9,7 @@ interface LaserPanelProps {
   getLaserLightColors: (index: number) => SliderLightColors;
   textState: MinigameTextState;
   isComplicationActive?: boolean;
+  recentlyFixed?: boolean;
 }
 
 /**

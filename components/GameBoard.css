@@ -66,21 +66,40 @@
     animation: lightsDimIn 1.5s ease-out forwards;
 }
 
-/* === Minigame Active Pulse === */
+/* === Minigame Active Pulse (purple to red) === */
 @keyframes minigamePulse {
     0%, 100% { fill: #45486c; }
-    50% { fill: #35384c; }
+    50% { fill: #8b2020; }
 }
 
 .minigame-active-pulse {
-    animation: minigamePulse 1.5s ease-in-out infinite;
+    animation: minigamePulse 1s ease-in-out infinite;
 }
 
 @keyframes minigamePulseLaser {
     0%, 100% { fill: #474871; }
-    50% { fill: #373858; }
+    50% { fill: #8b2020; }
 }
 
 .minigame-active-pulse-laser {
-    animation: minigamePulseLaser 1.5s ease-in-out infinite;
+    animation: minigamePulseLaser 1s ease-in-out infinite;
+}
+
+/* Minigame solved - green background that fades to purple */
+@keyframes minigameSolvedFade {
+    0% { fill: #22c55e; }
+    100% { fill: #45486c; }
+}
+
+.minigame-solved-fade {
+    animation: minigameSolvedFade 2s ease-out forwards;
+}
+
+@keyframes minigameSolvedFadeLaser {
+    0% { fill: #22c55e; }
+    100% { fill: #474871; }
+}
+
+.minigame-solved-fade-laser {
+    animation: minigameSolvedFadeLaser 2s ease-out forwards;
 }

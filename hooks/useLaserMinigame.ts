@@ -9,7 +9,7 @@ import {
 
 // Color constants for text state
 const TEAL = "#14b8a6";  // Idle
-const RED = "#ef4444";   // Active
+const WHITE = "#ffffff"; // Active (white to contrast with red pulse)
 const GREEN = "#22c55e"; // Recently fixed
 
 // Color constants for lights
@@ -208,7 +208,7 @@ export function useLaserMinigame({
    */
   const getLaserTextState = useCallback((): MinigameTextState => {
     if (hasActiveLaser()) {
-      return { text: "RESET LASER", color: RED };
+      return { text: "RESET LASER", color: WHITE };
     }
     if (recentlyFixed) {
       return { text: "LASER FIXED", color: GREEN };

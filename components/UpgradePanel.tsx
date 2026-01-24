@@ -161,27 +161,23 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
           </span>
         </div>
 
-        {/* Current Effect - always shown */}
-        <div style={{ color: '#ffffff', fontSize: '14px' }} className="mb-1">
-          {isActive ? (
-            // Actives show "Effect:" text unchanged
-            <>Effect: {upgrade.formatEffect(1)}</>
-          ) : currentLevel > 0 ? (
-            <>Current: {upgrade.formatEffect(currentLevel)}</>
-          ) : (
-            <span style={{ color: '#59acae' }}>Current: Spend points to upgrade</span>
+        {/* Current Effect + Max on same line */}
+        <div className="flex justify-between items-start" style={{ fontSize: '14px' }}>
+          <div style={{ color: '#ffffff' }}>
+            {isActive ? (
+              <>Effect: {upgrade.formatEffect(1)}</>
+            ) : currentLevel > 0 ? (
+              <>Current: {upgrade.formatEffect(currentLevel)}</>
+            ) : (
+              <span style={{ color: '#59acae' }}>Current: Spend points to upgrade</span>
+            )}
+          </div>
+          {isMaxLevel && upgrade.maxLevelBonus && (
+            <div className="italic text-right ml-2" style={{ color: '#5bbc70' }}>
+              Max: {upgrade.maxLevelBonus}
+            </div>
           )}
         </div>
-
-        {/* Max Level Bonus */}
-        {isMaxLevel && upgrade.maxLevelBonus && (
-          <div
-            className="italic"
-            style={{ color: '#5bbc70', fontSize: '14px' }}
-          >
-            MAX: {upgrade.maxLevelBonus}
-          </div>
-        )}
       </div>
     );
   };
@@ -292,10 +288,6 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
           </div>
         </foreignObject>
 
-        {/* Footer Tip */}
-        <text fill="#59acae" fontFamily="'Amazon Ember'" fontSize="14" transform="translate(291.5 870)" textAnchor="middle">
-          Earn 1 PWR per rank gained
-        </text>
         </svg>
 
         {/* Floating Back Button (like Settings) */}
