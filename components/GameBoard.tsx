@@ -1,6 +1,6 @@
 // --- Imports ---
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
-import { GameState, PieceState, ComplicationType, GamePhase } from '../types';
+import { GameState, PieceState, ComplicationType, GamePhase, PieceDefinition } from '../types';
 import { VISIBLE_WIDTH, VISIBLE_HEIGHT, COLORS, TOTAL_WIDTH, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 import { normalizeX, getGhostY, getPaletteForRank } from '../utils/gameLogic';
 import { isMobile } from '../utils/device';
@@ -11,6 +11,7 @@ import { getBlobPath, getContourPath, buildRenderableGroups } from '../utils/goo
 import { gameEventBus } from '../core/events/EventBus';
 import { GameEventType, SwapHoldPayload } from '../core/events/GameEvents';
 import { ActiveAbilityCircle } from './ActiveAbilityCircle';
+import { PiecePreview } from './PiecePreview';
 import { UPGRADES } from '../constants';
 import './GameBoard.css';
 
@@ -28,6 +29,8 @@ interface GameBoardProps {
   activeCharges?: Record<string, number>;  // Active ID -> charge (0-100)
   onActivateAbility?: (upgradeId: string) => void;  // Called when ability activated
   powerUps?: Record<string, number>;  // Upgrade levels for GOOP_SWAP effect
+  storedPiece?: PieceDefinition | null;  // Held piece for preview
+  nextPiece?: PieceDefinition | null;    // Next piece for preview
 }
 
 // --- Component ---
@@ -35,7 +38,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, lightsBrightness = 100,
     laserCapacitor = 100, controlsHeat = 0, complicationCooldowns,
     equippedActives = [], activeCharges = {}, onActivateAbility,
-    powerUps
+    powerUps, storedPiece, nextPiece
 }) => {
   const { grid, boardOffset, activePiece, fallingBlocks, floatingTexts, timeLeft, goalMarks } = state;
 
@@ -125,6 +128,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   const activeColors = useMemo(() => new Set(goalMarks.map(m => m.color)), [goalMarks]);
   const flyingOrbs = goalMarks.filter(m => now - m.spawnTime < 500);
+
+  // Piece preview visibility based on upgrades
+  const showHoldViewer = (powerUps?.['GOOP_HOLD_VIEWER'] || 0) >= 1;
+  const showNextWindow = (powerUps?.['GOOP_WINDOW'] || 0) >= 1;
 
   // --- Rendering ---
   return (
@@ -665,7 +672,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             return <div key={`fly-${orb.id}`} className="absolute w-4 h-4 rounded-full shadow-lg border border-white/50 z-30" style={{ backgroundColor: orb.color, left: `${currentX}%`, top: `${currentY}%`, transform: 'translate(-50%, -50%)', boxShadow: isMobile ? `0 0 4px ${orb.color}` : `0 0 10px ${orb.color}` }} />;
         })}
         
-        {/* Crack color pool UI removed - space reserved for hold/next piece windows */}
+        {/* Piece Preview - Hold (top-left) */}
+        {state.phase === GamePhase.PERISCOPE && (
+            <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 10 }}>
+                <PiecePreview piece={storedPiece ?? null} label="HOLD" visible={showHoldViewer} />
+            </div>
+        )}
+
+        {/* Piece Preview - Next (top-right) */}
+        {state.phase === GamePhase.PERISCOPE && (
+            <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10 }}>
+                <PiecePreview piece={nextPiece ?? null} label="NEXT" visible={showNextWindow} />
+            </div>
+        )}
     </div>
   );
 };
