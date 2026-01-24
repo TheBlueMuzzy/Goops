@@ -9,14 +9,20 @@ const TARGET_FRAME_TIME = isMobile ? 25 : 16; // ms per frame
 export const useGameEngine = (
     initialTotalScore: number,
     powerUps: Record<string, number>,
-    onRunComplete: (score: number) => void
+    onRunComplete: (score: number) => void,
+    equippedActives: string[] = []
 ) => {
     // Engine persistence
     const engineRef = useRef<GameEngine | null>(null);
     if (!engineRef.current) {
-        engineRef.current = new GameEngine(initialTotalScore, powerUps);
+        engineRef.current = new GameEngine(initialTotalScore, powerUps, equippedActives);
     }
     const engine = engineRef.current;
+
+    // Sync equipped actives when they change
+    useEffect(() => {
+        engine.equippedActives = equippedActives;
+    }, [equippedActives, engine]);
 
     // Force re-render without creating new objects
     const [, forceUpdate] = useReducer(x => x + 1, 0);

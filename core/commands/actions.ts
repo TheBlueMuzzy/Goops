@@ -280,6 +280,9 @@ export class BlockTapCommand implements Command {
             if (infusedCount > 0) {
                  engine.state.goalsCleared += infusedCount;
                  gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: infusedCount });
+
+                 // Charge active abilities: 10% per sealed crack-goop
+                 engine.chargeActiveAbilities(infusedCount * 10);
             }
 
             const totalTimeAdded = basePressureReduc + unitPressureReduc + tierPressureReduc + infusedBonus;
@@ -408,6 +411,28 @@ export class TogglePauseCommand implements Command {
         } else {
             gameEventBus.emit(GameEventType.GAME_RESUMED);
         }
+        engine.emitChange();
+    }
+}
+
+export class ActivateAbilityCommand implements Command {
+    type = 'ACTIVATE_ABILITY';
+    constructor(public upgradeId: string) {}
+
+    execute(engine: GameEngine): void {
+        if (engine.state.gameOver || engine.state.isPaused) return;
+
+        // Check ability is ready (charge >= 100)
+        const charge = engine.state.activeCharges[this.upgradeId] || 0;
+        if (charge < 100) return;
+
+        // Reset charge
+        engine.state.activeCharges[this.upgradeId] = 0;
+
+        // Execute ability effect
+        engine.activateAbility(this.upgradeId);
+
+        gameEventBus.emit(GameEventType.ABILITY_ACTIVATED, { upgradeId: this.upgradeId });
         engine.emitChange();
     }
 }

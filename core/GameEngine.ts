@@ -18,6 +18,7 @@ import { gameEventBus } from './events/EventBus';
 import { GameEventType } from './events/GameEvents';
 import { Command } from './commands/Command';
 import { complicationManager } from './ComplicationManager';
+import { UPGRADES } from '../constants';
 import { goalManager } from './GoalManager';
 
 const INITIAL_SPEED = 800; // ms per block
@@ -38,6 +39,7 @@ export class GameEngine {
     public initialTotalScore: number = 0;
     public powerUps: Record<string, number> = {};
     public isSessionActive: boolean = false;
+    public equippedActives: string[] = [];
 
     private pendingTotalScore: number | null = null;
 
@@ -46,9 +48,10 @@ export class GameEngine {
         return Math.floor(Math.random() * 13) + 12; // 12 to 24 inclusive
     }
 
-    constructor(initialTotalScore: number, powerUps: Record<string, number> = {}) {
+    constructor(initialTotalScore: number, powerUps: Record<string, number> = {}, equippedActives: string[] = []) {
         this.initialTotalScore = initialTotalScore;
         this.powerUps = powerUps;
+        this.equippedActives = equippedActives;
         
         // Calculate initial configuration
         const startRank = calculateRankDetails(initialTotalScore).rank;
@@ -203,7 +206,14 @@ export class GameEngine {
         this.lastComplicationCheckTime = Date.now();
         this.isSoftDropping = false;
         this.isSessionActive = true;
-        
+
+        // Initialize active ability charges for equipped actives
+        const initialCharges: Record<string, number> = {};
+        this.equippedActives.forEach(id => {
+            initialCharges[id] = 0; // Start at 0% charge
+        });
+        this.state.activeCharges = initialCharges;
+
         this.spawnNewPiece();
         gameEventBus.emit(GameEventType.GAME_START);
         gameEventBus.emit(GameEventType.MUSIC_START);
@@ -271,6 +281,42 @@ export class GameEngine {
         // Go back to Console after repair to confirm status
         this.state.phase = GamePhase.CONSOLE;
         this.emitChange();
+    }
+
+    /**
+     * Activate an active ability.
+     */
+    public activateAbility(upgradeId: string) {
+        if (this.state.gameOver) return;
+
+        const upgrade = UPGRADES[upgradeId as keyof typeof UPGRADES];
+        if (!upgrade || upgrade.type !== 'active') return;
+
+        // Execute ability effect based on type
+        switch (upgradeId) {
+            case 'COOLDOWN_BOOSTER': {
+                // Extend all complication cooldowns by 25%
+                const level = this.powerUps[upgradeId] || 1;
+                const extensionPercent = level * 0.25; // 25% per level
+                complicationManager.extendAllCooldowns(this.state, extensionPercent);
+                console.log(`COOLDOWN_BOOSTER activated: +${extensionPercent * 100}% cooldown extension`);
+                break;
+            }
+            // Future actives: GOOP_DUMP, GOOP_COLORIZER, CRACK_DOWN
+            default:
+                console.log(`Active ability ${upgradeId} not yet implemented`);
+        }
+    }
+
+    /**
+     * Add charge to active abilities. Called when crack-goop is sealed.
+     */
+    public chargeActiveAbilities(amount: number) {
+        // Charge all equipped actives
+        Object.keys(this.state.activeCharges).forEach(id => {
+            const current = this.state.activeCharges[id] || 0;
+            this.state.activeCharges[id] = Math.min(100, current + amount);
+        });
     }
 
     private checkComplications(dt: number) {
@@ -602,6 +648,22 @@ export class GameEngine {
 
     // --- Main Loop ---
 
+    /**
+     * Passive charging for active abilities.
+     * Slow charge: 1% per second = 100 seconds to fully charge.
+     */
+    private tickActiveCharges(dt: number): void {
+        const chargePerSecond = 1; // 1% per second
+        const chargeAmount = (dt / 1000) * chargePerSecond;
+
+        Object.keys(this.state.activeCharges).forEach(id => {
+            const current = this.state.activeCharges[id] || 0;
+            if (current < 100) {
+                this.state.activeCharges[id] = Math.min(100, current + chargeAmount);
+            }
+        });
+    }
+
     public tick(dt: number) {
         if (!this.isSessionActive || this.state.gameOver || this.state.isPaused) return;
 
@@ -622,6 +684,9 @@ export class GameEngine {
 
         // Active piece gravity
         this.tickActivePiece(dt);
+
+        // Active ability charging (passive)
+        this.tickActiveCharges(dt);
 
         this.emitChange();
     }

@@ -10,6 +10,8 @@ import { useInputHandlers } from '../hooks/useInputHandlers';
 import { getBlobPath, getContourPath, buildRenderableGroups } from '../utils/goopRenderer';
 import { gameEventBus } from '../core/events/EventBus';
 import { GameEventType, SwapHoldPayload } from '../core/events/GameEvents';
+import { ActiveAbilityCircle } from './ActiveAbilityCircle';
+import { UPGRADES } from '../constants';
 import './GameBoard.css';
 
 // --- Props Interface ---
@@ -22,12 +24,16 @@ interface GameBoardProps {
   laserCapacitor?: number;  // HUD meter: 0-100 (100 = full)
   controlsHeat?: number;    // HUD meter: 0-100 (0 = cool)
   complicationCooldowns?: Record<ComplicationType, number>;  // Cooldown timestamps
+  equippedActives?: string[];  // Active ability IDs equipped
+  activeCharges?: Record<string, number>;  // Active ID -> charge (0-100)
+  onActivateAbility?: (upgradeId: string) => void;  // Called when ability activated
 }
 
 // --- Component ---
 export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, lightsDimmed,
-    laserCapacitor = 100, controlsHeat = 0, complicationCooldowns
+    laserCapacitor = 100, controlsHeat = 0, complicationCooldowns,
+    equippedActives = [], activeCharges = {}, onActivateAbility
 }) => {
   const { grid, boardOffset, activePiece, fallingBlocks, floatingTexts, timeLeft, goalMarks } = state;
 
@@ -489,6 +495,32 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                             />
                         </g>
                     )}
+
+                    {/* Active Ability Circles - below controls meter on right side */}
+                    {equippedActives.length > 0 && equippedActives.map((activeId, index) => {
+                        const upgrade = UPGRADES[activeId as keyof typeof UPGRADES];
+                        if (!upgrade) return null;
+
+                        const charge = activeCharges[activeId] || 0;
+                        const isReady = charge >= 100;
+                        const circleSize = 36;
+                        const circleX = vbX + vbW - 26;
+                        const circleY = vbH * 0.30 + (index * (circleSize + 8));
+
+                        return (
+                            <ActiveAbilityCircle
+                                key={activeId}
+                                upgradeId={activeId}
+                                name={upgrade.name}
+                                charge={charge}
+                                isReady={isReady}
+                                x={circleX}
+                                y={circleY}
+                                size={circleSize}
+                                onClick={() => isReady && onActivateAbility?.(activeId)}
+                            />
+                        );
+                    })}
                 </>
             )}
         </svg>

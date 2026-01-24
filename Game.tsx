@@ -9,7 +9,7 @@ import { Play, Home } from 'lucide-react';
 import { gameEventBus } from './core/events/EventBus';
 import { GameEventType, RotatePayload, DragPayload, SoftDropPayload, BlockTapPayload, SwapHoldPayload } from './core/events/GameEvents';
 import { calculateRankDetails } from './utils/progression';
-import { MoveBoardCommand, RotatePieceCommand, SetSoftDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, BlockTapCommand } from './core/commands/actions';
+import { MoveBoardCommand, RotatePieceCommand, SetSoftDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, BlockTapCommand, ActivateAbilityCommand } from './core/commands/actions';
 
 // STATE ARCHITECTURE:
 // - Game state flows down: useGameEngine → state prop → child components
@@ -38,7 +38,12 @@ interface GameProps {
 }
 
 const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, powerUpPoints, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, equippedActives = [], onToggleEquip }) => {
-  const { engine, gameState } = useGameEngine(initialTotalScore, powerUps, onRunComplete);
+  const { engine, gameState } = useGameEngine(initialTotalScore, powerUps, onRunComplete, equippedActives);
+
+  // Handle active ability activation
+  const handleActivateAbility = useCallback((upgradeId: string) => {
+    engine.execute(new ActivateAbilityCommand(upgradeId));
+  }, [engine]);
   const heldKeys = useRef<Set<string>>(new Set());
   const dragDirectionRef = useRef<number>(0);
   const lastMoveTimeRef = useRef(0);
@@ -318,6 +323,9 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             laserCapacitor={gameState.laserCapacitor}
             controlsHeat={gameState.controlsHeat}
             complicationCooldowns={gameState.complicationCooldowns}
+            equippedActives={equippedActives}
+            activeCharges={gameState.activeCharges}
+            onActivateAbility={handleActivateAbility}
          />
          {/* LIGHTS complication effect is now handled via lightsDimmed prop on GameBoard */}
       </div>
