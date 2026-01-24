@@ -56,7 +56,9 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   const swapHoldStartRef = useRef<number | null>(null);
   const swapHoldIntervalRef = useRef<number | null>(null);
   const SWAP_HOLD_DELAY = 250;    // 0.25s before timer starts
-  const SWAP_HOLD_DURATION = 1000; // 1.0s to complete swap
+  // GOOP_SWAP upgrade: base 1.5s, -0.25s per level (min 0.5s at level 4)
+  const goopSwapLevel = powerUps?.['GOOP_SWAP'] || 0;
+  const SWAP_HOLD_DURATION = 1500 - (goopSwapLevel * 250); // Dynamic based on upgrade
 
   // CONTROLS complication: requires 2 inputs per move, halves hold speed
   const controlsComplication = gameState.complications.find(c => c.type === ComplicationType.CONTROLS);
