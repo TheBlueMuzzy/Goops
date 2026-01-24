@@ -31,7 +31,12 @@ export class MoveBoardCommand implements Command {
              const newGridX = getGridX(engine.state.activePiece.screenX, newOffset);
              newPiece = { ...engine.state.activePiece, x: newGridX };
 
-             if (checkCollision(engine.state.grid, newPiece, newOffset)) {
+             // For horizontal movement, check collision at nearest integer Y.
+             // This allows sliding into gaps that would fit when the piece lands,
+             // rather than rejecting because the fractional Y straddles an extra row.
+             const snappedPiece = { ...newPiece, y: Math.round(newPiece.y) };
+
+             if (checkCollision(engine.state.grid, snappedPiece, newOffset)) {
                  gameEventBus.emit(GameEventType.ACTION_REJECTED);
                  return;
              }

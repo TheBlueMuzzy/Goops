@@ -108,13 +108,13 @@ export const checkCollision = (grid: GridCell[][], piece: ActivePiece, boardOffs
     // Floor Check:
     // A block at y spans [y, y+1).
     // It hits the floor if the bottom edge (y + 1) is > TOTAL_HEIGHT.
-    if (y + 1 > TOTAL_HEIGHT) return true; 
-    
+    if (y + 1 > TOTAL_HEIGHT) return true;
+
     // Grid Cell Check:
     // We must check all integer grid rows that this block overlaps.
     // A block at y spans [y, y+1).
     // Using a strict epsilon to ensure we detect collision as soon as we cross the boundary.
-    
+
     const rStart = Math.floor(y);
     const rEnd = Math.floor(y + 1 - 0.0001);
 
