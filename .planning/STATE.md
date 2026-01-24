@@ -8,7 +8,7 @@
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- None — ready for v1.2 feature branch
+- None — ready for Phase 16/17 work
 
 ## Project Reference
 
@@ -21,12 +21,27 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 Phase: 16 of 18 (Junk Band)
 Plan: 3 of 3 in current phase
-Status: In progress — balance tuning complete, lights rework pending
+Status: ✅ Lights rework complete, ready for next phase work
 Last activity: 2026-01-24
 
-Progress: ████░░░░░░ 26%
+Progress: ████░░░░░░ 30%
 
 ## What's Done
+
+### Lights Malfunction Rework (Completed 2026-01-24)
+
+Replaced random trigger with player-controlled brightness system:
+- **Soft dropping** (S key or drag down) charges the lights
+- **Not soft dropping** starts grace period, then dims, then triggers malfunction
+- CIRCUIT_STABILIZER now extends grace period (+0.75s per level, max 8s at level 4)
+
+Timing:
+- Grace period: 5s base
+- Dim duration: 5s (100% → 10%)
+- Recovery: ~0.25s at 400%/sec
+- Overflare: 110% peak for visual feedback
+
+Also removed crack color pool UI from top of screen (freeing space for hold/next piece).
 
 ### v1.1 Architecture Refactor (Shipped 2026-01-21)
 
@@ -49,52 +64,53 @@ const ctm = refPoint.getScreenCTM();
 const svgPoint = screenPoint.matrixTransform(ctm.inverse());
 ```
 
-### Deferred Issues
-
-**Lights Malfunction Rework Needed:**
-- Circuit Stabilizer math broken: 20% base - 30% max upgrade = negative (never triggers)
-- Needs player-driven trigger and mitigation like Laser and Controls have
-- Current: random chance on piece lock
-- Desired: meter-based or action-based like the other two
-
-## Session Continuity
-
-Last session: 2026-01-24
-Stopped at: Balance tuning complete, lights rework next
-Resume file: None
-Phase 16 Status: In progress
-
-### This Session Summary
-
-**What was done:**
-1. Fixed active ability UI click passthrough (onPointerDown + stopPropagation)
-2. Added shake animation using existing shake-anim class
-3. Changed fill visual to bottom-to-top like goops
-4. Increased crack seal charge: 10% → 25%
-5. Reduced lights malfunction: 50% → 20%
-6. Sped up lights minigame: 50% faster pattern, near-instant button popup
-7. Added laser capacitor refill: +10% on piece lock (disabled during active LASER)
-8. Added Code Reuse Guideline to CLAUDE.md
-9. Added version note: patch versions can go past 9 (1.1.9 → 1.1.10)
-10. Updated PRD with new balance values
-
-**Version:** 1.1.13
-
-### Balance Summary (Current)
+### Balance Summary (Current v1.1.16)
 
 | Complication | Trigger | Player Mitigation |
 |--------------|---------|-------------------|
 | Laser | Capacitor drains on pop | +10% refill on piece lock |
 | Controls | Heat builds on rotate | Heat dissipates when idle |
-| Lights | 20% chance on piece lock | None (needs rework) |
+| Lights | Brightness dims when not soft dropping | Soft drop to recharge |
+
+All three complications now have player-driven triggers AND mitigations.
+
+## Session Continuity
+
+Last session: 2026-01-24
+Stopped at: Lights rework complete and tested
+Resume command: `What's next on the roadmap?` or `/gsd:progress`
+Phase 16 Status: Lights rework done, remaining 16-03 work TBD
+
+### This Session Summary (2026-01-24)
+
+**What was done:**
+1. Implemented lights brightness system (player-controlled via soft drop)
+2. Added grace period (5s base + 0.75s per CIRCUIT_STABILIZER level)
+3. Added warning flicker at end of grace period
+4. Added 5-second dim from 100% → 10%, then malfunction
+5. Added overflare (110% peak) visual feedback on recovery
+6. Updated CIRCUIT_STABILIZER to extend grace period instead of reduce trigger chance
+7. Removed crack color pool UI from top of screen
+8. Removed old random trigger logic entirely
+9. Fixed minigame completion to restart grace period
+
+**Version:** 1.1.16
+
+**Files changed:** 9 files
+- types.ts (added lightsBrightness, lightsGraceStart, lightsFlickered to GameState)
+- core/GameEngine.ts (added tickLightsBrightness, removed checkLightsTrigger)
+- core/ComplicationManager.ts (updated resolveComplication, removed checkLightsTrigger)
+- core/events/GameEvents.ts (added LIGHTS_FLICKER event)
+- complicationConfig.ts (replaced random trigger config with brightness config)
+- constants.ts (updated CIRCUIT_STABILIZER description and effect)
+- components/GameBoard.tsx (inline brightness filter, removed crack color pool UI)
+- Game.tsx (pass lightsBrightness instead of lightsDimmed)
+- components/Art.tsx (version bump)
 
 ### Next Steps
 
-1. Rework Lights malfunction:
-   - Add player-driven trigger (what action increases risk?)
-   - Add player-driven mitigation (what action decreases risk?)
-   - Fix Circuit Stabilizer upgrade math
-2. Continue with remaining Phase 16-18 implementations
+1. Continue Phase 16 (Junk Band) — Junk Goop, GOOP_DUMP, SEALING_BONUS
+2. Or proceed to Phase 17 (Mixer Band) if Phase 16 is considered complete
 3. Full playtest of progression Rank 0 → 39
 
 ## Quick Commands

@@ -95,7 +95,7 @@ Plans:
 Plans:
 - [x] 16-01: JUNK_UNIFORMER + Orange verification — completed 2026-01-23
 - [x] 16-02: GOOP_SWAP upgrade effect — completed 2026-01-23
-- [ ] 16-03: TBD
+- [x] 16-03: Lights malfunction rework (brightness-based, player-controlled) — completed 2026-01-24
 
 #### Phase 17: Mixer Band
 
@@ -138,6 +138,6 @@ Plans:
 | 13. Testing & Documentation | v1.1 | 2/2 | Complete | 2026-01-21 |
 | 14. Data Architecture | v1.2 | 2/2 | Complete | 2026-01-24 |
 | 15. Onboarding Band | v1.2 | 4/4 | Complete | 2026-01-24 |
-| 16. Junk Band | v1.2 | 2/? | In progress | - |
+| 16. Junk Band | v1.2 | 3/3 | Complete | 2026-01-24 |
 | 17. Mixer Band | v1.2 | 0/? | Not started | - |
 | 18. Cracked Band | v1.2 | 0/? | Not started | - |
