@@ -12,7 +12,7 @@ None
 
 - ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) — Phases 1-7 (shipped 2026-01-21)
 - ✅ [v1.1 Architecture Refactor](milestones/v1.1-ROADMAP.md) — Phases 8-13 (shipped 2026-01-21)
-- 🚧 **v1.2 Progression System** — Phases 14-18 (in progress)
+- ✅ [v1.2 Progression System](milestones/v1.2-ROADMAP.md) — Phases 14-18 (shipped 2026-01-24)
 
 ## Completed Milestones
 
@@ -55,70 +55,27 @@ See [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) for full details.
 
 </details>
 
----
+<details>
+<summary>v1.2 Progression System (Phases 14-18) — SHIPPED 2026-01-24</summary>
 
-### 🚧 v1.2 Progression System (In Progress)
+- [x] Phase 14: Data Architecture (2/2 plans) — completed 2026-01-24
+- [x] Phase 15: Onboarding Band (4/4 plans) — completed 2026-01-24
+- [x] Phase 16: Junk Band (3/3 plans) — completed 2026-01-24
+- [x] Phase 17: Mixer Band (3/3 plans) — completed 2026-01-24
+- [x] Phase 18: Cracked Band (2/2 plans) — completed 2026-01-24
 
-**Milestone Goal:** Implement ranks 0-39 progression with 4 bands, 17 upgrades, and 3 new colors
+**Total:** 5 phases, 14 plans, 112 tests
 
-#### Phase 14: Data Architecture
+**Key accomplishments:**
+- 20 upgrades across 4 bands (Onboarding, Junk, Mixer, Cracked)
+- Active ability system with per-ability charge times
+- 3 new colors: Orange@10, Purple@20, White@30
+- Lights malfunction rework (player-controlled brightness)
+- Expanding cracks mechanic
 
-**Goal**: Redesign upgrade system data structures, implement progression table, configure level effects
-**Depends on**: Previous milestone complete
-**Research**: Unlikely (internal restructuring)
-**Plans**: 2 plans
+See [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) for full details.
 
-Plans:
-- [x] 14-01: Upgrade system overhaul (types, 20 upgrades with level effects) — completed 2026-01-23
-- [x] 14-02: Complication & color config (unlock ranks, color schedule) — completed 2026-01-24
-
-#### Phase 15: Onboarding Band
-
-**Goal**: Implement ranks 0-9 upgrades — Circuit Stabilizer, Auto-Popper, Capacitor Efficiency, Cooldown Booster, Gear Lubrication, Focus Mode, Dense Goop, Pressure Control
-**Depends on**: Phase 14
-**Research**: Unlikely (extending existing upgrade patterns)
-**Plans**: 4 plans
-
-Plans:
-- [x] 15-01: Upgrade ID migration (LASER→CAPACITOR_EFFICIENCY, etc.) + UpgradePanel update — completed 2026-01-24
-- [x] 15-02: Complication upgrade effects (Circuit Stabilizer, Capacitor Efficiency, Gear Lubrication) — completed 2026-01-24
-- [x] 15-03: Game mechanics (Pressure Control, Focus Mode, Dense Goop) — completed 2026-01-24
-- [x] 15-04: Auto-Popper + Cooldown Booster active — completed 2026-01-24
-
-#### Phase 16: Junk Band
-
-**Goal**: Implement Junk Goop complication, starting junk mechanic, Orange color, Junk Uniformer, Goop Swap, Goop Dump, Sealing Bonus
-**Depends on**: Phase 15
-**Research**: Unlikely (new complication follows established patterns)
-**Plans**: TBD
-
-Plans:
-- [x] 16-01: JUNK_UNIFORMER + Orange verification — completed 2026-01-23
-- [x] 16-02: GOOP_SWAP upgrade effect — completed 2026-01-23
-- [x] 16-03: Lights malfunction rework (brightness-based, player-controlled) — completed 2026-01-24
-
-#### Phase 17: Mixer Band
-
-**Goal**: Implement Purple color, Active Expansion Slot, Goop Hold Viewer, Goop Colorizer, Goop Window
-**Depends on**: Phase 16
-**Research**: Unlikely (follows established patterns)
-**Plans**: 3 plans
-
-Plans:
-- [x] 17-01: Purple color + ACTIVE_EXPANSION_SLOT (2nd active slot) — completed 2026-01-24
-- [x] 17-02: GOOP_HOLD_VIEWER + GOOP_WINDOW (piece previews) — completed 2026-01-24
-- [x] 17-03: GOOP_COLORIZER active ability — completed 2026-01-24
-
-#### Phase 18: Cracked Band
-
-**Goal**: Implement Expanding Cracks complication, White color, Slow Cracks, Crack Matcher, Crack Down, 2nd Active Expansion Slot
-**Depends on**: Phase 17
-**Research**: Unlikely (follows established patterns)
-**Plans**: TBD
-
-Plans:
-- [x] 18-01: Expanding Cracks mechanic + SLOW_CRACKS passive — completed 2026-01-24
-- [x] 18-02: CRACK_MATCHER passive + CRACK_DOWN active — completed 2026-01-24
+</details>
 
 ---
 

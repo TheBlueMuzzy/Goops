@@ -1,32 +1,32 @@
 # Project Milestones: Goops
 
-## v1.2 Progression System (In Progress)
+## v1.2 Progression System (Shipped: 2026-01-24)
 
-**Goal:** Implement ranks 0-39 progression with 4 bands, 17 upgrades, 3 new colors, and active ability system.
+**Delivered:** Full ranks 0-39 progression with 4 bands, 20 upgrades, active ability system, and 3 new colors.
 
-**Phases completed:** 14-15 (6 plans total)
+**Phases completed:** 14-18 (14 plans total)
 
-**Key accomplishments (so far):**
-- Upgrade system overhaul: 17 upgrades with type/passive/active/feature
-- 8 Onboarding Band upgrades fully implemented (ranks 2-9)
-- Active ability system: equip UI, charge circles (1%/sec + 10%/crack), activation
-- AUTO_POPPER end-game mechanic (probabilistic auto-pop before penalty)
-- COOLDOWN_BOOSTER active ability (+25% cooldown extension)
-- Focus Mode (-10%/level time speed at console)
-- Dense Goop (+12.5%/level fall speed)
-- Pressure Control (+5s/level game time, 8 levels)
+**Key accomplishments:**
 
-**Phases remaining:**
-- Phase 16: Junk Band (starting junk, Orange color, 4 upgrades)
-- Phase 17: Mixer Band (multi-color pieces, Purple color, 4 upgrades)
-- Phase 18: Cracked Band (expanding cracks, White color, 4 upgrades)
+- Upgrade system overhaul: 20 upgrades with passive/active/feature types across 4 bands
+- Active ability system: equip, charge (1%/sec + 10%/crack), activate with per-ability cooldowns
+- 8 Onboarding Band upgrades (ranks 2-9): Circuit Stabilizer, Auto-Popper, Capacitor Efficiency, Cooldown Booster, Gear Lubrication, Focus Mode, Dense Goop, Pressure Control
+- 4 Junk Band features (ranks 10-19): JUNK_UNIFORMER, GOOP_SWAP, GOOP_DUMP, SEALING_BONUS
+- 4 Mixer Band features (ranks 20-29): 2nd active slot, hold/next piece previews, GOOP_COLORIZER
+- 4 Cracked Band features (ranks 30-39): Expanding cracks, SLOW_CRACKS, CRACK_MATCHER, CRACK_DOWN
+- Lights malfunction rework: player-controlled brightness (soft drop to charge)
+- Color progression: Orange@10, Purple@20, White@30
 
-**Stats (so far):**
-- 112 tests
-- 2 phases, 6 plans
+**Stats:**
+
+- 60 files modified (+5,325 / -664 lines)
+- 11,258 lines of TypeScript
+- 5 phases, 14 plans
 - 2 days (Jan 23-24, 2026)
 
-**Git range:** `feat(14-01)` → `docs(15-04)`
+**Git range:** `feat(14-01)` → `docs(18-02)`
+
+**What's next:** Bug fixes (pressure, crack interactions), Tetris movement research
 
 ---
 

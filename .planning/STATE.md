@@ -8,40 +8,38 @@
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- None — ready for Phase 16/17 work
+- None — v1.2 complete, ready for bug fix work
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** v1.2 progression system — ranks 0-39 with new upgrades and mechanics
+**Current focus:** v1.2 shipped — bug fixes and testing before next milestone
 
 ## Current Position
 
-Phase: 18 of 18 (Cracked Band)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-01-24 - Completed 18-02-PLAN.md (CRACK_MATCHER + CRACK_DOWN)
+Phase: 18 of 18 (all complete)
+Plan: All plans complete
+Status: v1.2 SHIPPED
+Last activity: 2026-01-24 — v1.2 milestone archived
 
-Progress: ████████████████████ 44/44 plans (v1.2 Milestone COMPLETE!)
+Progress: ████████████████████ 49/49 plans (v1.0 + v1.1 + v1.2 complete)
 
 ## What's Done
 
-### Lights Malfunction Rework (Completed 2026-01-24)
+### v1.2 Progression System (Shipped 2026-01-24)
 
-Replaced random trigger with player-controlled brightness system:
-- **Soft dropping** (S key or drag down) charges the lights
-- **Not soft dropping** starts grace period, then dims, then triggers malfunction
-- CIRCUIT_STABILIZER now extends grace period (+0.75s per level, max 8s at level 4)
+Full ranks 0-39 progression with 4 bands, 20 upgrades, and 3 new colors.
 
-Timing:
-- Grace period: 5s base
-- Dim duration: 5s (100% → 10%)
-- Recovery: ~0.25s at 400%/sec
-- Overflare: 110% peak for visual feedback
+Key features:
+- 20 upgrades across passive/active/feature types
+- Active ability system with per-ability charge times
+- Lights malfunction rework (player-controlled brightness)
+- Expanding cracks mechanic
+- 3 new colors: Orange@10, Purple@20, White@30
 
-Also removed crack color pool UI from top of screen (freeing space for hold/next piece).
+See [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) for full details.
 
 ### v1.1 Architecture Refactor (Shipped 2026-01-21)
 
@@ -53,18 +51,7 @@ All 7 phases complete. See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for ful
 
 ## Accumulated Context
 
-### Key Technical Discovery
-
-**SVG Coordinate Conversion with preserveAspectRatio="xMidYMid slice"**
-
-Simple viewBox math doesn't work. Must use:
-```tsx
-const refPoint = document.getElementById('coord-reference');
-const ctm = refPoint.getScreenCTM();
-const svgPoint = screenPoint.matrixTransform(ctm.inverse());
-```
-
-### Balance Summary (Current v1.1.24)
+### Balance Summary (Current v1.2.0)
 
 | Complication | Trigger | Player Mitigation |
 |--------------|---------|-------------------|
@@ -74,7 +61,7 @@ const svgPoint = screenPoint.matrixTransform(ctm.inverse());
 
 All three complications have player-driven triggers AND mitigations.
 
-### Active Abilities (v1.1.24)
+### Active Abilities (v1.2.0)
 
 | Active | Charge Time | Level 1 | Level 2 | Level 3 |
 |--------|-------------|---------|---------|---------|
@@ -83,45 +70,7 @@ All three complications have player-driven triggers AND mitigations.
 | Goop Colorizer | 25s | 6 match | 7 match | 8 match |
 | Crack Down | 30s | 3 cracks low | 5 cracks | 7 cracks |
 
-## Session Continuity
-
-Last session: 2026-01-24
-**Version:** 1.1.26
-
-### This Session Summary (2026-01-24 Late Night)
-
-**What was done:**
-
-1. **GOOP_DUMP Rework** (v1.1.21)
-   - Pieces now rain from TOP instead of spawning in-place
-   - Ghost appearance (30% opacity, dashed outline) until landing
-   - Pieces move WITH board rotation (absolute grid X)
-   - Staggered spawn for rain effect (80ms between pieces)
-   - Added DumpPiece interface, dumpPieces/dumpQueue to GameState
-   - New tickDumpPieces() method in GameEngine
-
-2. **All Actives Now Have 3 Levels** (v1.1.22)
-   | Ability | Level 1 | Level 2 | Level 3 |
-   |---------|---------|---------|---------|
-   | COOLDOWN_BOOSTER | +25% | +35% | +50% |
-   | GOOP_DUMP | 1 wave | 2 waves | 3 waves |
-   | GOOP_COLORIZER | 6 match | 7 match | 8 match |
-   | CRACK_DOWN | 3 cracks | 5 cracks | 7 cracks |
-
-3. **Per-Ability Charge Times** (v1.1.23)
-   - Cooldown Booster: 20s
-   - Goop Dump: 15s
-   - Goop Colorizer: 25s
-   - Crack Down: 30s
-
-4. **GOOP_DUMP now uses 60% coverage** (18 pieces per wave)
-
-5. **GOOP_COLORIZER Implemented** (v1.1.24)
-   - Locks next N pieces to current falling piece's color
-   - Level scaling: 6/7/8 pieces for level 1/2/3
-   - NextPiece preview shows colorized color
-
-### Remaining Tasks
+## Known Issues (Post v1.2)
 
 **Bugs to Investigate:**
 1. **Pressure not rising bug** - Sometimes pressure doesn't start rising for a long time.
@@ -132,6 +81,24 @@ Last session: 2026-01-24
 4. **Sideways movement into gaps** - Research Tetris collision logic for moving into gaps.
 
 ⚠️ **WARNING for tasks 3-4:** Previous attempts "broke pretty badly". Approach with caution.
+
+## Session Continuity
+
+Last session: 2026-01-24
+**Version:** 1.2.0
+
+### This Session Summary (2026-01-24)
+
+**What was done:**
+- Completed v1.2 milestone archival
+- Created `.planning/milestones/v1.2-ROADMAP.md`
+- Updated MILESTONES.md, ROADMAP.md, PROJECT.md, STATE.md
+- Tagged v1.2.0
+
+**Next session:**
+- User testing of v1.2 features
+- Address bug reports from testing
+- Plan next milestone (v1.3 or v2.0)
 
 ## Quick Commands
 
