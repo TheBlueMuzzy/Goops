@@ -1,7 +1,6 @@
 
-import { GameState, ComplicationType, Complication, GridCell } from '../types';
+import { GameState, ComplicationType, Complication } from '../types';
 import { COMPLICATION_CONFIG, calculateCooldownMs, isComplicationUnlocked } from '../complicationConfig';
-import { TOTAL_WIDTH, TOTAL_HEIGHT, VISIBLE_HEIGHT, BUFFER_HEIGHT } from '../constants';
 import { calculateRankDetails } from '../utils/progression';
 import { gameEventBus } from './events/EventBus';
 import { GameEventType } from './events/GameEvents';
@@ -57,7 +56,7 @@ export class ComplicationManager {
             spawned = ComplicationType.CONTROLS;
         }
 
-        // LIGHTS: Triggered on piece lock (handled by checkLightsTrigger)
+        // LIGHTS: Triggered by brightness system in GameEngine.tickLightsBrightness()
 
         return { spawned, newLastCheckTime: now };
     }
@@ -106,7 +105,10 @@ export class ComplicationManager {
                     state.rotationTimestamps = [];
                     break;
                 case ComplicationType.LIGHTS:
-                    // No counter to reset - chance automatically resumes after resolution
+                    // Reset brightness system - lights back to full, timer restarts
+                    state.lightsBrightness = 100;
+                    state.lightsGraceStart = null; // Will start fresh when next piece spawns
+                    state.lightsFlickered = false;
                     break;
             }
 
@@ -123,56 +125,8 @@ export class ComplicationManager {
         audio.playPop(5); // Success sound
     }
 
-    /**
-     * Check if LIGHTS complication should trigger on piece lock.
-     * Returns true if LIGHTS should spawn.
-     */
-    checkLightsTrigger(
-        state: GameState,
-        initialTotalScore: number,
-        maxTime: number,
-        powerUps: Record<string, number>,
-        grid: GridCell[][]
-    ): boolean {
-        const startingRank = calculateRankDetails(initialTotalScore).rank;
-        const hasLightsActive = state.complications.some(c => c.type === ComplicationType.LIGHTS);
-        const lightsOnCooldown = Date.now() < state.complicationCooldowns[ComplicationType.LIGHTS];
-        const lightsConfig = COMPLICATION_CONFIG[ComplicationType.LIGHTS];
-
-        if (!isComplicationUnlocked(ComplicationType.LIGHTS, startingRank) || hasLightsActive || lightsOnCooldown) {
-            return false;
-        }
-
-        // Find highest goop row (lowest Y value with any block)
-        let highestGoopY = TOTAL_HEIGHT;
-        for (let y = 0; y < TOTAL_HEIGHT; y++) {
-            for (let x = 0; x < TOTAL_WIDTH; x++) {
-                if (grid[y][x]) {
-                    highestGoopY = y;
-                    break;
-                }
-            }
-            if (highestGoopY < TOTAL_HEIGHT) break;
-        }
-
-        // Calculate pressure line Y position
-        const pressureRatio = Math.max(0, 1 - (state.timeLeft / maxTime));
-        const waterHeightBlocks = 1 + (pressureRatio * (VISIBLE_HEIGHT - 1));
-        const pressureLineY = BUFFER_HEIGHT + (VISIBLE_HEIGHT - waterHeightBlocks);
-
-        // Gap = rows between pressure line and highest goop
-        const gap = highestGoopY - pressureLineY;
-
-        // Random threshold from config range
-        const gapRange = lightsConfig.pressureGapMax - lightsConfig.pressureGapMin + 1;
-        const gapThreshold = Math.floor(Math.random() * gapRange) + lightsConfig.pressureGapMin;
-
-        // Trigger chance with upgrade modifier
-        const lightsLevel = powerUps['CIRCUIT_STABILIZER'] || 0;
-        const triggerChance = lightsConfig.triggerChanceBase - (lightsConfig.triggerUpgradeEffect * lightsLevel);
-
-        return gap >= gapThreshold && Math.random() < triggerChance;
-    }
+    // NOTE: checkLightsTrigger() removed - LIGHTS is now triggered by brightness system
+    // in GameEngine.tickLightsBrightness() based on soft drop behavior
 
     /**
      * Extend all active complication cooldowns by a percentage.

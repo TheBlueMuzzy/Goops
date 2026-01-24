@@ -36,6 +36,11 @@ export class GameEngine {
     public lastGoalSpawnTime: number = 0;
     public lastComplicationCheckTime: number = 0;
     public isSoftDropping: boolean = false;
+    private wasSoftDropping: boolean = false; // For edge detection
+    private lightsOverflarePhase: 'none' | 'rising' | 'falling' = 'none';
+    private lightsOverflareTime: number = 0; // Time spent in current overflare phase
+    private lightsFlickerTime: number = 0; // Time spent in flicker animation
+    private lightsFlickerActive: boolean = false; // Currently in flicker animation
     public initialTotalScore: number = 0;
     public powerUps: Record<string, number> = {};
     public isSessionActive: boolean = false;
@@ -93,6 +98,9 @@ export class GameEngine {
             primedGroups: new Set(),
             laserCapacitor: 100,  // Starts full
             controlsHeat: 0,      // Starts cool
+            lightsBrightness: 100,     // Starts at full brightness
+            lightsGraceStart: null,    // null = soft dropping, starts as if soft dropping
+            lightsFlickered: false,    // No flicker yet this cycle
             complicationCooldowns: {
                 [ComplicationType.LIGHTS]: 0,
                 [ComplicationType.CONTROLS]: 0,
@@ -194,6 +202,9 @@ export class GameEngine {
             primedGroups: new Set(),
             laserCapacitor: 100,  // Starts full
             controlsHeat: 0,      // Starts cool
+            lightsBrightness: 100,     // Starts at full brightness
+            lightsGraceStart: null,    // null = soft dropping, starts as if soft dropping
+            lightsFlickered: false,    // No flicker yet this cycle
             complicationCooldowns: {
                 [ComplicationType.LIGHTS]: 0,
                 [ComplicationType.CONTROLS]: 0,
@@ -573,6 +584,162 @@ export class GameEngine {
     }
 
     /**
+     * Handle LIGHTS brightness system: dims when not soft dropping, recovers when soft dropping.
+     * Player must "work faster" (soft drop) to keep the lights on.
+     */
+    private tickLightsBrightness(dt: number): void {
+        const startingRank = calculateRankDetails(this.initialTotalScore).rank;
+        const lightsConfig = COMPLICATION_CONFIG[ComplicationType.LIGHTS];
+
+        // Only run if LIGHTS is unlocked
+        if (!isComplicationUnlocked(ComplicationType.LIGHTS, startingRank)) return;
+
+        // Skip if not in PERISCOPE phase (don't dim during console/minigame)
+        if (this.state.phase !== GamePhase.PERISCOPE) return;
+
+        // Skip if already in malfunction state
+        const hasLightsActive = this.state.complications.some(c => c.type === ComplicationType.LIGHTS);
+        if (hasLightsActive) {
+            // Keep at failed brightness during malfunction
+            this.state.lightsBrightness = lightsConfig.failedBrightness;
+            return;
+        }
+
+        const now = Date.now();
+
+        // Edge detection: started soft dropping
+        if (this.isSoftDropping && !this.wasSoftDropping) {
+            // Start recovery - clear grace timer, begin lerping to 100
+            this.state.lightsGraceStart = null;
+            this.state.lightsFlickered = false;
+            this.lightsOverflarePhase = 'none';
+            this.lightsFlickerActive = false;
+        }
+
+        // Edge detection: stopped soft dropping
+        if (!this.isSoftDropping && this.wasSoftDropping) {
+            // Start grace period
+            this.state.lightsGraceStart = now;
+            this.state.lightsFlickered = false;
+            this.lightsOverflarePhase = 'none';
+            this.lightsFlickerActive = false;
+        }
+
+        // Update tracking
+        this.wasSoftDropping = this.isSoftDropping;
+
+        // Calculate grace period with upgrade bonus
+        const stabilizerLevel = this.powerUps['CIRCUIT_STABILIZER'] || 0;
+        const graceDuration = (lightsConfig.graceBaseSec + lightsConfig.gracePerLevel * stabilizerLevel) * 1000;
+
+        if (this.isSoftDropping) {
+            // RECOVERING: Lerp brightness toward 100, then overflare
+            if (this.state.lightsBrightness < 100) {
+                // Lerp up at constant rate
+                const increase = (lightsConfig.recoverRate * dt) / 1000;
+                this.state.lightsBrightness = Math.min(100, this.state.lightsBrightness + increase);
+
+                // If we just reached 100, start overflare
+                if (this.state.lightsBrightness >= 100) {
+                    this.lightsOverflarePhase = 'rising';
+                    this.lightsOverflareTime = 0;
+                }
+            } else if (this.lightsOverflarePhase === 'rising') {
+                // Rising to overflare peak
+                this.lightsOverflareTime += dt;
+                const progress = Math.min(1, this.lightsOverflareTime / lightsConfig.overflareUpMs);
+                this.state.lightsBrightness = 100 + (lightsConfig.overflarePeak - 100) * progress;
+
+                if (progress >= 1) {
+                    this.lightsOverflarePhase = 'falling';
+                    this.lightsOverflareTime = 0;
+                }
+            } else if (this.lightsOverflarePhase === 'falling') {
+                // Falling back to 100 from overflare
+                this.lightsOverflareTime += dt;
+                const progress = Math.min(1, this.lightsOverflareTime / lightsConfig.overflareDownMs);
+                this.state.lightsBrightness = lightsConfig.overflarePeak - (lightsConfig.overflarePeak - 100) * progress;
+
+                if (progress >= 1) {
+                    this.lightsOverflarePhase = 'none';
+                    this.state.lightsBrightness = 100;
+                }
+            }
+            // else: at 100, no overflare, just hold
+        } else {
+            // NOT SOFT DROPPING: Grace period, then dim
+            if (this.state.lightsGraceStart === null) {
+                // First tick after game start or other edge case - start grace
+                this.state.lightsGraceStart = now;
+            }
+
+            const elapsed = now - this.state.lightsGraceStart;
+
+            if (elapsed < graceDuration) {
+                // In grace period - hold at current brightness (should be 100)
+                // Handle ongoing flicker animation even in grace (if started at edge)
+                if (this.lightsFlickerActive) {
+                    this.lightsFlickerTime += dt;
+                    const totalFlickerTime = lightsConfig.flickerDipMs + lightsConfig.flickerRecoverMs;
+
+                    if (this.lightsFlickerTime < lightsConfig.flickerDipMs) {
+                        // Dipping down
+                        const progress = this.lightsFlickerTime / lightsConfig.flickerDipMs;
+                        this.state.lightsBrightness = 100 - (100 - lightsConfig.flickerDipBrightness) * progress;
+                    } else if (this.lightsFlickerTime < totalFlickerTime) {
+                        // Recovering back up
+                        const recoverProgress = (this.lightsFlickerTime - lightsConfig.flickerDipMs) / lightsConfig.flickerRecoverMs;
+                        this.state.lightsBrightness = lightsConfig.flickerDipBrightness + (100 - lightsConfig.flickerDipBrightness) * recoverProgress;
+                    } else {
+                        // Flicker complete
+                        this.lightsFlickerActive = false;
+                        this.state.lightsBrightness = 100;
+                    }
+                }
+            } else if (elapsed >= graceDuration && !this.state.lightsFlickered) {
+                // At end of grace period - trigger flicker warning
+                this.state.lightsFlickered = true;
+                this.lightsFlickerActive = true;
+                this.lightsFlickerTime = 0;
+                // Emit flicker event for sound/additional effects
+                gameEventBus.emit(GameEventType.LIGHTS_FLICKER, {});
+            } else if (this.lightsFlickerActive) {
+                // Continue flicker animation
+                this.lightsFlickerTime += dt;
+                const totalFlickerTime = lightsConfig.flickerDipMs + lightsConfig.flickerRecoverMs;
+
+                if (this.lightsFlickerTime < lightsConfig.flickerDipMs) {
+                    // Dipping down
+                    const progress = this.lightsFlickerTime / lightsConfig.flickerDipMs;
+                    this.state.lightsBrightness = 100 - (100 - lightsConfig.flickerDipBrightness) * progress;
+                } else if (this.lightsFlickerTime < totalFlickerTime) {
+                    // Recovering back up
+                    const recoverProgress = (this.lightsFlickerTime - lightsConfig.flickerDipMs) / lightsConfig.flickerRecoverMs;
+                    this.state.lightsBrightness = lightsConfig.flickerDipBrightness + (100 - lightsConfig.flickerDipBrightness) * recoverProgress;
+                } else {
+                    // Flicker complete, start dimming
+                    this.lightsFlickerActive = false;
+                }
+            } else {
+                // Past grace period - dimming
+                const dimElapsed = elapsed - graceDuration;
+                const dimDuration = lightsConfig.dimDurationSec * 1000;
+                const dimProgress = Math.min(1, dimElapsed / dimDuration);
+
+                // Lerp from 100 to dimThreshold
+                this.state.lightsBrightness = 100 - (100 - lightsConfig.dimThreshold) * dimProgress;
+
+                // Check for malfunction trigger
+                if (this.state.lightsBrightness <= lightsConfig.dimThreshold) {
+                    // Snap to failed brightness and trigger malfunction
+                    this.state.lightsBrightness = lightsConfig.failedBrightness;
+                    complicationManager.spawnComplication(this.state, ComplicationType.LIGHTS);
+                }
+            }
+        }
+    }
+
+    /**
      * Update falling blocks (gravity after pop).
      */
     private tickFallingBlocks(dt: number): void {
@@ -656,8 +823,8 @@ export class GameEngine {
             this.handleGoals(consumedGoals, destroyedGoals, finalPiece);
         }
 
-        // LIGHTS complication trigger
-        this.checkLightsTrigger(newGrid);
+        // LIGHTS complication is now triggered by brightness system (tickLightsBrightness)
+        // No random trigger on piece lock anymore
 
         // Laser capacitor refill: +15% on piece lock (only when no active LASER complication)
         const hasActiveLaser = this.state.complications.some(c => c.type === ComplicationType.LASER);
@@ -673,23 +840,6 @@ export class GameEngine {
         this.isSoftDropping = false;
     }
 
-    /**
-     * Check if LIGHTS complication should trigger on piece lock.
-     */
-    private checkLightsTrigger(newGrid: GridCell[][]): void {
-        const shouldTrigger = complicationManager.checkLightsTrigger(
-            this.state,
-            this.initialTotalScore,
-            this.maxTime,
-            this.powerUps,
-            newGrid
-        );
-
-        if (shouldTrigger) {
-            complicationManager.spawnComplication(this.state, ComplicationType.LIGHTS);
-            this.emitChange();
-        }
-    }
 
     // --- Main Loop ---
 
@@ -731,6 +881,9 @@ export class GameEngine {
 
         // Heat dissipation
         this.tickHeat(dt);
+
+        // Lights brightness (player-controlled via soft drop)
+        this.tickLightsBrightness(dt);
 
         // Falling blocks
         this.tickFallingBlocks(dt);

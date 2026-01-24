@@ -12,6 +12,7 @@ export enum GameEventType {
     // Complications
     COMPLICATION_SPAWNED = 'COMPLICATION_SPAWNED',
     COMPLICATION_RESOLVED = 'COMPLICATION_RESOLVED',
+    LIGHTS_FLICKER = 'LIGHTS_FLICKER', // Warning flicker before lights start dimming
 
     // Active Abilities
     ABILITY_ACTIVATED = 'ABILITY_ACTIVATED',

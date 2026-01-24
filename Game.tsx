@@ -302,11 +302,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   // Use starting rank for HUD meter visibility - complications unlock based on starting rank, not mid-run
   const startingRank = calculateRankDetails(initialTotalScore).rank;
 
-  // Determine active effects based on complications
-  const lightsComplication = gameState.complications.find(c => c.type === ComplicationType.LIGHTS);
-  const activeEffects = {
-      dimmed: !!lightsComplication,
-  };
+  // Lights brightness is now continuous (player-controlled via soft drop)
+  // Only apply dimming effect in PERISCOPE phase
 
   return (
     <div className="w-full h-full relative touch-none bg-slate-950 overflow-hidden">
@@ -321,7 +318,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             state={gameState}
             rank={startingRank}
             maxTime={60000}
-            lightsDimmed={activeEffects.dimmed && gameState.phase === GamePhase.PERISCOPE}
+            lightsBrightness={gameState.phase === GamePhase.PERISCOPE ? gameState.lightsBrightness : 100}
             laserCapacitor={gameState.laserCapacitor}
             controlsHeat={gameState.controlsHeat}
             complicationCooldowns={gameState.complicationCooldowns}
@@ -330,7 +327,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             onActivateAbility={handleActivateAbility}
             powerUps={powerUps}
          />
-         {/* LIGHTS complication effect is now handled via lightsDimmed prop on GameBoard */}
+         {/* Lights brightness is now controlled by state.lightsBrightness (player-controlled via soft drop) */}
       </div>
 
       {/* LAYER 2: CONSOLE VIEW (Visible in Console Phase) */}

@@ -162,6 +162,11 @@ export interface GameState {
   laserCapacitor: number;  // 0-100 (100 = full, 0 = empty/triggers LASER)
   controlsHeat: number;    // 0-100 (0 = cool, 100 = overheated/triggers CONTROLS)
 
+  // Lights brightness system (player-controlled via soft drop)
+  lightsBrightness: number;        // 5-110 (100 = normal, 5 = failed, 110 = overflare peak)
+  lightsGraceStart: number | null; // Timestamp when grace period started (null = soft dropping)
+  lightsFlickered: boolean;        // Has the 5-second warning flicker happened this cycle
+
   // Cooldown timestamps: when each type can next trigger (0 = no cooldown)
   complicationCooldowns: Record<ComplicationType, number>;
 

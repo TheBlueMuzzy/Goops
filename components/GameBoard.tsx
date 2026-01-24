@@ -20,7 +20,7 @@ interface GameBoardProps {
   state: GameState;
   rank: number;
   maxTime: number;
-  lightsDimmed?: boolean; // LIGHTS complication effect: dim to 10% + grayscale
+  lightsBrightness?: number; // 5-110: brightness level (100 = normal, lower = dimmer, 110 = overflare)
   laserCapacitor?: number;  // HUD meter: 0-100 (100 = full)
   controlsHeat?: number;    // HUD meter: 0-100 (0 = cool)
   complicationCooldowns?: Record<ComplicationType, number>;  // Cooldown timestamps
@@ -32,7 +32,7 @@ interface GameBoardProps {
 
 // --- Component ---
 export const GameBoard: React.FC<GameBoardProps> = ({
-    state, rank, maxTime, lightsDimmed,
+    state, rank, maxTime, lightsBrightness = 100,
     laserCapacitor = 100, controlsHeat = 0, complicationCooldowns,
     equippedActives = [], activeCharges = {}, onActivateAbility,
     powerUps
@@ -152,8 +152,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             height="100%"
             viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
             preserveAspectRatio="xMidYMin meet"
-            className={`touch-none ${lightsDimmed ? 'lights-dimmed' : ''}`}
-            style={{ willChange: 'transform' }} // OPTIMIZATION: Promote to compositor layer
+            className="touch-none"
+            style={{
+                willChange: 'transform', // OPTIMIZATION: Promote to compositor layer
+                filter: lightsBrightness < 100
+                    ? `brightness(${lightsBrightness / 100}) grayscale(${Math.max(0, (50 - lightsBrightness) / 50)})`
+                    : lightsBrightness > 100
+                        ? `brightness(${lightsBrightness / 100})`
+                        : undefined,
+                transition: 'filter 0.05s linear' // Smooth brightness changes
+            }}
         >
             {maskDefinitions}
 
@@ -657,16 +665,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             return <div key={`fly-${orb.id}`} className="absolute w-4 h-4 rounded-full shadow-lg border border-white/50 z-30" style={{ backgroundColor: orb.color, left: `${currentX}%`, top: `${currentY}%`, transform: 'translate(-50%, -50%)', boxShadow: isMobile ? `0 0 4px ${orb.color}` : `0 0 10px ${orb.color}` }} />;
         })}
         
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-4 p-2 pl-4 bg-slate-900/80 rounded-full border border-slate-700/50 backdrop-blur-md z-20 pointer-events-none shadow-lg">
-            <span className="text-lg font-mono font-black text-yellow-400 leading-none drop-shadow-md">{state.goalsCleared}/{state.goalsTarget}</span>
-            <div className="w-px h-6 bg-slate-700/50" />
-            <div className="flex items-center gap-2">
-                {palette.map(color => {
-                    const isActive = activeColors.has(color);
-                    return <div key={color} className="w-5 h-5 rounded-full border-2 border-slate-700/50 relative flex items-center justify-center" style={{ borderColor: isActive ? 'transparent' : color }}><div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isActive ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`} style={{ backgroundColor: color, boxShadow: isMobile ? `0 0 4px ${color}` : `0 0 6px ${color}` }} />{isActive && <div className="w-1 h-1 rounded-full bg-slate-800" />}</div>;
-                })}
-            </div>
-        </div>
+        {/* Crack color pool UI removed - space reserved for hold/next piece windows */}
     </div>
   );
 };

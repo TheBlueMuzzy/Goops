@@ -42,13 +42,13 @@ export const UPGRADES = {
   CIRCUIT_STABILIZER: {
     id: 'CIRCUIT_STABILIZER',
     name: 'Circuit Stabilizer',
-    desc: 'Reduces probability of lights malfunction triggering.',
+    desc: 'Extends grace period before lights start dimming.',
     type: 'passive' as const,
     unlockRank: 2,
     costPerLevel: 1,
     maxLevel: 4,
-    effectPerLevel: 0.075, // -7.5% trigger chance per level
-    formatEffect: (lvl: number) => `-${(lvl * 7.5).toFixed(1)}% Trigger Chance`,
+    effectPerLevel: 0.75, // +0.75 seconds grace per level
+    formatEffect: (lvl: number) => `+${(lvl * 0.75).toFixed(2)}s Grace Period`,
     maxLevelBonus: '3-button sequence instead of 4'
   },
 
