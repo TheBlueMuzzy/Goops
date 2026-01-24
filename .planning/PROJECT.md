@@ -46,11 +46,12 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 
 ### Active
 
-**Post v1.2 Bug Fixes:**
-- [ ] Falling pieces don't interact with cracks after clears
-
 **Research:**
 - [ ] Tetris movement feel (lock delay, sideways into gaps)
+
+**Recently Fixed (v1.1.27):**
+- [x] Gravity pieces now interact with cracks
+- [x] Non-matching pieces no longer destroy cracks (persist under goop)
 
 ### Out of Scope (v1.2)
 

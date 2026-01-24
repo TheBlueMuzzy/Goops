@@ -72,14 +72,15 @@ All three complications have player-driven triggers AND mitigations.
 
 ## Known Issues (Post v1.2)
 
-**Bugs to Investigate:**
-1. **Falling pieces don't interact with cracks** - After clears, gravity-falling pieces don't consume/destroy cracks.
-
 **RESEARCH REQUIRED - Tetris Movement Feel:**
-2. **Lock delay / last-moment sliding** - Research how Tetris achieves this feel.
-3. **Sideways movement into gaps** - Research Tetris collision logic for moving into gaps.
+1. **Lock delay / last-moment sliding** - Research how Tetris achieves this feel.
+2. **Sideways movement into gaps** - Research Tetris collision logic for moving into gaps.
 
-⚠️ **WARNING for tasks 2-3:** Previous attempts "broke pretty badly". Approach with caution.
+⚠️ **WARNING for tasks 1-2:** Previous attempts "broke pretty badly". Approach with caution.
+
+**Fixed:**
+- Gravity pieces now interact with cracks (v1.1.27)
+- Non-matching color pieces no longer destroy cracks (they persist under goop)
 
 **Investigated (see INVESTIGATIONS.md):**
 - Pressure not rising bug — likely fixed in v1.1, cannot reproduce
@@ -87,7 +88,7 @@ All three complications have player-driven triggers AND mitigations.
 ## Session Continuity
 
 Last session: 2026-01-24
-**Version:** 1.2.0
+**Version:** 1.1.27
 
 ### This Session Summary (2026-01-24)
 
