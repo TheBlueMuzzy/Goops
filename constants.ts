@@ -49,7 +49,7 @@ export const UPGRADES = {
     maxLevel: 4,
     effectPerLevel: 0.75, // +0.75 seconds grace per level
     formatEffect: (lvl: number) => `+${(lvl * 0.75).toFixed(2)}s Grace Period`,
-    maxLevelBonus: '3-button sequence instead of 4'
+    maxLevelBonus: 'Easier Fixing Sequence'
   },
 
   AUTO_POPPER: {
@@ -76,7 +76,7 @@ export const UPGRADES = {
     maxLevel: 4,
     effectPerLevel: 0.0625, // -6.25% drain per level
     formatEffect: (lvl: number) => `-${(lvl * 6.25).toFixed(2)}% Drain Rate`,
-    maxLevelBonus: 'No center targets in Reset Laser puzzle'
+    maxLevelBonus: 'Easier Fixing Sequence'
   },
 
   COOLDOWN_BOOSTER: {
@@ -103,7 +103,7 @@ export const UPGRADES = {
     maxLevel: 4,
     effectPerLevel: 0.125, // +12.5% dissipation per level
     formatEffect: (lvl: number) => `+${(lvl * 12.5).toFixed(1)}% Heat Dissipation`,
-    maxLevelBonus: '3 alignments instead of 4'
+    maxLevelBonus: 'Easier Fixing Sequence'
   },
 
   FOCUS_MODE: {

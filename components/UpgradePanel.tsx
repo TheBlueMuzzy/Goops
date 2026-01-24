@@ -239,19 +239,19 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
               </div>
             ) : (
               <div className="space-y-4 pb-20">
+                {/* PWR earning message */}
+                <div
+                  className="text-lg mt-2 mb-3 text-center"
+                  style={{ color: '#fbbf24', fontFamily: "'Amazon Ember', sans-serif" }}
+                >
+                  Earn PWR by Increasing your Operator Rank
+                </div>
+
                 {/* ACTIVES SECTION - First */}
                 {availableActives.length > 0 && (
-                  <>
-                    <div
-                      className="text-lg tracking-wide mt-2 mb-3"
-                      style={{ color: '#fbbf24', fontFamily: "'From Where You Are', sans-serif" }}
-                    >
-                      ACTIVES ({equippedActives.length}/{maxActiveSlots} equipped)
-                    </div>
-                    <div className="space-y-3">
-                      {availableActives.map(renderUpgradeCard)}
-                    </div>
-                  </>
+                  <div className="space-y-3">
+                    {availableActives.map(renderUpgradeCard)}
+                  </div>
                 )}
 
                 {/* FEATURES SECTION - Second */}
