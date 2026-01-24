@@ -490,10 +490,14 @@ export class GameEngine {
     private tickActivePiece(dt: number): void {
         if (!this.state.activePiece) return;
 
-        const gameSpeed = INITIAL_SPEED;
+        // DENSE_GOOP: +12.5% fall speed per level (reduces interval between drops)
+        const denseLevel = this.powerUps['DENSE_GOOP'] || 0;
+        const speedMultiplier = 1 + (denseLevel * 0.125); // 1.0, 1.125, 1.25, 1.375, 1.5
+        const adjustedSpeed = INITIAL_SPEED / speedMultiplier;
+
         const gravitySpeed = this.isSoftDropping
-            ? gameSpeed / SOFT_DROP_FACTOR
-            : gameSpeed;
+            ? adjustedSpeed / SOFT_DROP_FACTOR
+            : adjustedSpeed;
 
         const moveAmount = dt / gravitySpeed;
         const nextY = this.state.activePiece.y + moveAmount;
