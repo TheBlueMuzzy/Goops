@@ -483,117 +483,171 @@ Players can spend upgrade points at any rank. The consolidation period lets play
 
 | Band | Ranks | New Mechanic | New Color | Status |
 |------|-------|--------------|-----------|--------|
-| Tutorial | 0-9 | Complications | - | Implemented |
-| Band 1 | 10-19 | Starting Junk | Teal @10 | Planned |
-| Band 2 | 20-29 | Multi-color Pieces | TBD @20 | Planned |
-| Band 3 | 30-39 | Growing Cracks | TBD @30 | Concept |
-| Band 4 | 40-49 | TBD | TBD @40 | Future |
-| Band 5 | 50-59 | TBD | TBD @50 | Future |
-| Band 6 | 60-69 | TBD | TBD @60 | Future |
-| Band 7+ | 70-99 | TBD | (colors capped) | Future |
+| Onboarding | 0-9 | Complications | - | **Complete** |
+| Junk | 10-19 | Starting Junk | Orange @10 | Planned (Phase 16) |
+| Mixer | 20-29 | Multi-color Pieces | Purple @20 | Planned (Phase 17) |
+| Cracked | 30-39 | Expanding Cracks | White @30 | Planned (Phase 18) |
+| Band 4+ | 40-99 | TBD | TBD | Future |
 
-**Colors:** 10 total (Red, Blue, Green, Yellow, Teal, White, Orange, Purple, Pink, Grey). New color unlocks stop after they run out. Game difficulty by then makes this acceptable.
+**Colors:** 7 total planned (Red, Blue, Green, Yellow, Orange, Purple, White). New color unlocks at ranks 10, 20, 30.
 
 ---
 
-### Tutorial Band (Ranks 0-9)
+### Onboarding Band (Ranks 0-9) — **COMPLETE**
 
-**Focus:** Learn core loop, complications introduced gradually
+**Focus:** Learn core loop, complications introduced gradually, 8 upgrades unlock
 
 | Rank | What Unlocks |
 |------|--------------|
-| 0 | Base game, 4 colors, no complications |
+| 0 | Base game, 4 colors (Red, Blue, Green, Yellow), no complications |
 | 1 | LASER complication |
-| 2 | LIGHTS complication |
-| 3 | CONTROLS complication |
-| 4-9 | Consolidation - master complications, spend upgrade points |
+| 2 | LIGHTS complication + **Circuit Stabilizer** upgrade |
+| 3 | CONTROLS complication + **Auto-Popper** upgrade |
+| 4 | **Capacitor Efficiency** upgrade |
+| 5 | **Cooldown Booster** active ability |
+| 6 | **Gear Lubrication** upgrade |
+| 7 | **Focus Mode** upgrade |
+| 8 | **Dense Goop** upgrade |
+| 9 | **Pressure Control** upgrade |
 
-**XP Curve:** Gentler than standard (easier to level through tutorial)
+**Upgrades (8 total):**
 
-**Upgrades Available:**
-- LASER: Capacitor Efficiency (reduces drain rate)
-- LIGHTS: Circuit Stabilizer (reduces trigger chance)
-- CONTROLS: Heat Sink Upgrade (increases heat dissipation)
-
----
-
-### Band 1: Starting Junk (Ranks 10-19)
-
-**Focus:** Sessions start with goop already in the tank
-
-| Rank | Junk Level | New Color |
-|------|------------|-----------|
-| 10 | Light junk (~10%) | +Teal (5 total) |
-| 11 | More junk (~15%) | |
-| 12 | More junk (~20%) | |
-| 13 | More junk (~25%) | |
-| 14 | More junk (~30%) | |
-| 15-19 | Stable at ~30% | Consolidation |
-
-**New Upgrade:** TBD (junk-related mitigation)
+| Upgrade | Type | Effect per Level | Max Level |
+|---------|------|------------------|-----------|
+| Circuit Stabilizer | passive | -7.5% trigger chance | 4 (+ 3-button sequence) |
+| Auto-Popper | passive | -4% end-game decay | 4 |
+| Capacitor Efficiency | passive | -6.25% drain rate | 4 (+ no center targets) |
+| Cooldown Booster | active | +25% cooldown extension | 1 |
+| Gear Lubrication | passive | +12.5% heat dissipation | 4 (+ 3 alignments) |
+| Focus Mode | passive | -10% time speed at console | 4 |
+| Dense Goop | passive | +12.5% fall speed | 4 |
+| Pressure Control | passive | +5 seconds game time | 8 |
 
 ---
 
-### Band 2: Multi-color Pieces (Ranks 20-29)
+### Junk Band (Ranks 10-19) — Phase 16
 
-**Focus:** Falling pieces can have two colors (cells [0,1] = colorA, cells [2,3] = colorB)
+**Focus:** Sessions start with "junk goop" already in the tank. Junk Goop complication triggers based on junk interactions.
 
-| Rank | Multi-color Chance | New Color |
-|------|-------------------|-----------|
-| 20 | Low chance (~15%) | +White (6 total) |
-| 21 | Increasing (~20%) | |
-| 22 | Increasing (~25%) | |
-| 23 | Increasing (~30%) | |
-| 24 | Increasing (~35%) | |
-| 25-29 | Stable at ~35% | Consolidation |
+| Rank | What Unlocks |
+|------|--------------|
+| 10 | +Orange color (5 total), **Junk Uniformer** upgrade |
+| 12 | **Goop Swap** upgrade |
+| 15 | **Goop Dump** active ability |
+| 18 | **Sealing Bonus** upgrade |
 
-**New Upgrade:** TBD (e.g., increases same-color spawn streaks)
+**Upgrades (4 total):**
 
----
-
-### Band 3: Growing Cracks (Ranks 30-39)
-
-**Focus:** Cracks spread over time if not sealed quickly
-
-**Concept:**
-- Cracks now "grow" to adjacent cells over time
-- Larger crack = more goop needed to cover and seal it
-- Creates urgency to prioritize crack sealing
-
-| Rank | Growth Rate | New Color |
-|------|-------------|-----------|
-| 30 | Slow growth | +Orange (7 total) |
-| 31-34 | Faster growth | Ramping |
-| 35-39 | Stable | Consolidation |
-
-**New Upgrade:** TBD (e.g., slows crack growth rate)
+| Upgrade | Type | Effect per Level | Max Level |
+|---------|------|------------------|-----------|
+| Junk Uniformer | passive | +10% same-color junk | 4 |
+| Goop Swap | passive | -0.25s swap time (1.5s → 0.5s) | 4 |
+| Goop Dump | active | Drops matching junk across board | 1 |
+| Sealing Bonus | passive | +5% cooldown reduction per seal (10% base) | 4 |
 
 ---
 
-### Bands 4-9 (Ranks 40-99)
+### Mixer Band (Ranks 20-29) — Phase 17
+
+**Focus:** Goop Mix complication — falling pieces can have two colors (cells [0,1] = colorA, cells [2,3] = colorB)
+
+| Rank | What Unlocks |
+|------|--------------|
+| 20 | +Purple color (6 total), **Active Expansion Slot** (2nd active slot) |
+| 22 | **Goop Hold Viewer** feature |
+| 25 | **Goop Colorizer** active ability |
+| 28 | **Goop Window** feature (next piece preview) |
+
+**Upgrades (4 total):**
+
+| Upgrade | Type | Effect | Max Level |
+|---------|------|--------|-----------|
+| Active Expansion Slot | feature | Equip 2 actives simultaneously | 1 |
+| Goop Hold Viewer | feature | Shows held goop piece | 1 |
+| Goop Colorizer | active | Next 5 goop match current color | 1 |
+| Goop Window | feature | Preview next goop piece | 1 |
+
+---
+
+### Cracked Band (Ranks 30-39) — Phase 18
+
+**Focus:** Expanding Cracks complication — cracks grow over time if not sealed quickly
+
+**Mechanic:** Cracks grow every 5s from inception. Growth chance = current pressure percentage. Upgrade offsets that chance.
+
+| Rank | What Unlocks |
+|------|--------------|
+| 30 | +White color (7 total), **Slow Cracks** upgrade |
+| 32 | **Crack Matcher** upgrade |
+| 35 | **Crack Down** active ability |
+| 38 | **Active Expansion Slot 2** (3rd active slot) |
+
+**Upgrades (4 total):**
+
+| Upgrade | Type | Effect per Level | Max Level |
+|---------|------|------------------|-----------|
+| Slow Cracks | passive | -5% growth chance offset | 4 |
+| Crack Matcher | passive | +25% color bias toward lowest crack | 4 |
+| Crack Down | active | New cracks spawn on bottom row | 1 |
+| Active Expansion Slot 2 | feature | Equip 3 actives simultaneously | 1 |
+
+---
+
+### Future Bands (Ranks 40-99)
 
 **Status:** Future design. Mechanics TBD.
 
 **Design Principles:**
-- Each band introduces ONE new mechanic
-- First 5 ranks ramp it up, last 5 consolidate
-- New colors unlock at X0 until colors run out
-- New upgrade track introduced with each mechanic
+- Each band introduces ONE new complication/mechanic
+- Upgrades unlock throughout the band (not all at X0)
+- Colors capped at 7 (may add more if needed)
 
 ---
 
 ### Scoring & Economy Notes
 
-As difficulty increases, scoring becomes harder. Future adjustments may include:
-- New scoring methods at higher ranks
-- Increased point values for certain actions
-- **Goop Penalty Reduction upgrade:** Destroys some remaining goop at end of session, reducing negative point accrual
+**End-Game Penalty:**
+- Remaining goop: -50 points per unit
+- AUTO_POPPER upgrade: Probabilistically auto-pops remaining goop before penalty
+  - Base decay: 20% (keeps penalty). Per level: -4% decay.
+  - Level 4: Only 4% decay (most goop auto-pops)
 
 **Upgrade Economy:**
 - 1 point per rank gained
-- Open to any number of upgrade types
-- Goal: ~100 points of meaningful value across all upgrades
-- Focus for now: Ranks 0-20
+- 17 upgrades total across ranks 0-39
+- Passives have 4-8 levels, actives have 1 level
+- Features have 1 level (unlock only)
+
+---
+
+## Active Ability System
+
+Active abilities are upgrades that can be equipped and manually activated during gameplay.
+
+### Equipping
+- Actives must be purchased AND equipped to use
+- Default: 1 active slot (can equip 1 at a time)
+- Rank 20: Active Expansion Slot unlocks 2nd slot
+- Rank 38: Active Expansion Slot 2 unlocks 3rd slot
+
+### Charging
+- Passive: 1% charge per second (100 seconds to full)
+- Crack-goop seal: +10% charge per sealed crack
+- Visual: Grey circle fills with color, glows when ready
+
+### Activation
+- Tap the ability circle when fully charged (100%)
+- Effect triggers immediately
+- Charge resets to 0%
+
+### Current Actives
+
+| Active | Rank | Effect |
+|--------|------|--------|
+| Cooldown Booster | 5 | +25% extension to all complication cooldowns |
+| Goop Dump | 15 | Drops matching junk across the board |
+| Goop Colorizer | 25 | Next 5 goop match current falling goop color |
+| Crack Down | 35 | New cracks spawn on bottom row for a duration |
 
 ---
 
@@ -668,58 +722,61 @@ As difficulty increases, scoring becomes harder. Future adjustments may include:
 
 ---
 
-## Implementation Phases
+## Implementation Status
 
-### Phase 0: Bug Fixes & Stabilization
-- [x] Fix piece/board coupling
-- [ ] Stabilize existing gameplay
+### Shipped Milestones
 
-### Phase 1: Architecture Refactor
-- [ ] Extract pure game state from Game.tsx
-- [ ] Implement event bus
-- [ ] Create command pattern for inputs
-- [ ] Move all game logic to core/
+**v1.0 MVP** (Jan 2026) — Phases 1-7
+- Core gameplay loop with complications
+- Three minigame puzzles (Reset Laser, Reset Lights, Reset Controls)
+- HUD meters, progression system, system upgrades
+- 65 tests, pre-commit hooks
 
-### Phase 2: Console Mode Shell
-- [ ] Create ConsoleView component
-- [ ] Implement periscope pull-down interaction
-- [ ] Add game phase state machine
-- [ ] Tank simulation continues during console mode
-- [ ] Transition animations
+**v1.1 Architecture Refactor** (Jan 2026) — Phases 8-13
+- Memory leak fixes, file decomposition
+- Art.tsx: 1,478 → 581 lines
+- GameBoard.tsx: 1,031 → 604 lines
+- GameEngine.tick(): 159 → 22 lines
+- Event-based input, 110 tests
 
-### Phase 3: Complications System
-- [ ] Define complication types and triggers
-- [ ] Implement Reset Laser mini-game
-- [ ] Implement Reset Lights mini-game (Lights Out)
-- [ ] Implement Reset Controls mini-game
-- [ ] Wire up complication → console → mini-game flow
+### Current Milestone: v1.2 Progression System
 
-### Phase 4: End Day Screen
-- [ ] CRT monitor drop-down animation
-- [ ] Stats display
-- [ ] Swipe up to dismiss
-- [ ] "Pull Down to Start" idle state
+**Phase 14: Data Architecture** — Complete
+- Upgrade system overhaul (17 upgrades with level effects)
+- Complication & color config (unlock ranks, color schedule)
 
-### Phase 5: Polish & Balance
-- [ ] Console visual design refinement
-- [ ] Light blinking patterns
-- [ ] Sound design for console mode
-- [ ] Complication threshold balancing
-- [ ] Mobile touch controls
+**Phase 15: Onboarding Band** — Complete
+- 8 upgrades implemented (ranks 2-9)
+- Active ability system (equip, charge, activate)
+- AUTO_POPPER end-game mechanic
 
-### Phase 6: Future (Post-MVP)
-- [ ] Soft-body shader rendering for goop
-- [ ] Additional complications
-- [ ] Power-up system expansion
-- [ ] C# / Unity port
+**Phase 16: Junk Band** — Planned
+- Junk Goop complication, starting junk mechanic
+- Orange color unlock at rank 10
+- 4 upgrades (Junk Uniformer, Goop Swap, Goop Dump, Sealing Bonus)
+
+**Phase 17: Mixer Band** — Planned
+- Goop Mix complication (multi-color pieces)
+- Purple color unlock at rank 20
+- 4 upgrades including 2nd active slot
+
+**Phase 18: Cracked Band** — Planned
+- Expanding Cracks complication
+- White color unlock at rank 30
+- 4 upgrades including 3rd active slot
+
+### Future
+- Soft-body shader rendering for goop
+- Additional bands (40+)
+- C# / Unity port
 
 ---
 
 ## Open Questions
 
-1. **Bonus crack scoring** - How many points per bonus crack?
-2. **Mobile controls** - Swipe up for swap vs exit periscope conflict?
-3. **Difficulty curve** - How aggressively do complication thresholds scale with rank?
+1. **Junk Goop mechanics** - How does starting junk spawn? How does the Junk complication trigger?
+2. **Multi-color piece frequency** - How often do mixed-color pieces appear in Mixer Band?
+3. **Crack growth formula** - Exact timing and probability for expanding cracks
 
 ---
 
@@ -757,6 +814,6 @@ SOFT_DROP_FACTOR = 20
 
 ---
 
-*Document Version: 3.0*
+*Document Version: 4.0*
 *Last Updated: January 2026*
-*Changes: Fixed Reset Lights/Laser descriptions, added complication cooldowns, HUD meters, XP floor, future progression roadmap*
+*Changes: Updated band system (Onboarding/Junk/Mixer/Cracked), added 17 upgrades, active ability system, implementation status*

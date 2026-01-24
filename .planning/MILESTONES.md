@@ -1,5 +1,35 @@
 # Project Milestones: Goops
 
+## v1.2 Progression System (In Progress)
+
+**Goal:** Implement ranks 0-39 progression with 4 bands, 17 upgrades, 3 new colors, and active ability system.
+
+**Phases completed:** 14-15 (6 plans total)
+
+**Key accomplishments (so far):**
+- Upgrade system overhaul: 17 upgrades with type/passive/active/feature
+- 8 Onboarding Band upgrades fully implemented (ranks 2-9)
+- Active ability system: equip UI, charge circles (1%/sec + 10%/crack), activation
+- AUTO_POPPER end-game mechanic (probabilistic auto-pop before penalty)
+- COOLDOWN_BOOSTER active ability (+25% cooldown extension)
+- Focus Mode (-10%/level time speed at console)
+- Dense Goop (+12.5%/level fall speed)
+- Pressure Control (+5s/level game time, 8 levels)
+
+**Phases remaining:**
+- Phase 16: Junk Band (starting junk, Orange color, 4 upgrades)
+- Phase 17: Mixer Band (multi-color pieces, Purple color, 4 upgrades)
+- Phase 18: Cracked Band (expanding cracks, White color, 4 upgrades)
+
+**Stats (so far):**
+- 112 tests
+- 2 phases, 6 plans
+- 2 days (Jan 23-24, 2026)
+
+**Git range:** `feat(14-01)` → `docs(15-04)`
+
+---
+
 ## v1.1 Architecture Refactor (Shipped: 2026-01-21)
 
 **Delivered:** Comprehensive codebase refactor — fixed memory leaks, decomposed large files, extracted managers, expanded test coverage.

@@ -139,25 +139,29 @@ Mobile rendering is heavily optimized (40fps, simplified rendering). Key optimiz
 Do NOT remove the `isMobile` checks without understanding why they exist.
 
 ## Current Status (as of Jan 2026)
+
 ### Complete
-- Core gameplay loop + mobile optimization (50 tests)
-- Phase 1-5: Dial rotation, minigames, complications, HUD meters
-- Phase 6 Plan 1: XP curve retuned (linear delta), XP floor implemented
+- **v1.0 MVP** (Phases 1-7): Core gameplay, complications, minigames, HUD meters, 65 tests
+- **v1.1 Architecture** (Phases 8-13): File decomposition, memory fixes, event-based input, 110 tests
+- **v1.2 Phase 14-15**: Data architecture + Onboarding Band complete
 
 ### In Progress
-- **Phase 6: Progression System** (Plan 2 pending: Milestone Infrastructure)
+- **Phase 16: Junk Band** — Next up (Junk Goop complication, Orange color, 4 upgrades)
 
 ### Key Systems
 - **Complications**: LASER@rank1, LIGHTS@rank2, CONTROLS@rank3
 - **HUD Meters**: Laser capacitor (drains on pop), Controls heat (builds on rotate)
-- **XP Curve**: `(rank+2) * (1750 + 250*rank)` — Rank 1 = 6,000 XP, Rank 10 = 51,000 XP
+- **Upgrades**: 17 total (8 Onboarding + 4 Junk + 4 Mixer + 4 Cracked)
+- **Active Abilities**: Equip + charge (1%/sec + 10%/crack) + tap to activate
+- **XP Curve**: `(rank+2) * (1750 + 250*rank)` — Rank 1 = 6,000 XP
 - **XP Floor**: `max(100 * rank, score)` prevents zero-gain runs
-- **Dev Tool**: Operator Rank selector (0-100) in console footer
 
 ### Key Documents
-- `.planning/STATE.md` — Current position and accumulated context
-- `.planning/ROADMAP.md` — Phase overview and progress
+- `.planning/STATE.md` — Current position and session continuity
+- `.planning/ROADMAP.md` — Phase overview and progress (18 phases total)
+- `.planning/PROJECT.md` — Requirements and key decisions
 - `PRD.md` — Full product requirements
+- `constants.ts` — UPGRADES configuration (17 upgrades)
 
 ## Testing Philosophy
 - Tests cover core game logic (collision, gravity, scoring, coordinates)
