@@ -173,6 +173,29 @@ export class ComplicationManager {
 
         return gap >= gapThreshold && Math.random() < triggerChance;
     }
+
+    /**
+     * Extend all active complication cooldowns by a percentage.
+     * Used by COOLDOWN_BOOSTER active ability.
+     * @param state - Current game state
+     * @param extensionPercent - Percentage to extend cooldowns (0.25 = 25%)
+     */
+    extendAllCooldowns(
+        state: GameState,
+        extensionPercent: number
+    ): void {
+        const now = Date.now();
+
+        for (const type of Object.values(ComplicationType)) {
+            const cooldownEnd = state.complicationCooldowns[type];
+            if (cooldownEnd > now) {
+                // Cooldown is active, extend it
+                const remainingMs = cooldownEnd - now;
+                const extensionMs = remainingMs * extensionPercent;
+                state.complicationCooldowns[type] = cooldownEnd + extensionMs;
+            }
+        }
+    }
 }
 
 export const complicationManager = new ComplicationManager();
