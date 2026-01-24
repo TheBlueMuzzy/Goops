@@ -865,10 +865,29 @@ export class GameEngine {
             gameEventBus.emit(GameEventType.PIECE_DROPPED);
             const newGrid = this.state.grid.map(row => [...row]);
             let landUpdates = false;
+            const consumedGoals: string[] = [];
 
             landed.forEach(b => {
                 if (b.y >= 0 && b.y < TOTAL_HEIGHT) {
-                    newGrid[Math.floor(b.y)][b.x] = { ...b.data, timestamp: Date.now() };
+                    const landY = Math.floor(b.y);
+
+                    // Check for goal at this position
+                    const hitGoal = this.state.goalMarks.find(
+                        g => g.x === b.x && g.y === landY
+                    );
+
+                    let isMatch = false;
+                    if (hitGoal && hitGoal.color === b.data.color) {
+                        consumedGoals.push(hitGoal.id);
+                        isMatch = true;
+                    }
+                    // Non-matching: goal stays in array, visible through goop
+
+                    newGrid[landY][b.x] = {
+                        ...b.data,
+                        timestamp: Date.now(),
+                        isGlowing: isMatch
+                    };
                     landUpdates = true;
                 }
             });
@@ -876,6 +895,17 @@ export class GameEngine {
             if (landUpdates) {
                 this.state.grid = updateGroups(newGrid);
             }
+
+            // Handle consumed goals (remove from array, emit events)
+            if (consumedGoals.length > 0) {
+                this.state.goalMarks = this.state.goalMarks.filter(
+                    g => !consumedGoals.includes(g.id)
+                );
+                consumedGoals.forEach(() => {
+                    gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });
+                });
+            }
+
             this.state.fallingBlocks = active;
         } else {
             this.state.fallingBlocks = active;

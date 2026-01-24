@@ -305,14 +305,11 @@ export const mergePiece = (
       const hitGoal = goalMarks.find(g => g.x === x && g.y === y);
       
       let isMatch = false;
-      if (hitGoal) {
-          if (hitGoal.color === piece.definition.color) {
-              consumedGoals.push(hitGoal.id);
-              isMatch = true;
-          } else {
-              destroyedGoals.push(hitGoal.id);
-          }
+      if (hitGoal && hitGoal.color === piece.definition.color) {
+          consumedGoals.push(hitGoal.id);
+          isMatch = true;
       }
+      // Non-matching color: crack persists (visible through goop)
 
       newGrid[y][x] = {
         id: Math.random().toString(36).substr(2, 9),

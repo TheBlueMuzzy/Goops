@@ -69,8 +69,8 @@ export class GoalManager {
         piece: ActivePiece,
         emitChange: () => void
     ): void {
-        const goalsToRemove = [...consumed, ...destroyed];
-        state.goalMarks = state.goalMarks.filter(g => !goalsToRemove.includes(g.id));
+        // Only remove consumed goals - non-matching cracks persist under goop
+        state.goalMarks = state.goalMarks.filter(g => !consumed.includes(g.id));
 
         consumed.forEach(id => {
             const cx = normalizeX(piece.x);
@@ -94,10 +94,7 @@ export class GoalManager {
 
             gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });
         });
-
-        destroyed.forEach(id => {
-            gameEventBus.emit(GameEventType.ACTION_REJECTED);
-        });
+        // destroyed goals (non-matching color) are ignored - crack persists
     }
 }
 
