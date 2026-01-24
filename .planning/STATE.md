@@ -100,24 +100,27 @@ All three complications have player-driven triggers AND mitigations.
 ## Session Continuity
 
 Last session: 2026-01-24
-**Version:** 1.1.28
+**Version:** 1.1.30
 
 ### This Session Summary (2026-01-24)
 
 **What was done:**
-- Investigated "pressure not rising" bug — archived to INVESTIGATIONS.md (likely fixed in v1.1)
-- Fixed gravity pieces not interacting with cracks (v1.1.27)
-- Changed behavior: non-matching pieces no longer destroy cracks (persist under goop)
-- Fixed footer text layout — Version/MuzzyMade symmetrical, "RANK SELECT" centered (v1.1.28)
+- Researched Tetris movement feel — documented in INVESTIGATIONS.md
+- Implemented move reset lock delay (v1.1.29): rotation/movement resets 500ms lock timer
+- Reduced reset limit to 10 (v1.1.30) after user testing
+- Lights grace timer now pauses during console/minigame views (v1.1.30)
+- Added debug logging for pressure bug (still investigating)
 
 **Decisions made:**
-- Cracks persist when covered by non-matching color goop (visible through/over)
-- Gravity pieces check for crack matches on landing
-- "OPERATOR RANK" renamed to "RANK SELECT" in console footer
+- Move reset limit = 10 (middle ground between Tetris's 15 and user's instinct of 5)
+- Lights timer pauses in console to prevent feels-bad chain after minigames
+
+**Known bug:**
+- Pressure not rising bug reproduced on desktop — debug logging added to catch it next time
 
 **Next session:**
-- Research: Tetris movement feel (lock delay, sideways into gaps) — ⚠️ CAUTION, previous attempts broke badly
-- Consider planning v1.3 or v2.0 milestone
+- Monitor debug logs for pressure bug
+- Consider Phase 2: upward kicks (+y offset) if move reset feels good
 
 ## Quick Commands
 
