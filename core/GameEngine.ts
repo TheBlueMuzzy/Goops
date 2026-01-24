@@ -938,7 +938,7 @@ export class GameEngine {
 
     /**
      * Passive charging for active abilities.
-     * Charge rate: 3% per second = ~33 seconds to fully charge.
+     * Each ability has its own charge time.
      */
     private tickActiveCharges(dt: number): void {
         // Auto-fix: initialize charges for equipped actives if missing
@@ -948,12 +948,19 @@ export class GameEngine {
             });
         }
 
-        const chargePerSecond = 3; // 3% per second (~33s to full)
-        const chargeAmount = (dt / 1000) * chargePerSecond;
+        // Charge rates per ability (100 / seconds to full charge)
+        const chargeRates: Record<string, number> = {
+            'COOLDOWN_BOOSTER': 100 / 20,  // 20s to full = 5%/sec
+            'GOOP_DUMP': 100 / 15,         // 15s to full = 6.67%/sec
+            'GOOP_COLORIZER': 100 / 25,    // 25s to full = 4%/sec
+            'CRACK_DOWN': 100 / 30         // 30s to full = 3.33%/sec
+        };
 
         Object.keys(this.state.activeCharges).forEach(id => {
             const current = this.state.activeCharges[id] || 0;
             if (current < 100) {
+                const chargePerSecond = chargeRates[id] || 3; // Default 3%/sec if unknown
+                const chargeAmount = (dt / 1000) * chargePerSecond;
                 const newCharge = Math.min(100, current + chargeAmount);
                 this.state.activeCharges[id] = newCharge;
             }
