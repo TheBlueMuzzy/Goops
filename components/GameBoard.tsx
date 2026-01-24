@@ -672,16 +672,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             return <div key={`fly-${orb.id}`} className="absolute w-4 h-4 rounded-full shadow-lg border border-white/50 z-30" style={{ backgroundColor: orb.color, left: `${currentX}%`, top: `${currentY}%`, transform: 'translate(-50%, -50%)', boxShadow: isMobile ? `0 0 4px ${orb.color}` : `0 0 10px ${orb.color}` }} />;
         })}
         
-        {/* Piece Preview - Hold (top-left) */}
-        {state.phase === GamePhase.PERISCOPE && (
-            <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 10 }}>
+        {/* Piece Previews - side by side at top center (like old color pool) */}
+        {state.phase === GamePhase.PERISCOPE && (showHoldViewer || showNextWindow) && (
+            <div style={{
+                position: 'absolute',
+                top: '8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 10,
+                display: 'flex',
+                gap: '8px'
+            }}>
                 <PiecePreview piece={storedPiece ?? null} label="HOLD" visible={showHoldViewer} />
-            </div>
-        )}
-
-        {/* Piece Preview - Next (top-right) */}
-        {state.phase === GamePhase.PERISCOPE && (
-            <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10 }}>
                 <PiecePreview piece={nextPiece ?? null} label="NEXT" visible={showNextWindow} />
             </div>
         )}
