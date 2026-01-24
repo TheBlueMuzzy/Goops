@@ -77,13 +77,14 @@ export const ActiveAbilityCircle: React.FC<ActiveAbilityCircleProps> = ({
         fill="none"
         stroke={color}
         strokeWidth={strokeWidth}
-        strokeDasharray={`${fillLength} ${circumference}`}
-        strokeDashoffset={circumference / 4} // Start from top
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference - fillLength}
         strokeLinecap="round"
         opacity={isReady ? 1 : 0.6}
         style={{
           transform: 'rotate(-90deg)',
-          transformOrigin: 'center'
+          transformOrigin: 'center',
+          transition: 'stroke-dashoffset 0.1s linear'
         }}
       />
 

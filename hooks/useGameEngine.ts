@@ -19,10 +19,27 @@ export const useGameEngine = (
     }
     const engine = engineRef.current;
 
-    // Sync equipped actives when they change
-    useEffect(() => {
+    // CRITICAL: Sync equippedActives immediately (synchronously during render)
+    // This ensures startRun() has the correct equippedActives before useEffect runs
+    // Compare by length and content to avoid unnecessary updates
+    const needsSync = engine.equippedActives.length !== equippedActives.length ||
+        !engine.equippedActives.every((id, i) => id === equippedActives[i]);
+
+    if (needsSync) {
         engine.equippedActives = equippedActives;
-    }, [equippedActives, engine]);
+
+        // Also update activeCharges to include any newly equipped abilities
+        const currentCharges = engine.state.activeCharges || {};
+        const updatedCharges: Record<string, number> = {};
+
+        equippedActives.forEach(id => {
+            // Preserve existing charge if already tracked, else start at 0
+            updatedCharges[id] = currentCharges[id] ?? 0;
+        });
+
+        engine.state.activeCharges = updatedCharges;
+        console.log('useGameEngine: Synced equippedActives =', equippedActives, 'activeCharges =', updatedCharges);
+    }
 
     // Force re-render without creating new objects
     const [, forceUpdate] = useReducer(x => x + 1, 0);

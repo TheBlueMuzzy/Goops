@@ -505,6 +505,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                         if (!upgrade) return null;
 
                         const charge = activeCharges[activeId] || 0;
+                        // DEBUG: Log charge value on render
+                        if (Math.floor(charge) % 10 === 0 && charge > 0) {
+                            console.log(`GameBoard render: ${activeId} charge = ${charge.toFixed(1)}%`);
+                        }
                         const isReady = charge >= 100;
                         const circleSize = 36;
                         const circleX = vbX + vbW - 26;
