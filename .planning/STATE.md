@@ -19,12 +19,12 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 ## Current Position
 
-Phase: 17 of 18 (Mixer Band)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-01-24 - Completed 17-03-PLAN.md (GOOP_COLORIZER active)
+Phase: 18 of 18 (Cracked Band)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-24 - Completed 18-01-PLAN.md (Expanding Cracks + SLOW_CRACKS)
 
-Progress: ██████████░░░░░░░░░░ 42/43 plans (Phase 17 complete)
+Progress: ██████████████████░░ 43/44 plans (Phase 18 in progress)
 
 ## What's Done
 
@@ -86,7 +86,7 @@ All three complications have player-driven triggers AND mitigations.
 ## Session Continuity
 
 Last session: 2026-01-24
-**Version:** 1.1.24
+**Version:** 1.1.25
 
 ### This Session Summary (2026-01-24 Late Night)
 

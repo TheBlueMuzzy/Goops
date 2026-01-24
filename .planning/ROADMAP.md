@@ -117,7 +117,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 18-01: TBD
+- [x] 18-01: Expanding Cracks mechanic + SLOW_CRACKS passive — completed 2026-01-24
+- [ ] 18-02: CRACK_MATCHER passive + CRACK_DOWN active
 
 ---
 
@@ -142,4 +143,4 @@ Plans:
 | 15. Onboarding Band | v1.2 | 4/4 | Complete | 2026-01-24 |
 | 16. Junk Band | v1.2 | 3/3 | Complete | 2026-01-24 |
 | 17. Mixer Band | v1.2 | 3/3 | Complete | 2026-01-24 |
-| 18. Cracked Band | v1.2 | 0/? | Not started | - |
+| 18. Cracked Band | v1.2 | 1/2 | In progress | - |
