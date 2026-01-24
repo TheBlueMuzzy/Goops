@@ -326,6 +326,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             equippedActives={equippedActives}
             activeCharges={gameState.activeCharges}
             onActivateAbility={handleActivateAbility}
+            powerUps={powerUps}
          />
          {/* LIGHTS complication effect is now handled via lightsDimmed prop on GameBoard */}
       </div>

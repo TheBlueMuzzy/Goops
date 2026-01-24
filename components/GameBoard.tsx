@@ -27,13 +27,15 @@ interface GameBoardProps {
   equippedActives?: string[];  // Active ability IDs equipped
   activeCharges?: Record<string, number>;  // Active ID -> charge (0-100)
   onActivateAbility?: (upgradeId: string) => void;  // Called when ability activated
+  powerUps?: Record<string, number>;  // Upgrade levels for GOOP_SWAP effect
 }
 
 // --- Component ---
 export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, lightsDimmed,
     laserCapacitor = 100, controlsHeat = 0, complicationCooldowns,
-    equippedActives = [], activeCharges = {}, onActivateAbility
+    equippedActives = [], activeCharges = {}, onActivateAbility,
+    powerUps
 }) => {
   const { grid, boardOffset, activePiece, fallingBlocks, floatingTexts, timeLeft, goalMarks } = state;
 
@@ -77,7 +79,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       callbacks: {}, // Callbacks optional - events emitted regardless
       boardOffset,
       grid,
-      pressureRatio
+      pressureRatio,
+      powerUps  // For GOOP_SWAP: reduces hold-to-swap duration
   });
 
   // --- KEYBOARD SWAP HOLD (via EventBus) ---
