@@ -397,7 +397,14 @@ export class GameEngine {
      * Handle timer countdown. Returns false if game ended (caller should stop processing).
      */
     private tickTimer(dt: number): boolean {
-        this.state.timeLeft = Math.max(0, this.state.timeLeft - dt);
+        // FOCUS_MODE: slow time during minigames (-10% per level)
+        const focusLevel = this.powerUps['FOCUS_MODE'] || 0;
+        const isInMinigame = this.state.phase === GamePhase.COMPLICATION_MINIGAME;
+        const timeMultiplier = (isInMinigame && focusLevel > 0)
+            ? (1 - focusLevel * 0.10)  // At level 4: 0.60 (40% slower)
+            : 1;
+
+        this.state.timeLeft = Math.max(0, this.state.timeLeft - (dt * timeMultiplier));
         if (this.state.timeLeft <= 0) {
             this.finalizeGame();
             return false;
