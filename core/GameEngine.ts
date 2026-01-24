@@ -109,9 +109,17 @@ export class GameEngine {
     }
 
     private applyUpgrades() {
-        // System upgrades are now applied in complication-specific code (Plans 07-02)
-        // Base maxTime remains INITIAL_TIME_MS (no time bonus upgrade)
-        this.maxTime = INITIAL_TIME_MS;
+        // Base time from constants
+        let baseTime = INITIAL_TIME_MS;
+
+        // PRESSURE_CONTROL: +5 seconds per level (max 8 levels = +40s)
+        const pressureLevel = this.powerUps['PRESSURE_CONTROL'] || 0;
+        if (pressureLevel > 0) {
+            const bonusMs = pressureLevel * 5 * 1000; // 5 seconds per level
+            baseTime += bonusMs;
+        }
+
+        this.maxTime = baseTime;
 
         // Reset time if we haven't started playing yet
         if (this.state.gameStats.startTime === 0) {
