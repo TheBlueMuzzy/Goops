@@ -371,7 +371,25 @@ export class GameEngine {
                 console.log(`GOOP_DUMP activated: ${waveCount} wave(s), ${allPieces.length} total ${targetColor} pieces`);
                 break;
             }
-            // Future actives: GOOP_COLORIZER, CRACK_DOWN
+            case 'GOOP_COLORIZER': {
+                // Lock next N pieces to current falling piece's color
+                // Level 1: 6 pieces, Level 2: 7 pieces, Level 3: 8 pieces
+                const targetColor = this.state.activePiece?.definition.color;
+                if (!targetColor) {
+                    console.log('GOOP_COLORIZER: No active piece to match color');
+                    break;
+                }
+
+                const colorizerLevel = this.powerUps[upgradeId] || 1;
+                const pieceCountByLevel = [6, 7, 8]; // Level 1/2/3
+                const pieceCount = pieceCountByLevel[Math.min(colorizerLevel, 3) - 1];
+
+                this.state.colorizerColor = targetColor;
+                this.state.colorizerRemaining = pieceCount;
+                console.log(`GOOP_COLORIZER activated: next ${pieceCount} pieces will be ${targetColor}`);
+                break;
+            }
+            // Future actives: CRACK_DOWN
             default:
                 console.log(`Active ability ${upgradeId} not yet implemented`);
         }
