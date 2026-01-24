@@ -88,20 +88,24 @@ All three complications have player-driven triggers AND mitigations.
 ## Session Continuity
 
 Last session: 2026-01-24
-**Version:** 1.1.27
+**Version:** 1.1.28
 
 ### This Session Summary (2026-01-24)
 
 **What was done:**
-- Completed v1.2 milestone archival
-- Created `.planning/milestones/v1.2-ROADMAP.md`
-- Updated MILESTONES.md, ROADMAP.md, PROJECT.md, STATE.md
-- Tagged v1.2.0
+- Investigated "pressure not rising" bug — archived to INVESTIGATIONS.md (likely fixed in v1.1)
+- Fixed gravity pieces not interacting with cracks (v1.1.27)
+- Changed behavior: non-matching pieces no longer destroy cracks (persist under goop)
+- Fixed footer text layout — Version/MuzzyMade symmetrical, "RANK SELECT" centered (v1.1.28)
+
+**Decisions made:**
+- Cracks persist when covered by non-matching color goop (visible through/over)
+- Gravity pieces check for crack matches on landing
+- "OPERATOR RANK" renamed to "RANK SELECT" in console footer
 
 **Next session:**
-- User testing of v1.2 features
-- Address bug reports from testing
-- Plan next milestone (v1.3 or v2.0)
+- Research: Tetris movement feel (lock delay, sideways into gaps) — ⚠️ CAUTION, previous attempts broke badly
+- Consider planning v1.3 or v2.0 milestone
 
 ## Quick Commands
 
