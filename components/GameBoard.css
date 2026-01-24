@@ -65,3 +65,22 @@
 .lights-dimmed {
     animation: lightsDimIn 1.5s ease-out forwards;
 }
+
+/* === Minigame Active Pulse === */
+@keyframes minigamePulse {
+    0%, 100% { fill: #45486c; }
+    50% { fill: #35384c; }
+}
+
+.minigame-active-pulse {
+    animation: minigamePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes minigamePulseLaser {
+    0%, 100% { fill: #474871; }
+    50% { fill: #373858; }
+}
+
+.minigame-active-pulse-laser {
+    animation: minigamePulseLaser 1.5s ease-in-out infinite;
+}

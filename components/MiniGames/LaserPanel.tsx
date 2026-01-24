@@ -8,6 +8,7 @@ interface LaserPanelProps {
   onSliderChange: (index: number, value: SliderPosition) => void;
   getLaserLightColors: (index: number) => SliderLightColors;
   textState: MinigameTextState;
+  isComplicationActive?: boolean;
 }
 
 /**
@@ -21,6 +22,7 @@ export const LaserPanel: React.FC<LaserPanelProps> = ({
   onSliderChange,
   getLaserLightColors,
   textState,
+  isComplicationActive = false,
 }) => {
   return (
     <g id="Reset_Laser_Top">

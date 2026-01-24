@@ -1,25 +1,31 @@
 import React from 'react';
 import { UPGRADES } from '../constants';
+import { ChevronLeft } from 'lucide-react';
 
 interface UpgradePanelProps {
   powerUpPoints: number;
   upgrades: Record<string, number>;
   rank: number;
   onPurchase: (upgradeId: string) => void;
+  onRefund?: (upgradeId: string) => void;
   onClose: () => void;
   equippedActives?: string[];
   onToggleEquip?: (upgradeId: string) => void;
-  maxActiveSlots?: number; // Max actives player can equip (default 1)
+  maxActiveSlots?: number;
 }
 
-// Get accent colors based on upgrade ID
-const getUpgradeAccent = (upgradeId: string): { accent: string; text: string } => {
-  // Complication-related upgrades get complication colors
-  if (upgradeId === 'CAPACITOR_EFFICIENCY') return { accent: '#d82727', text: '#ff6b6b' }; // LASER red
-  if (upgradeId === 'CIRCUIT_STABILIZER') return { accent: '#d36b28', text: '#ffa94d' }; // LIGHTS orange
-  if (upgradeId === 'GEAR_LUBRICATION') return { accent: '#2d5a87', text: '#74c0fc' }; // CONTROLS blue
-  // Default for other passives
-  return { accent: '#2d7a4d', text: '#5bbc70' }; // Green
+// Get accent colors based on upgrade type and ID
+const getUpgradeAccent = (upgradeId: string, type: string): { accent: string; text: string } => {
+  // Actives get gold
+  if (type === 'active') return { accent: '#b45309', text: '#fbbf24' };
+  // Features get purple
+  if (type === 'feature') return { accent: '#7c3aed', text: '#a78bfa' };
+  // Complication-related passives get complication colors
+  if (upgradeId === 'CAPACITOR_EFFICIENCY') return { accent: '#d82727', text: '#ff6b6b' };
+  if (upgradeId === 'CIRCUIT_STABILIZER') return { accent: '#d36b28', text: '#ffa94d' };
+  if (upgradeId === 'GEAR_LUBRICATION') return { accent: '#2d5a87', text: '#74c0fc' };
+  // Default passives get green
+  return { accent: '#2d7a4d', text: '#5bbc70' };
 };
 
 export const UpgradePanel: React.FC<UpgradePanelProps> = ({
@@ -27,20 +33,158 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
   upgrades,
   rank,
   onPurchase,
+  onRefund,
   onClose,
   equippedActives = [],
   onToggleEquip,
   maxActiveSlots = 1
 }) => {
-  // Filter passive upgrades by player rank, sorted by unlock rank
-  const availableUpgrades = Object.values(UPGRADES)
-    .filter(u => u.type === 'passive' && u.unlockRank <= rank)
-    .sort((a, b) => a.unlockRank - b.unlockRank);
-
-  // Filter active abilities by player rank
+  // Filter upgrades by type and player rank, sorted by unlock rank
   const availableActives = Object.values(UPGRADES)
     .filter(u => u.type === 'active' && u.unlockRank <= rank)
     .sort((a, b) => a.unlockRank - b.unlockRank);
+
+  const availableFeatures = Object.values(UPGRADES)
+    .filter(u => u.type === 'feature' && u.unlockRank <= rank)
+    .sort((a, b) => a.unlockRank - b.unlockRank);
+
+  const availablePassives = Object.values(UPGRADES)
+    .filter(u => u.type === 'passive' && u.unlockRank <= rank)
+    .sort((a, b) => a.unlockRank - b.unlockRank);
+
+  const hasAnyUpgrades = availableActives.length > 0 || availableFeatures.length > 0 || availablePassives.length > 0;
+
+  // Render a single upgrade card
+  const renderUpgradeCard = (upgrade: typeof UPGRADES[keyof typeof UPGRADES]) => {
+    const currentLevel = upgrades[upgrade.id] || 0;
+    const isMaxLevel = currentLevel >= upgrade.maxLevel;
+    const canAfford = powerUpPoints >= upgrade.costPerLevel;
+    const canIncrease = canAfford && !isMaxLevel;
+    const canDecrease = currentLevel > 0;
+    const accent = getUpgradeAccent(upgrade.id, upgrade.type);
+    const isActive = upgrade.type === 'active';
+    const isEquipped = equippedActives.includes(upgrade.id);
+
+    return (
+      <div
+        key={upgrade.id}
+        className="rounded-xl p-4 border"
+        style={{
+          backgroundColor: '#0c0f19',
+          borderColor: isActive && isEquipped ? '#5bbc70' : '#ffffff40'
+        }}
+      >
+        {/* Upgrade Header */}
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <h3
+              className="font-bold tracking-wide"
+              style={{ color: accent.text, fontSize: '18px' }}
+            >
+              {upgrade.name}
+            </h3>
+            <p style={{ color: '#59acae', fontSize: '13px' }} className="mt-1">
+              {upgrade.desc}
+            </p>
+          </div>
+          {/* Equip toggle for actives (top right) */}
+          {isActive && currentLevel > 0 && onToggleEquip && (
+            <button
+              onClick={() => onToggleEquip(upgrade.id)}
+              disabled={!isEquipped && equippedActives.length >= maxActiveSlots}
+              className="ml-2 px-3 py-1 rounded-lg font-bold text-sm border-2 transition-all"
+              style={{
+                borderColor: isEquipped ? '#5bbc70' : '#59acae60',
+                color: isEquipped ? '#5bbc70' : '#59acae',
+                backgroundColor: isEquipped ? '#5bbc7020' : 'transparent',
+                cursor: (!isEquipped && equippedActives.length >= maxActiveSlots) ? 'not-allowed' : 'pointer',
+                opacity: (!isEquipped && equippedActives.length >= maxActiveSlots) ? 0.5 : 1
+              }}
+            >
+              {isEquipped ? 'ON' : 'OFF'}
+            </button>
+          )}
+        </div>
+
+        {/* Level Indicator with +/- buttons */}
+        <div className="flex items-center gap-3 my-3">
+          {/* Minus Button */}
+          <button
+            onClick={() => canDecrease && onRefund?.(upgrade.id)}
+            disabled={!canDecrease}
+            className="w-8 h-8 rounded-lg font-bold text-xl border-2 transition-all flex items-center justify-center"
+            style={{
+              borderColor: canDecrease ? accent.accent : '#59acae30',
+              color: canDecrease ? accent.text : '#59acae40',
+              backgroundColor: canDecrease ? accent.accent + '20' : 'transparent',
+              cursor: canDecrease ? 'pointer' : 'not-allowed'
+            }}
+          >
+            −
+          </button>
+
+          {/* Level boxes */}
+          <div className="flex gap-1 flex-1 justify-center">
+            {Array.from({ length: upgrade.maxLevel }).map((_, i) => (
+              <div
+                key={i}
+                className="h-4 rounded-sm border flex-1 max-w-8"
+                style={{
+                  borderColor: i < currentLevel ? accent.accent : '#59acae40',
+                  backgroundColor: i < currentLevel ? accent.accent : 'transparent'
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Plus Button */}
+          <button
+            onClick={() => canIncrease && onPurchase(upgrade.id)}
+            disabled={!canIncrease}
+            className="w-8 h-8 rounded-lg font-bold text-xl border-2 transition-all flex items-center justify-center"
+            style={{
+              borderColor: canIncrease ? accent.accent : '#59acae30',
+              color: canIncrease ? accent.text : '#59acae40',
+              backgroundColor: canIncrease ? accent.accent + '20' : 'transparent',
+              cursor: canIncrease ? 'pointer' : 'not-allowed'
+            }}
+          >
+            +
+          </button>
+
+          {/* Level text */}
+          <span
+            className="font-bold w-12 text-right"
+            style={{ color: accent.text, fontSize: '16px' }}
+          >
+            {currentLevel}/{upgrade.maxLevel}
+          </span>
+        </div>
+
+        {/* Current Effect - always shown */}
+        <div style={{ color: '#ffffff', fontSize: '14px' }} className="mb-1">
+          {isActive ? (
+            // Actives show "Effect:" text unchanged
+            <>Effect: {upgrade.formatEffect(1)}</>
+          ) : currentLevel > 0 ? (
+            <>Current: {upgrade.formatEffect(currentLevel)}</>
+          ) : (
+            <span style={{ color: '#59acae' }}>Current: Spend points to upgrade</span>
+          )}
+        </div>
+
+        {/* Max Level Bonus */}
+        {isMaxLevel && upgrade.maxLevelBonus && (
+          <div
+            className="italic"
+            style={{ color: '#5bbc70', fontSize: '14px' }}
+          >
+            MAX: {upgrade.maxLevelBonus}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -68,39 +212,23 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
         {/* Screen Background - Darker Blue */}
         <rect fill="#1f1f38" x="23.26" y="60.46" width="537.16" height="825.87" rx="39.53" ry="39.53"/>
 
-        {/* HEADER: PASSIVE UPGRADES */}
-        <text fill="#f2a743" fontFamily="'From Where You Are'" fontSize="32" transform="translate(291.5 115)" textAnchor="middle">
-          PASSIVE UPGRADES
+        {/* HEADER: System Upgrades (left) + Points (right) */}
+        <text fill="#f2a743" fontFamily="'From Where You Are'" fontSize="28" transform="translate(50 105)">
+          SYSTEM UPGRADES
         </text>
-
-        {/* Available Power Section */}
-        <text fill="#6acbda" fontFamily="'Amazon Ember'" fontSize="18" transform="translate(291.5 160)" textAnchor="middle">
-          AVAILABLE POWER
+        <text fill="#5bbc70" fontFamily="'Amazon Ember'" fontWeight="800" fontSize="32" transform="translate(530 105)" textAnchor="end">
+          {powerUpPoints} PWR
         </text>
-        <text fill="#5bbc70" fontFamily="'Amazon Ember'" fontWeight="800" fontSize="48" transform="translate(291.5 215)" textAnchor="middle">
-          {powerUpPoints}
-        </text>
-
-        {/* Close Button - X in top right */}
-        <g
-          className="cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={onClose}
-        >
-          <circle fill="#1d1d3a" cx="530" cy="90" r="24"/>
-          <text fill="#f2a743" fontFamily="'Amazon Ember'" fontWeight="800" fontSize="28" transform="translate(530 100)" textAnchor="middle">
-            ✕
-          </text>
-        </g>
 
         {/* Upgrades Content Area */}
-        <foreignObject x="40" y="240" width="503" height="600">
+        <foreignObject x="40" y="125" width="503" height="720">
           <div
             // @ts-ignore - xmlns is valid for foreignObject content
             xmlns="http://www.w3.org/1999/xhtml"
             className="w-full h-full overflow-y-auto pr-2"
             style={{ fontFamily: "'Amazon Ember', sans-serif" }}
           >
-            {availableUpgrades.length === 0 ? (
+            {!hasAnyUpgrades ? (
               // Empty state
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <p
@@ -114,198 +242,52 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="space-y-5">
-                {availableUpgrades.map(upgrade => {
-                  const currentLevel = upgrades[upgrade.id] || 0;
-                  const isMaxLevel = currentLevel >= upgrade.maxLevel;
-                  const canAfford = powerUpPoints >= upgrade.costPerLevel;
-                  const canPurchase = canAfford && !isMaxLevel;
-                  const accent = getUpgradeAccent(upgrade.id);
-
-                  return (
+              <div className="space-y-4 pb-20">
+                {/* ACTIVES SECTION - First */}
+                {availableActives.length > 0 && (
+                  <>
                     <div
-                      key={upgrade.id}
-                      className="rounded-xl p-4 border"
-                      style={{
-                        backgroundColor: '#0c0f19',
-                        borderColor: '#ffffff'
-                      }}
+                      className="text-lg tracking-wide mt-2 mb-3"
+                      style={{ color: '#fbbf24', fontFamily: "'From Where You Are', sans-serif" }}
                     >
-                      {/* Upgrade Header */}
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3
-                            className="font-bold tracking-wide"
-                            style={{ color: accent.text, fontSize: '20px' }}
-                          >
-                            {upgrade.name}
-                          </h3>
-                          <p style={{ color: '#59acae', fontSize: '14px' }} className="mt-1">
-                            {upgrade.desc}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Level Indicator */}
-                      <div className="flex items-center gap-2 my-3">
-                        <span style={{ color: '#6acbda', fontSize: '14px' }}>
-                          LVL
-                        </span>
-                        <div className="flex gap-1">
-                          {Array.from({ length: upgrade.maxLevel }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-8 h-4 rounded-sm border"
-                              style={{
-                                borderColor: i < currentLevel ? accent.accent : '#59acae60',
-                                backgroundColor: i < currentLevel ? accent.accent : 'transparent'
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <span
-                          className="font-bold"
-                          style={{ color: accent.text, fontSize: '18px' }}
-                        >
-                          {currentLevel}/{upgrade.maxLevel}
-                        </span>
-                      </div>
-
-                      {/* Current Effect */}
-                      {currentLevel > 0 && (
-                        <div style={{ color: '#ffffff', fontSize: '16px' }} className="mb-2">
-                          Current: {upgrade.formatEffect(currentLevel)}
-                        </div>
-                      )}
-
-                      {/* Max Level Bonus */}
-                      {isMaxLevel && upgrade.maxLevelBonus && (
-                        <div
-                          className="mb-2 italic"
-                          style={{ color: '#5bbc70', fontSize: '16px' }}
-                        >
-                          MAX: {upgrade.maxLevelBonus}
-                        </div>
-                      )}
-
-                      {/* Purchase Button */}
-                      <button
-                        onClick={() => onPurchase(upgrade.id)}
-                        disabled={!canPurchase}
-                        className="w-full mt-2 py-3 px-4 rounded-lg font-bold transition-all border-2"
-                        style={{
-                          borderColor: canPurchase ? accent.accent : '#59acae40',
-                          color: canPurchase ? accent.text : '#59acae60',
-                          backgroundColor: canPurchase ? accent.accent + '20' : 'transparent',
-                          cursor: canPurchase ? 'pointer' : 'not-allowed',
-                          fontSize: '16px'
-                        }}
-                      >
-                        {isMaxLevel ? 'MAX LEVEL' : `UPGRADE (${upgrade.costPerLevel} PWR)`}
-                      </button>
+                      ACTIVES ({equippedActives.length}/{maxActiveSlots} equipped)
                     </div>
-                  );
-                })}
+                    <div className="space-y-3">
+                      {availableActives.map(renderUpgradeCard)}
+                    </div>
+                  </>
+                )}
+
+                {/* FEATURES SECTION - Second */}
+                {availableFeatures.length > 0 && (
+                  <>
+                    <div
+                      className="text-lg tracking-wide mt-4 mb-3"
+                      style={{ color: '#a78bfa', fontFamily: "'From Where You Are', sans-serif" }}
+                    >
+                      FEATURES
+                    </div>
+                    <div className="space-y-3">
+                      {availableFeatures.map(renderUpgradeCard)}
+                    </div>
+                  </>
+                )}
+
+                {/* PASSIVES SECTION - Third */}
+                {availablePassives.length > 0 && (
+                  <>
+                    <div
+                      className="text-lg tracking-wide mt-4 mb-3"
+                      style={{ color: '#5bbc70', fontFamily: "'From Where You Are', sans-serif" }}
+                    >
+                      PASSIVES
+                    </div>
+                    <div className="space-y-3">
+                      {availablePassives.map(renderUpgradeCard)}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-
-            {/* Active Abilities Section */}
-            {availableActives.length > 0 && (
-              <>
-                <div
-                  className="text-xl tracking-wide mt-6 mb-4 text-center"
-                  style={{ color: '#f2a743', fontFamily: "'From Where You Are', sans-serif" }}
-                >
-                  ACTIVE ABILITIES ({equippedActives.length}/{maxActiveSlots})
-                </div>
-                <div className="space-y-4">
-                  {availableActives.map(active => {
-                    const currentLevel = upgrades[active.id] || 0;
-                    const isUnlocked = currentLevel > 0;
-                    const canAfford = powerUpPoints >= active.costPerLevel;
-                    const canPurchase = canAfford && currentLevel === 0; // Actives are 1 level
-                    const isEquipped = equippedActives.includes(active.id);
-
-                    return (
-                      <div
-                        key={active.id}
-                        className="rounded-xl p-4 border"
-                        style={{
-                          backgroundColor: '#0c0f19',
-                          borderColor: isEquipped ? '#5bbc70' : '#ffffff'
-                        }}
-                      >
-                        {/* Active Header */}
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3
-                              className="font-bold tracking-wide"
-                              style={{ color: '#f2a743', fontSize: '20px' }}
-                            >
-                              {active.name}
-                            </h3>
-                            <p style={{ color: '#59acae', fontSize: '14px' }} className="mt-1">
-                              {active.desc}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Effect */}
-                        <div style={{ color: '#ffffff', fontSize: '16px' }} className="mb-3">
-                          Effect: {active.formatEffect(1)}
-                        </div>
-
-                        {/* Equip Checkbox (only if unlocked) */}
-                        {isUnlocked && onToggleEquip && (
-                          <label
-                            className="flex items-center gap-3 mb-2 p-2 rounded-lg"
-                            style={{
-                              backgroundColor: isEquipped ? '#5bbc7020' : 'transparent',
-                              cursor: (!isEquipped && equippedActives.length >= maxActiveSlots) ? 'not-allowed' : 'pointer',
-                              opacity: (!isEquipped && equippedActives.length >= maxActiveSlots) ? 0.5 : 1
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isEquipped}
-                              onChange={() => onToggleEquip(active.id)}
-                              disabled={!isEquipped && equippedActives.length >= maxActiveSlots}
-                              className="w-5 h-5 accent-green-500"
-                            />
-                            <span
-                              style={{
-                                color: isEquipped ? '#5bbc70' : '#59acae',
-                                fontSize: '16px',
-                                fontWeight: isEquipped ? 'bold' : 'normal'
-                              }}
-                            >
-                              {isEquipped ? 'EQUIPPED' : (equippedActives.length >= maxActiveSlots ? 'Slots Full' : 'Equip')}
-                            </span>
-                          </label>
-                        )}
-
-                        {/* Unlock Button (if not unlocked) */}
-                        {!isUnlocked && (
-                          <button
-                            onClick={() => onPurchase(active.id)}
-                            disabled={!canPurchase}
-                            className="w-full mt-2 py-3 px-4 rounded-lg font-bold transition-all border-2"
-                            style={{
-                              borderColor: canPurchase ? '#f2a743' : '#59acae40',
-                              color: canPurchase ? '#f2a743' : '#59acae60',
-                              backgroundColor: canPurchase ? '#f2a74320' : 'transparent',
-                              cursor: canPurchase ? 'pointer' : 'not-allowed',
-                              fontSize: '16px'
-                            }}
-                          >
-                            UNLOCK ({active.costPerLevel} PWR)
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
             )}
           </div>
         </foreignObject>
@@ -315,6 +297,20 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
           Earn 1 PWR per rank gained
         </text>
         </svg>
+
+        {/* Floating Back Button (like Settings) */}
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center z-20 pointer-events-none">
+          <button
+            onClick={onClose}
+            className="pointer-events-auto flex items-center justify-center bg-green-700 hover:bg-green-600 text-black rounded-full shadow-[0_0_20px_rgba(21,128,61,0.4)] transition-all active:scale-95 border border-green-500/30"
+            style={{
+              width: 'min(13.2vw, 7.4vh)',
+              height: 'min(13.2vw, 7.4vh)'
+            }}
+          >
+            <ChevronLeft className="w-1/2 h-1/2 stroke-[3]" />
+          </button>
+        </div>
       </div>
     </div>
   );

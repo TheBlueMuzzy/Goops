@@ -19,12 +19,13 @@ interface ConsoleViewProps {
     onOpenUpgrades?: () => void;
     onSetRank?: (rank: number) => void;
     onPurchaseUpgrade?: (upgradeId: string) => void;
+    onRefundUpgrade?: (upgradeId: string) => void;
     onDismissGameOver?: () => void;
     equippedActives?: string[];
     onToggleEquip?: (upgradeId: string) => void;
 }
 
-export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalScore, powerUpPoints, powerUps = {}, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onDismissGameOver, equippedActives = [], onToggleEquip }) => {
+export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalScore, powerUpPoints, powerUps = {}, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, onDismissGameOver, equippedActives = [], onToggleEquip }) => {
     // Calculate Rank based on:
     // Engine's start-of-run total (which hasn't been updated with the run score yet if Game Over)
     // + Current run score.
@@ -286,6 +287,7 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalSc
                     upgrades={powerUps}
                     rank={rankInfo.rank}
                     onPurchase={(id) => onPurchaseUpgrade?.(id)}
+                    onRefund={(id) => onRefundUpgrade?.(id)}
                     onClose={() => setShowSystemUpgrades(false)}
                     equippedActives={equippedActives}
                     onToggleEquip={onToggleEquip}

@@ -115,6 +115,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         getLaserLightColors,
         getLaserTextState,
         recentlyFixed: laserRecentlyFixed,
+        isComplicationActive: laserComplicationActive,
     } = useLaserMinigame({
         complications,
         isLaserMaxed,
@@ -131,6 +132,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
         getLightsSliderLightColors,
         getLightsTextState,
         recentlyFixed: lightsRecentlyFixed,
+        isComplicationActive: lightsComplicationActive,
     } = useLightsMinigame({
         complications,
         isLightsMaxed,
@@ -286,7 +288,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 
                 {/* Footer Text */}
                 <text fill="#aad9d9" fontFamily="'Amazon Ember'" fontSize="15.7" transform="translate(83.81 1855.15)">
-                    <tspan letterSpacing="-0.04em">V</tspan><tspan x="9.49">ersion 1.1.17</tspan>
+                    <tspan letterSpacing="-0.04em">V</tspan><tspan x="9.49">ersion 1.1.18</tspan>
                 </text>
                 <text fill="#aad9d9" fontFamily="'Amazon Ember'" fontSize="15.7" transform="translate(442.36 1855.15)">
                     <tspan>Muz</tspan><tspan letterSpacing="0em" x="29.67">z</tspan><tspan x="37.29">yMade @ 2026</tspan>
@@ -313,7 +315,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 <path fill="#aad9d9" fillRule="evenodd" d="M604.74,37.21H8.21c-3.37,0-5.34-4.05-3.17-6.52L23.09,10.16C28.83,3.68,37.14,0,46.03,0h520.89c8.89,0,17.2,3.68,22.94,10.16l18.06,20.52c2.17,2.47.19,6.52-3.17,6.52Z"/>
                 <path fill="#1d1d3a" d="M536.44,362.92H76.51c-21.64,0-40.25-18.8-41.48-41.9l-11.76-220.89c-.6-11.35,3.24-22,10.81-29.99,7.45-7.85,17.63-12.18,28.67-12.18h487.46c11.04,0,21.22,4.33,28.67,12.18,7.58,7.99,11.41,18.64,10.81,29.99l-11.76,220.89c-1.23,23.1-19.84,41.9-41.48,41.9ZM62.75,62.96c-9.65,0-18.55,3.77-25.04,10.62-6.62,6.98-9.98,16.32-9.45,26.28l11.76,220.89c1.09,20.49,17.46,37.17,36.49,37.17h459.93c19.03,0,35.4-16.67,36.49-37.17l11.76-220.89c.53-9.96-2.82-19.3-9.45-26.28-6.49-6.85-15.39-10.62-25.04-10.62H62.75Z"/>
                 <path fill="#35385b" fillRule="evenodd" d="M550.2,60.46H62.75c-21.59,0-38.15,17.7-36.98,39.53l11.76,220.89c1.16,21.83,18.62,39.53,38.99,39.53h459.93c20.37,0,37.82-17.7,38.99-39.53l11.76-220.89c1.16-21.83-15.4-39.53-36.98-39.53Z"/>
-                <path fill="#474871" fillRule="evenodd" d="M549.56,74.42H63.39c-21.53,0-38.04,17.7-36.88,39.53l11.02,206.94c1.16,21.83,18.62,39.53,38.99,39.53h459.93c20.37,0,37.82-17.7,38.99-39.53l11.02-206.94c1.16-21.83-15.35-39.53-36.88-39.53Z"/>
+                <path fill="#474871" fillRule="evenodd" d="M549.56,74.42H63.39c-21.53,0-38.04,17.7-36.88,39.53l11.02,206.94c1.16,21.83,18.62,39.53,38.99,39.53h459.93c20.37,0,37.82-17.7,38.99-39.53l11.02-206.94c1.16-21.83-15.35-39.53-36.88-39.53Z" className={laserComplicationActive ? 'minigame-active-pulse-laser' : ''}/>
 
                 {/* 2. Operator Rank Meter */}
                 <g id="Operator_Rank_-_meter">
@@ -347,6 +349,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     onSliderChange={updateLaserSlider}
                     getLaserLightColors={getLaserLightColors}
                     textState={getLaserTextState()}
+                    isComplicationActive={laserComplicationActive}
                 />
             </g>
 
@@ -365,6 +368,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 onBlueClick={onBlueClick}
                 onGreenClick={onGreenClick}
                 onPurpleClick={onPurpleClick}
+                isComplicationActive={lightsComplicationActive}
             />
 
             {/* Reset Controls (Dial) */}

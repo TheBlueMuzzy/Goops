@@ -36,6 +36,7 @@ interface UseLightsMinigameReturn {
   getLightsSliderLightColors: () => { top: string; bottom: string };
   getLightsTextState: () => MinigameTextState;
   recentlyFixed: boolean;
+  isComplicationActive: boolean;
 }
 
 /**
@@ -371,5 +372,6 @@ export function useLightsMinigame({
     getLightsSliderLightColors,
     getLightsTextState,
     recentlyFixed,
+    isComplicationActive: hasActiveLights(),
   };
 }

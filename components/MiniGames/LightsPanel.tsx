@@ -23,6 +23,7 @@ interface LightsPanelProps {
   onBlueClick?: () => void;
   onGreenClick?: () => void;
   onPurpleClick?: () => void;
+  isComplicationActive?: boolean;
 }
 
 /**
@@ -46,6 +47,7 @@ export const LightsPanel: React.FC<LightsPanelProps> = ({
   onBlueClick,
   onGreenClick,
   onPurpleClick,
+  isComplicationActive = false,
 }) => {
   const sliderLightColors = getLightsSliderLightColors();
   const isButtonDisabled = lightsComplication.phase === 'slider1' || lightsComplication.phase === 'showing';
@@ -53,7 +55,7 @@ export const LightsPanel: React.FC<LightsPanelProps> = ({
   return (
     <g id="Reset_Lights">
       {/* Purple Base */}
-      <polygon fill="#45486c" points="608.7 1720.12 341.17 1720.12 341.17 1452.22 564.14 1452.22 608.7 1720.12"/>
+      <polygon fill="#45486c" points="608.7 1720.12 341.17 1720.12 341.17 1452.22 564.14 1452.22 608.7 1720.12" className={isComplicationActive ? 'minigame-active-pulse' : ''}/>
       <text
         fill={textState.color}
         fontFamily="'Amazon Ember'"

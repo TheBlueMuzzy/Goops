@@ -29,6 +29,7 @@ interface UseLaserMinigameReturn {
   getLaserLightColors: (sliderIndex: number) => SliderLightColors;
   getLaserTextState: () => MinigameTextState;
   recentlyFixed: boolean;
+  isComplicationActive: boolean;
 }
 
 /**
@@ -222,5 +223,6 @@ export function useLaserMinigame({
     getLaserLightColors,
     getLaserTextState,
     recentlyFixed,
+    isComplicationActive: hasActiveLaser(),
   };
 }

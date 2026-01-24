@@ -11,6 +11,7 @@ import { gameEventBus } from './core/events/EventBus';
 import { GameEventType } from './core/events/GameEvents';
 import { audio } from './utils/audio';
 import { useAudioSubscription } from './hooks/useAudioSubscription';
+import { UPGRADES } from './constants';
 
 type ViewState = 'GAME' | 'UPGRADES' | 'SETTINGS' | 'HOW_TO_PLAY';
 
@@ -98,8 +99,9 @@ const App: React.FC = () => {
   const handlePurchaseUpgrade = useCallback((upgradeId: string) => {
     setSaveData(prev => {
       const currentLevel = prev.powerUps[upgradeId] || 0;
-      const maxLevel = 5;
-      const cost = 1;
+      const upgrade = UPGRADES[upgradeId as keyof typeof UPGRADES];
+      const maxLevel = upgrade?.maxLevel || 4;
+      const cost = upgrade?.costPerLevel || 1;
 
       if (prev.powerUpPoints < cost || currentLevel >= maxLevel) {
         return prev; // Can't purchase
@@ -112,6 +114,34 @@ const App: React.FC = () => {
           ...prev.powerUps,
           [upgradeId]: currentLevel + 1
         }
+      };
+    });
+  }, []);
+
+  const handleRefundUpgrade = useCallback((upgradeId: string) => {
+    setSaveData(prev => {
+      const currentLevel = prev.powerUps[upgradeId] || 0;
+      const upgrade = UPGRADES[upgradeId as keyof typeof UPGRADES];
+      const refund = upgrade?.costPerLevel || 1;
+
+      if (currentLevel <= 0) {
+        return prev; // Nothing to refund
+      }
+
+      // If active is equipped and we're removing its only level, unequip it
+      let newEquipped = prev.equippedActives;
+      if (currentLevel === 1 && prev.equippedActives.includes(upgradeId)) {
+        newEquipped = prev.equippedActives.filter(id => id !== upgradeId);
+      }
+
+      return {
+        ...prev,
+        powerUpPoints: prev.powerUpPoints + refund,
+        powerUps: {
+          ...prev.powerUps,
+          [upgradeId]: currentLevel - 1
+        },
+        equippedActives: newEquipped
       };
     });
   }, []);
@@ -162,6 +192,7 @@ const App: React.FC = () => {
           onOpenUpgrades={() => setView('UPGRADES')}
           onSetRank={handleSetRank}
           onPurchaseUpgrade={handlePurchaseUpgrade}
+          onRefundUpgrade={handleRefundUpgrade}
           equippedActives={saveData.equippedActives}
           onToggleEquip={handleToggleEquip}
         />

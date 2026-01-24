@@ -33,11 +33,12 @@ interface GameProps {
   onOpenUpgrades?: () => void;
   onSetRank?: (rank: number) => void;
   onPurchaseUpgrade?: (upgradeId: string) => void;
+  onRefundUpgrade?: (upgradeId: string) => void;
   equippedActives?: string[];
   onToggleEquip?: (upgradeId: string) => void;
 }
 
-const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, powerUpPoints, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, equippedActives = [], onToggleEquip }) => {
+const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, powerUpPoints, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, equippedActives = [], onToggleEquip }) => {
   const { engine, gameState } = useGameEngine(initialTotalScore, powerUps, onRunComplete, equippedActives);
 
   // Handle active ability activation
@@ -349,6 +350,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             onOpenUpgrades={onOpenUpgrades}
             onSetRank={onSetRank}
             onPurchaseUpgrade={onPurchaseUpgrade}
+            onRefundUpgrade={onRefundUpgrade}
             onDismissGameOver={() => engine.resetSession()}
             equippedActives={equippedActives}
             onToggleEquip={onToggleEquip}
