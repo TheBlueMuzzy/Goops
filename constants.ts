@@ -347,10 +347,12 @@ export const COLORS = {
   BLUE: '#3b82f6',
   GREEN: '#22c55e',
   YELLOW: '#eab308',
-  TEAL: '#14b8a6',   // Rank 2+
-  WHITE: '#f8fafc',  // Rank 5+
-  ORANGE: '#f97316', // Rank 8+
-  
+  ORANGE: '#f97316',  // Rank 10+
+  PURPLE: '#a855f7',  // Rank 20+ (Tailwind purple-500)
+  WHITE: '#f8fafc',   // Rank 30+
+  // TEAL removed from active palette (kept for backwards compatibility)
+  TEAL: '#14b8a6',
+
   GRID_BG: '#020617', // Very dark slate (almost black)
   GRID_EMPTY: '#1e293b', // Dark slate for grid lines
 };

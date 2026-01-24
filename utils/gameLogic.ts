@@ -18,9 +18,9 @@ export const getRotatedCells = (cells: Coordinate[], clockwise: boolean): Coordi
 
 export const getPaletteForRank = (rank: number): string[] => {
   const palette = [COLORS.RED, COLORS.BLUE, COLORS.GREEN, COLORS.YELLOW];
-  if (rank >= 2) palette.push(COLORS.TEAL);
-  if (rank >= 5) palette.push(COLORS.WHITE);
-  if (rank >= 8) palette.push(COLORS.ORANGE);
+  if (rank >= 10) palette.push(COLORS.ORANGE);
+  if (rank >= 20) palette.push(COLORS.PURPLE);
+  if (rank >= 30) palette.push(COLORS.WHITE);
   return palette;
 };
 
