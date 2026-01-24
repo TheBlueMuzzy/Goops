@@ -9,7 +9,7 @@ import { ComplicationType } from './types';
 // Per-complication configuration
 export const COMPLICATION_CONFIG = {
   [ComplicationType.LASER]: {
-    unlockRank: 1,
+    unlockRank: 4,
     capacitorMax: 100,       // Full capacitor value
     drainPerUnit: 4,         // Capacitor drain per unit popped
     drainUpgradeEffect: 0.05, // -5% drain per upgrade level
@@ -22,7 +22,7 @@ export const COMPLICATION_CONFIG = {
     pressureGapMax: 5,        // Maximum rows (random in range)
   },
   [ComplicationType.CONTROLS]: {
-    unlockRank: 3,
+    unlockRank: 6,
     heatMax: 100,             // Heat threshold for trigger
     heatPerRotation: 5,       // Heat added per rotation
     dissipationBase: 50,      // Heat drain per second when idle
