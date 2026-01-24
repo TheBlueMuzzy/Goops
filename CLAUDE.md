@@ -45,6 +45,8 @@ Version displayed in console footer (`components/Art.tsx`). Format: **X.Y.Z**
 | **Y** (minor) | Major milestone completion | 0.7.5 → 0.8.0 |
 | **X** (major) | Release to friends | 0.9.0 → 1.0.0 |
 
+**Note:** Patch versions can go past 9 (e.g., 1.1.9 → 1.1.10 → 1.1.11). Don't roll to minor unless it's a real milestone.
+
 **When presenting fixes for testing**, always state the version number so user can verify they're running the updated code.
 
 ### Git Workflow

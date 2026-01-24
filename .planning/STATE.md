@@ -20,9 +20,9 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 16 of 18 (Junk Band)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-23 — Completed 16-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: In progress — active ability UI complete, needs UAT
+Last activity: 2026-01-24
 
 Progress: ████░░░░░░ 26%
 
@@ -39,7 +39,7 @@ Progress: ████░░░░░░ 26%
 - ✅ Phase 13: Testing & Documentation (2026-01-21)
 
 **Constraints:**
-- All 110 tests must pass throughout (81 at Phase 12 + 29 new in Phase 13)
+- All 112 tests must pass throughout
 - No gameplay changes
 - Each phase independently deployable
 
@@ -59,27 +59,12 @@ All 6 phases (8-13) complete. See [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) 
 - Art.tsx: 1,478 → 581 lines (61% reduction)
 - GameBoard.tsx: 1,031 → 604 lines (41% reduction)
 - GameEngine.tick(): 159 → 22 lines (86% reduction)
-- Tests: 65 → 110 (69% increase)
+- Tests: 65 → 112 (72% increase)
 - Event-based input, 6 callback props removed
 
 ### v1.0 MVP (Shipped 2026-01-21)
 
 All 7 phases complete. See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
-
-## Audit Findings (from discuss-milestone)
-
-**Critical Issues:**
-- ~~Art.tsx: 1,478 lines~~ ✅ Fixed in Phase 9 (581 lines)
-- ~~GameBoard.tsx: 1,052 lines~~ ✅ Fixed in Phase 10 (604 lines, 41% reduction)
-- ~~rotationTimestamps memory leak~~ ✅ Fixed in Phase 8 (circular buffer)
-
-**High Priority:**
-- ~~GameEngine.tick() is 167 lines~~ ✅ Fixed in Phase 11 (22 lines)
-- ~~Hard-coded values scattered~~ ✅ Fixed in Phase 8 (complicationConfig.ts)
-- ~~State fragmented across 6 locations~~ ✅ Documented in Phase 12 (GameStateManager interface)
-- ~~Prop drilling (10+ callbacks to GameBoard)~~ ✅ Fixed in Phase 12 (6 callbacks removed)
-
-See `.planning/SYSTEM-INVENTORY.md` for complete system list.
 
 ## Accumulated Context
 
@@ -105,50 +90,45 @@ None — all UAT issues resolved.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: 16-03-PLAN.md in progress - debugging active ability charging UI
+Stopped at: 16-03 active ability UI complete, pending final UAT
 Resume file: None
 Phase 16 Status: In progress — executing plan 3 of 3
 
 ### This Session Summary
 
 **What was done:**
-1. Started executing 16-03-PLAN.md (GOOP_DUMP + SEALING_BONUS)
-2. Implemented GOOP_DUMP active ability effect (commit `23d0dd5`)
-3. Implemented SEALING_BONUS passive effect (commit `e274f6a`)
-4. Fixed active ability charging bugs:
-   - equippedActives sync was async (useEffect), now syncs during render
-   - activeCharges wasn't being initialized properly
-   - SVG progress circle wasn't rendering (fixed strokeDasharray approach)
+1. Fixed active ability UI click passthrough (uses onPointerDown + stopPropagation)
+2. Added shake animation reusing existing shake-anim class
+3. Changed fill visual to bottom-to-top like goops
+4. Increased crack seal charge: 10% → 25% per sealed crack
+5. Reduced lights malfunction: 50% → 20% base trigger chance
+6. Sped up lights minigame: 50% faster pattern, near-instant button popup
+7. Added Code Reuse Guideline to CLAUDE.md
+8. Added version note: patch versions can go past 9 (1.1.9 → 1.1.10)
+9. Updated PRD with new balance values
 
 **Commits this session:**
-- `23d0dd5` feat(16-03): implement GOOP_DUMP active ability effect
-- `e274f6a` feat(16-03): implement SEALING_BONUS passive effect
-- `9c81462` fix(16-03): active ability charging and UI progress display
+- `237fdd8` fix(16-03): active ability UI and balance tuning v1.1.9
 
-### Current Issue Being Debugged
+**Version:** 1.1.9
 
-Active ability UI progress circle - need to verify:
-1. Visual progress fills smoothly as it charges
-2. Clicking on button when not ready should not pass through to rotate piece
-3. Should shake when clicked if not ready
+### What Works (Verified)
+- Active ability button charges (1%/sec passive, 25%/crack seal)
+- Fill visual shows bottom-to-top progress like goops
+- Lights minigame pattern is faster with quick button popup
 
-**Version:** 1.1.6 - dev server on port 5176
-
-### Debug Console Logs Added (remove after fix)
-- GameEngine.ts:716 - logs every 5% charge increase
-- GameBoard.tsx:510 - logs charge value on render (every 10%)
-
-### Bugs/Blockers
-
-User reported: clicking on ability circle passes through and rotates falling piece
+### Needs UAT
+- Click passthrough fix (clicking ability shouldn't rotate piece)
+- Shake feedback when clicking non-ready ability
+- GOOP_DUMP effect (spawns orange goop when activated)
 
 ### Next Steps
 
-1. Verify charging UI works visually (v1.1.6)
-2. Fix click passthrough on ability button
-3. Add shake feedback when clicking non-ready button
-4. Complete human verification checkpoint
-5. Create 16-03-SUMMARY.md and finish phase 16
+1. User tests v1.1.9 ability button behavior
+2. If issues found, fix and bump to 1.1.10
+3. Complete human verification checkpoint
+4. Create 16-03-SUMMARY.md
+5. Continue with remaining 16-03 plan items or move to 16-04
 
 ## Quick Commands
 

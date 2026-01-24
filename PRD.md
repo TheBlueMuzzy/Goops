@@ -214,7 +214,7 @@ While in Periscope Mode, equipment malfunctions occur based on player actions. P
 | Complication | Trigger | Rank Unlock | Upgradeable? |
 |--------------|---------|-------------|--------------|
 | Reset Laser | Capacitor drain meter empties (cumulative pops drain it) | Rank 1+ | Yes - slower drain rate |
-| Reset Lights | 15-50% chance on piece lock when pressure is 3-5 rows above highest goop | Rank 2+ | Yes - lower probability |
+| Reset Lights | 20% base chance on piece lock when pressure is 3-5 rows above highest goop | Rank 2+ | Yes - lower probability |
 | Reset Controls | Heat meter fills to 100% (builds while rotating, drains when stopped) | Rank 3+ | Yes - faster heat dissipation |
 
 **Key Design:** The game does NOT pause when you exit to console. The tank keeps filling, pressure keeps rising. Fix complications fast!
@@ -632,7 +632,7 @@ Active abilities are upgrades that can be equipped and manually activated during
 
 ### Charging
 - Passive: 1% charge per second (100 seconds to full)
-- Crack-goop seal: +10% charge per sealed crack
+- Crack-goop seal: +25% charge per sealed crack
 - Visual: Grey circle fills with color, glows when ready
 
 ### Activation
