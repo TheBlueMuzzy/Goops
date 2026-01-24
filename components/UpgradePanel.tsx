@@ -7,6 +7,8 @@ interface UpgradePanelProps {
   rank: number;
   onPurchase: (upgradeId: string) => void;
   onClose: () => void;
+  equippedActives?: string[];
+  onToggleEquip?: (upgradeId: string) => void;
 }
 
 // Get accent colors based on upgrade ID
@@ -24,11 +26,18 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
   upgrades,
   rank,
   onPurchase,
-  onClose
+  onClose,
+  equippedActives = [],
+  onToggleEquip
 }) => {
   // Filter passive upgrades by player rank, sorted by unlock rank
   const availableUpgrades = Object.values(UPGRADES)
     .filter(u => u.type === 'passive' && u.unlockRank <= rank)
+    .sort((a, b) => a.unlockRank - b.unlockRank);
+
+  // Filter active abilities by player rank
+  const availableActives = Object.values(UPGRADES)
+    .filter(u => u.type === 'active' && u.unlockRank <= rank)
     .sort((a, b) => a.unlockRank - b.unlockRank);
 
   return (
@@ -196,6 +205,100 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
                   );
                 })}
               </div>
+            )}
+
+            {/* Active Abilities Section */}
+            {availableActives.length > 0 && (
+              <>
+                <div
+                  className="text-xl tracking-wide mt-6 mb-4 text-center"
+                  style={{ color: '#f2a743', fontFamily: "'From Where You Are', sans-serif" }}
+                >
+                  ACTIVE ABILITIES
+                </div>
+                <div className="space-y-4">
+                  {availableActives.map(active => {
+                    const currentLevel = upgrades[active.id] || 0;
+                    const isUnlocked = currentLevel > 0;
+                    const canAfford = powerUpPoints >= active.costPerLevel;
+                    const canPurchase = canAfford && currentLevel === 0; // Actives are 1 level
+                    const isEquipped = equippedActives.includes(active.id);
+
+                    return (
+                      <div
+                        key={active.id}
+                        className="rounded-xl p-4 border"
+                        style={{
+                          backgroundColor: '#0c0f19',
+                          borderColor: isEquipped ? '#5bbc70' : '#ffffff'
+                        }}
+                      >
+                        {/* Active Header */}
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3
+                              className="font-bold tracking-wide"
+                              style={{ color: '#f2a743', fontSize: '20px' }}
+                            >
+                              {active.name}
+                            </h3>
+                            <p style={{ color: '#59acae', fontSize: '14px' }} className="mt-1">
+                              {active.desc}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Effect */}
+                        <div style={{ color: '#ffffff', fontSize: '16px' }} className="mb-3">
+                          Effect: {active.formatEffect(1)}
+                        </div>
+
+                        {/* Equip Checkbox (only if unlocked) */}
+                        {isUnlocked && onToggleEquip && (
+                          <label
+                            className="flex items-center gap-3 cursor-pointer mb-2 p-2 rounded-lg"
+                            style={{ backgroundColor: isEquipped ? '#5bbc7020' : 'transparent' }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isEquipped}
+                              onChange={() => onToggleEquip(active.id)}
+                              className="w-5 h-5 accent-green-500"
+                            />
+                            <span
+                              style={{
+                                color: isEquipped ? '#5bbc70' : '#59acae',
+                                fontSize: '16px',
+                                fontWeight: isEquipped ? 'bold' : 'normal'
+                              }}
+                            >
+                              {isEquipped ? 'EQUIPPED' : 'Equip'}
+                            </span>
+                          </label>
+                        )}
+
+                        {/* Unlock Button (if not unlocked) */}
+                        {!isUnlocked && (
+                          <button
+                            onClick={() => onPurchase(active.id)}
+                            disabled={!canPurchase}
+                            className="w-full mt-2 py-3 px-4 rounded-lg font-bold transition-all border-2"
+                            style={{
+                              borderColor: canPurchase ? '#f2a743' : '#59acae40',
+                              color: canPurchase ? '#f2a743' : '#59acae60',
+                              backgroundColor: canPurchase ? '#f2a74320' : 'transparent',
+                              cursor: canPurchase ? 'pointer' : 'not-allowed',
+                              fontSize: '16px'
+                            }}
+                          >
+                            UNLOCK ({active.costPerLevel} PWR)
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         </foreignObject>

@@ -33,9 +33,11 @@ interface GameProps {
   onOpenUpgrades?: () => void;
   onSetRank?: (rank: number) => void;
   onPurchaseUpgrade?: (upgradeId: string) => void;
+  equippedActives?: string[];
+  onToggleEquip?: (upgradeId: string) => void;
 }
 
-const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, powerUpPoints, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade }) => {
+const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, powerUpPoints, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, equippedActives = [], onToggleEquip }) => {
   const { engine, gameState } = useGameEngine(initialTotalScore, powerUps, onRunComplete);
   const heldKeys = useRef<Set<string>>(new Set());
   const dragDirectionRef = useRef<number>(0);
@@ -338,6 +340,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             onSetRank={onSetRank}
             onPurchaseUpgrade={onPurchaseUpgrade}
             onDismissGameOver={() => engine.resetSession()}
+            equippedActives={equippedActives}
+            onToggleEquip={onToggleEquip}
           />
       </div>
 

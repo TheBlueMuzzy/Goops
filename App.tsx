@@ -116,6 +116,36 @@ const App: React.FC = () => {
     });
   }, []);
 
+  const handleToggleEquip = useCallback((upgradeId: string) => {
+    setSaveData(prev => {
+      const isCurrentlyEquipped = prev.equippedActives.includes(upgradeId);
+      let newEquipped: string[];
+
+      if (isCurrentlyEquipped) {
+        // Unequip
+        newEquipped = prev.equippedActives.filter(id => id !== upgradeId);
+      } else {
+        // Equip (for now, allow only 1 active - can expand with ACTIVE_EXPANSION_SLOT later)
+        // Check if player has expansion slot upgrade for multiple actives
+        const expansionSlots = (prev.powerUps['ACTIVE_EXPANSION_SLOT'] || 0) +
+                               (prev.powerUps['ACTIVE_EXPANSION_SLOT_2'] || 0);
+        const maxActives = 1 + expansionSlots;
+
+        if (prev.equippedActives.length >= maxActives) {
+          // Replace the last equipped active
+          newEquipped = [...prev.equippedActives.slice(0, maxActives - 1), upgradeId];
+        } else {
+          newEquipped = [...prev.equippedActives, upgradeId];
+        }
+      }
+
+      return {
+        ...prev,
+        equippedActives: newEquipped
+      };
+    });
+  }, []);
+
   return (
     <div className="w-full h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
       {view === 'GAME' && (
@@ -132,6 +162,8 @@ const App: React.FC = () => {
           onOpenUpgrades={() => setView('UPGRADES')}
           onSetRank={handleSetRank}
           onPurchaseUpgrade={handlePurchaseUpgrade}
+          equippedActives={saveData.equippedActives}
+          onToggleEquip={handleToggleEquip}
         />
       )}
 
