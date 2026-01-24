@@ -20,11 +20,11 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 ## Current Position
 
 Phase: 15 of 18 (Onboarding Band)
-Plan: 1 of 4 complete
+Plan: 2 of 4 complete
 Status: In progress
-Last activity: 2026-01-24 — Completed 15-01-PLAN.md
+Last activity: 2026-01-24 — Completed 15-02-PLAN.md
 
-Progress: ███░░░░░░░ 15%
+Progress: ███░░░░░░░ 17%
 
 ## v1.1 Architecture Refactor
 
@@ -105,7 +105,7 @@ None — all UAT issues resolved.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 15-01-PLAN.md (upgrade ID migration + UpgradePanel)
+Stopped at: Completed 15-02-PLAN.md (complication upgrade effects verification)
 Resume file: None
 
 ### Level Effects Decided This Session
@@ -142,7 +142,7 @@ None
 ### Next Steps
 
 1. `/clear` — Fresh context window
-2. `/gsd:execute-plan .planning/phases/15-onboarding-band/15-02-PLAN.md` — Execute complication upgrade effects
+2. `/gsd:execute-plan .planning/phases/15-onboarding-band/15-03-PLAN.md` — Game mechanics (Pressure Control, Focus Mode, Dense Goop)
 
 ## Quick Commands
 
