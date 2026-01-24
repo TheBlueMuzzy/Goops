@@ -184,6 +184,10 @@ export interface GameState {
   // Active ability charge tracking (charged by popping crack-goop)
   activeCharges: Record<string, number>; // Active ID -> current charge (0 to chargeCost)
   crackGoopPopped: number; // Count of glowing goop popped this session (for charging)
+
+  // GOOP_COLORIZER tracking
+  colorizerColor: string | null;    // Locked color for next N pieces
+  colorizerRemaining: number;       // Pieces left with forced color
 }
 
 // --- State Management Interface ---

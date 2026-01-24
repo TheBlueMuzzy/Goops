@@ -116,7 +116,11 @@ export class GameEngine {
 
             // Active ability tracking
             activeCharges: {},     // Will be populated based on equipped actives
-            crackGoopPopped: 0     // Count of glowing goop popped (for charging actives)
+            crackGoopPopped: 0,    // Count of glowing goop popped (for charging actives)
+
+            // GOOP_COLORIZER tracking
+            colorizerColor: null,
+            colorizerRemaining: 0
         };
 
         this.applyUpgrades();
@@ -225,7 +229,11 @@ export class GameEngine {
                 [ComplicationType.LIGHTS]: 0,
                 [ComplicationType.CONTROLS]: 0,
                 [ComplicationType.LASER]: 0
-            }
+            },
+
+            // GOOP_COLORIZER tracking - reset on new run
+            colorizerColor: null,
+            colorizerRemaining: 0
         };
 
         this.lockStartTime = null;
