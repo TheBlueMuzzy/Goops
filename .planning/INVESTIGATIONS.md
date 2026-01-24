@@ -6,7 +6,15 @@ Reference file for investigated bugs that were either fixed, couldn't reproduce,
 
 ## Tetris Movement Feel Research (2026-01-24)
 
-**Status:** Research complete. Ready for implementation if desired.
+**Status:** IMPLEMENTED (v1.1.29-33)
+
+| Feature | Version | Notes |
+|---------|---------|-------|
+| Move reset lock delay | v1.1.29 | Rotation/movement resets 500ms timer |
+| 10-reset limit | v1.1.30 | Prevents infinite stalling |
+| Upward kicks (y:-2) | v1.1.31 | Allows tucking under overhangs |
+| Slide into gaps | v1.1.32 | Check collision at rounded Y |
+| Snap to grid | v1.1.33 | Snap when sliding into tight gaps |
 
 ### Research Question
 Why does Tetris feel more responsive for "last-moment sliding" and "moving pieces sideways into gaps"?

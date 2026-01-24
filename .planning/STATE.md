@@ -77,30 +77,23 @@ All three complications have player-driven triggers AND mitigations.
 - Non-matching color pieces no longer destroy cracks (they persist under goop)
 
 **Researched (see INVESTIGATIONS.md):**
-- Tetris movement feel — research complete, ready for implementation
-- Pressure not rising bug — likely fixed in v1.1, cannot reproduce
+- Tetris movement feel — IMPLEMENTED (v1.1.29-33)
+- Pressure not rising bug — debug logging added, waiting for next occurrence
 
-### Tetris Movement Feel Summary
+### Tetris Movement Feel — COMPLETE
 
-**Key Finding:** Lock delay and sideways-into-gaps are linked systems.
-
-| What Tetris Has | What Goops Has | Gap |
-|-----------------|----------------|-----|
-| Move Reset lock delay (resets timer on any move/rotate) | Fixed 500ms timer | **HIGH IMPACT** - add move reset |
-| 15-reset limit (prevents infinite spin) | No limit | Need to add with move reset |
-| SRS wall kicks (+1/+2 y-offsets for climbing) | Basic kicks (no upward) | **MEDIUM IMPACT** - add +y kicks |
-| Rotation-state-dependent kick tables | Same kicks for all states | Low priority |
-
-**Recommended Implementation:**
-1. Phase 1: Add move reset to lock delay (reset timer on rotation/board move, 15-reset cap)
-2. Phase 2: Add upward kick tests (+1 y-offset)
-
-⚠️ **CAUTION:** Previous attempts broke badly. Issues likely due to cylindrical coordinate wrapping and gridX/screenX/boardOffset sync.
+| Feature | Version | Status |
+|---------|---------|--------|
+| Move reset lock delay | v1.1.29 | ✓ Done |
+| 10-reset limit | v1.1.30 | ✓ Done |
+| Upward kicks (y:-2) | v1.1.31 | ✓ Done |
+| Slide into gaps while falling | v1.1.32 | ✓ Done |
+| Snap to grid when sliding into tight gaps | v1.1.33 | ✓ Done |
 
 ## Session Continuity
 
 Last session: 2026-01-24
-**Version:** 1.1.31
+**Version:** 1.1.33
 
 ### This Session Summary (2026-01-24)
 
@@ -111,18 +104,23 @@ Last session: 2026-01-24
 - Lights grace timer now pauses during console/minigame views (v1.1.30)
 - Added debug logging for pressure bug (still investigating)
 - **Phase 2 kicks (v1.1.31):** Added upward kick tests (y:-2) to allow pieces to climb 2 rows via rotation
+- **Slide into gaps fix (v1.1.32):** Fixed collision check to use rounded Y for horizontal movement
+- **Grid snap fix (v1.1.33):** Snap piece to grid when sliding into tight gaps
+
+**Root cause of slide-into-gaps bug:** Fractional Y positions (e.g., 16.49) caused collision check to straddle two rows, blocking slides into single-row gaps. Fix: check collision at `Math.round(y)` for horizontal movement.
 
 **Decisions made:**
 - Move reset limit = 10 (middle ground between Tetris's 15 and user's instinct of 5)
 - Lights timer pauses in console to prevent feels-bad chain after minigames
 - Added 3 new kick offsets: {0,-2}, {1,-2}, {-1,-2} for tucking under overhangs
+- Horizontal movement uses rounded Y for collision, snaps if needed
 
 **Known bug:**
-- Pressure not rising bug reproduced on desktop — debug logging added to catch it next time
+- Pressure not rising bug — debug logging added, waiting for next occurrence
 
 **Next session:**
-- Test upward kicks (try rotating pieces near gaps to tuck under overhangs)
 - Monitor debug logs for pressure bug
+- Continue testing movement feel improvements
 
 ## Quick Commands
 
