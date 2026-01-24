@@ -314,6 +314,39 @@ export class GameEngine {
             }
         }
 
+        // AUTO_POPPER: Each remaining block has a chance to auto-pop before penalty
+        // Base decay is 20% (block survives with 20% chance, pops with 80% chance).
+        // Each level reduces decay by 4%, so block has higher survival chance at higher levels.
+        // Wait - actually the design says "decay" is the penalty per unit.
+        // Re-reading: "Base decay: -20% per unit. Each level reduces decay by 4%"
+        // This means: at level 0, each goop unit decays (causes) 20% penalty.
+        // With AUTO_POPPER, we reduce that percentage. But that's not quite how it's implemented.
+        // The plan says: "Each remaining unit has chance to auto-pop"
+        // So: (1 - decayChance) = pop chance. At level 0: 80% pop, 20% survive.
+        // At level 4: 96% pop, 4% survive.
+        const autoPopperLevel = this.powerUps['AUTO_POPPER'] || 0;
+        if (autoPopperLevel > 0) {
+            const originalCount = remainingBlocks;
+            // Decay chance per unit: 0.20 - (level * 0.04)
+            // Level 0: 20% decay (80% auto-pop)
+            // Level 1: 16% decay (84% auto-pop)
+            // Level 2: 12% decay (88% auto-pop)
+            // Level 3: 8% decay (92% auto-pop)
+            // Level 4: 4% decay (96% auto-pop)
+            const decayChance = 0.20 - (autoPopperLevel * 0.04);
+            let autoPoppedCount = 0;
+
+            for (let i = 0; i < originalCount; i++) {
+                // Each unit has (1 - decayChance) chance to auto-pop
+                if (Math.random() > decayChance) {
+                    autoPoppedCount++;
+                }
+            }
+
+            remainingBlocks -= autoPoppedCount;
+            console.log(`AUTO_POPPER: ${autoPoppedCount} of ${originalCount} goop auto-popped (${remainingBlocks} remaining)`);
+        }
+
         const penalty = remainingBlocks * 50;
         this.state.gameStats.penalty = penalty;
 
