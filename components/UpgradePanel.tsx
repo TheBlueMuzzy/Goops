@@ -9,13 +9,14 @@ interface UpgradePanelProps {
   onClose: () => void;
 }
 
-const SYSTEM_UPGRADES = ['LASER', 'LIGHTS', 'CONTROLS'] as const;
-
-// System-specific accent colors
-const UPGRADE_ACCENTS: Record<string, { accent: string; text: string }> = {
-  LASER: { accent: '#d82727', text: '#ff6b6b' },
-  LIGHTS: { accent: '#d36b28', text: '#ffa94d' },
-  CONTROLS: { accent: '#2d5a87', text: '#74c0fc' },
+// Get accent colors based on upgrade ID
+const getUpgradeAccent = (upgradeId: string): { accent: string; text: string } => {
+  // Complication-related upgrades get complication colors
+  if (upgradeId === 'CAPACITOR_EFFICIENCY') return { accent: '#d82727', text: '#ff6b6b' }; // LASER red
+  if (upgradeId === 'CIRCUIT_STABILIZER') return { accent: '#d36b28', text: '#ffa94d' }; // LIGHTS orange
+  if (upgradeId === 'GEAR_LUBRICATION') return { accent: '#2d5a87', text: '#74c0fc' }; // CONTROLS blue
+  // Default for other passives
+  return { accent: '#2d7a4d', text: '#5bbc70' }; // Green
 };
 
 export const UpgradePanel: React.FC<UpgradePanelProps> = ({
@@ -25,10 +26,10 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
   onPurchase,
   onClose
 }) => {
-  // Filter upgrades by player rank
-  const availableUpgrades = SYSTEM_UPGRADES.filter(
-    id => UPGRADES[id].unlockRank <= rank
-  );
+  // Filter passive upgrades by player rank, sorted by unlock rank
+  const availableUpgrades = Object.values(UPGRADES)
+    .filter(u => u.type === 'passive' && u.unlockRank <= rank)
+    .sort((a, b) => a.unlockRank - b.unlockRank);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -56,9 +57,9 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
         {/* Screen Background - Darker Blue */}
         <rect fill="#1f1f38" x="23.26" y="60.46" width="537.16" height="825.87" rx="39.53" ry="39.53"/>
 
-        {/* HEADER: SYSTEM UPGRADES */}
+        {/* HEADER: PASSIVE UPGRADES */}
         <text fill="#f2a743" fontFamily="'From Where You Are'" fontSize="32" transform="translate(291.5 115)" textAnchor="middle">
-          SYSTEM UPGRADES
+          PASSIVE UPGRADES
         </text>
 
         {/* Available Power Section */}
@@ -98,22 +99,21 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
                   NO UPGRADES AVAILABLE
                 </p>
                 <p style={{ color: '#59acae', fontSize: '16px' }}>
-                  Reach Rank 1 to unlock your first upgrade
+                  Reach Rank 2 to unlock your first upgrade
                 </p>
               </div>
             ) : (
               <div className="space-y-5">
-                {availableUpgrades.map(upgradeId => {
-                  const config = UPGRADES[upgradeId];
-                  const currentLevel = upgrades[upgradeId] || 0;
-                  const isMaxLevel = currentLevel >= config.maxLevel;
-                  const canAfford = powerUpPoints >= config.costPerLevel;
+                {availableUpgrades.map(upgrade => {
+                  const currentLevel = upgrades[upgrade.id] || 0;
+                  const isMaxLevel = currentLevel >= upgrade.maxLevel;
+                  const canAfford = powerUpPoints >= upgrade.costPerLevel;
                   const canPurchase = canAfford && !isMaxLevel;
-                  const accent = UPGRADE_ACCENTS[upgradeId];
+                  const accent = getUpgradeAccent(upgrade.id);
 
                   return (
                     <div
-                      key={upgradeId}
+                      key={upgrade.id}
                       className="rounded-xl p-4 border"
                       style={{
                         backgroundColor: '#0c0f19',
@@ -127,10 +127,10 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
                             className="font-bold tracking-wide"
                             style={{ color: accent.text, fontSize: '20px' }}
                           >
-                            {config.name}
+                            {upgrade.name}
                           </h3>
                           <p style={{ color: '#59acae', fontSize: '14px' }} className="mt-1">
-                            {config.desc}
+                            {upgrade.desc}
                           </p>
                         </div>
                       </div>
@@ -141,7 +141,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
                           LVL
                         </span>
                         <div className="flex gap-1">
-                          {Array.from({ length: config.maxLevel }).map((_, i) => (
+                          {Array.from({ length: upgrade.maxLevel }).map((_, i) => (
                             <div
                               key={i}
                               className="w-8 h-4 rounded-sm border"
@@ -156,30 +156,30 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
                           className="font-bold"
                           style={{ color: accent.text, fontSize: '18px' }}
                         >
-                          {currentLevel}/{config.maxLevel}
+                          {currentLevel}/{upgrade.maxLevel}
                         </span>
                       </div>
 
                       {/* Current Effect */}
                       {currentLevel > 0 && (
                         <div style={{ color: '#ffffff', fontSize: '16px' }} className="mb-2">
-                          Current: {config.formatEffect(currentLevel)}
+                          Current: {upgrade.formatEffect(currentLevel)}
                         </div>
                       )}
 
                       {/* Max Level Bonus */}
-                      {isMaxLevel && config.maxLevelBonus && (
+                      {isMaxLevel && upgrade.maxLevelBonus && (
                         <div
                           className="mb-2 italic"
                           style={{ color: '#5bbc70', fontSize: '16px' }}
                         >
-                          MAX: {config.maxLevelBonus}
+                          MAX: {upgrade.maxLevelBonus}
                         </div>
                       )}
 
                       {/* Purchase Button */}
                       <button
-                        onClick={() => onPurchase(upgradeId)}
+                        onClick={() => onPurchase(upgrade.id)}
                         disabled={!canPurchase}
                         className="w-full mt-2 py-3 px-4 rounded-lg font-bold transition-all border-2"
                         style={{
@@ -190,7 +190,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
                           fontSize: '16px'
                         }}
                       >
-                        {isMaxLevel ? 'MAX LEVEL' : `UPGRADE (${config.costPerLevel} PWR)`}
+                        {isMaxLevel ? 'MAX LEVEL' : `UPGRADE (${upgrade.costPerLevel} PWR)`}
                       </button>
                     </div>
                   );
