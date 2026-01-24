@@ -322,9 +322,10 @@ export class GameEngine {
         // Execute ability effect based on type
         switch (upgradeId) {
             case 'COOLDOWN_BOOSTER': {
-                // Extend all complication cooldowns by 25%
+                // Extend all complication cooldowns: 25% / 35% / 50% based on level
                 const level = this.powerUps[upgradeId] || 1;
-                const extensionPercent = level * 0.25; // 25% per level
+                const extensionValues = [0.25, 0.35, 0.50]; // Level 1/2/3
+                const extensionPercent = extensionValues[Math.min(level, 3) - 1];
                 complicationManager.extendAllCooldowns(this.state, extensionPercent);
                 console.log(`COOLDOWN_BOOSTER activated: +${extensionPercent * 100}% cooldown extension`);
                 break;
@@ -336,24 +337,30 @@ export class GameEngine {
                 const targetColor = this.state.activePiece?.definition.color
                     || palette[Math.floor(Math.random() * palette.length)];
 
-                // Pick 8 random X positions across full cylinder width (0-29)
-                const xPositions: number[] = [];
-                for (let i = 0; i < 8; i++) {
-                    xPositions.push(Math.floor(Math.random() * TOTAL_WIDTH));
+                // Level determines number of waves: 1 / 2 / 3
+                const dumpLevel = this.powerUps[upgradeId] || 1;
+                const waveCount = Math.min(dumpLevel, 3);
+                const piecesPerWave = 18; // 60% coverage of 30-column cylinder
+                const waveDelay = 600; // ms between waves
+
+                // Create all waves with appropriate delays
+                const allPieces: DumpPiece[] = [];
+                for (let wave = 0; wave < waveCount; wave++) {
+                    // Pick random X positions for this wave
+                    for (let i = 0; i < piecesPerWave; i++) {
+                        allPieces.push({
+                            id: Math.random().toString(36).substr(2, 9),
+                            color: targetColor,
+                            x: Math.floor(Math.random() * TOTAL_WIDTH),
+                            y: -1,  // Start above visible area
+                            spawnDelay: (wave * waveDelay) + (i * DUMP_SPAWN_INTERVAL)
+                        });
+                    }
                 }
 
-                // Create dump pieces with staggered spawn delays
-                const dumpPieces: DumpPiece[] = xPositions.map((x, index) => ({
-                    id: Math.random().toString(36).substr(2, 9),
-                    color: targetColor,
-                    x: x,
-                    y: -1,  // Start above visible area
-                    spawnDelay: index * DUMP_SPAWN_INTERVAL  // 0, 80, 160, 240...
-                }));
-
                 // Add to queue (pieces will move to active when delay expires)
-                this.state.dumpQueue.push(...dumpPieces);
-                console.log(`GOOP_DUMP activated: queued ${dumpPieces.length} ${targetColor} pieces`);
+                this.state.dumpQueue.push(...allPieces);
+                console.log(`GOOP_DUMP activated: ${waveCount} wave(s), ${allPieces.length} total ${targetColor} pieces`);
                 break;
             }
             // Future actives: GOOP_COLORIZER, CRACK_DOWN
@@ -931,7 +938,7 @@ export class GameEngine {
 
     /**
      * Passive charging for active abilities.
-     * Slow charge: 1% per second = 100 seconds to fully charge.
+     * Charge rate: 3% per second = ~33 seconds to fully charge.
      */
     private tickActiveCharges(dt: number): void {
         // Auto-fix: initialize charges for equipped actives if missing
@@ -941,7 +948,7 @@ export class GameEngine {
             });
         }
 
-        const chargePerSecond = 1; // 1% per second
+        const chargePerSecond = 3; // 3% per second (~33s to full)
         const chargeAmount = (dt / 1000) * chargePerSecond;
 
         Object.keys(this.state.activeCharges).forEach(id => {

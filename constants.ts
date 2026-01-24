@@ -86,11 +86,11 @@ export const UPGRADES = {
     type: 'active' as const,
     unlockRank: 5,
     costPerLevel: 1,
-    maxLevel: 1,
-    chargeCost: 8, // Legacy - will be replaced by cooldown system
-    effectPerLevel: 0.25, // +25% cooldown extension when activated
-    formatEffect: () => '+25% Cooldown Extension',
-    maxLevelBonus: undefined
+    maxLevel: 3,
+    chargeCost: 8, // Legacy - charge rate is 3%/sec
+    effectPerLevel: 0, // Custom scaling: 25% / 35% / 50%
+    formatEffect: (lvl: number) => `+${[25, 35, 50][lvl - 1] || 25}% Cooldown Extension`,
+    maxLevelBonus: '+50% Cooldown Extension'
   },
 
   GEAR_LUBRICATION: {
@@ -177,15 +177,15 @@ export const UPGRADES = {
   GOOP_DUMP: {
     id: 'GOOP_DUMP',
     name: 'Goop Dump',
-    desc: 'When activated, drops same-color junk across the entire board.',
+    desc: 'When activated, rains same-color junk from the sky. Higher levels add more waves.',
     type: 'active' as const,
     unlockRank: 15,
     costPerLevel: 1,
-    maxLevel: 1,
-    chargeCost: 12, // Legacy - will be replaced by cooldown system
-    effectPerLevel: 1,
-    formatEffect: () => 'Drops matching junk',
-    maxLevelBonus: undefined
+    maxLevel: 3,
+    chargeCost: 12, // Legacy - charge rate is 3%/sec (33s to full)
+    effectPerLevel: 1, // Waves: 1 / 2 / 3
+    formatEffect: (lvl: number) => `${lvl} wave${lvl > 1 ? 's' : ''} of junk`,
+    maxLevelBonus: '3 waves of matching junk'
   },
 
   SEALING_BONUS: {
@@ -233,15 +233,15 @@ export const UPGRADES = {
   GOOP_COLORIZER: {
     id: 'GOOP_COLORIZER',
     name: 'Goop Colorizer',
-    desc: 'When activated, next 5 goop are same color as current falling goop.',
+    desc: 'When activated, upcoming goop match your current color.',
     type: 'active' as const,
     unlockRank: 25,
     costPerLevel: 1,
-    maxLevel: 1,
-    chargeCost: 10, // Will be replaced by cooldown system
-    effectPerLevel: 1,
-    formatEffect: () => 'Next 5 goop match',
-    maxLevelBonus: undefined
+    maxLevel: 3,
+    chargeCost: 10, // Legacy - charge rate is 3%/sec
+    effectPerLevel: 1, // Pieces: 6 / 7 / 8
+    formatEffect: (lvl: number) => `Next ${5 + lvl} goop match`,
+    maxLevelBonus: 'Next 8 goop match'
   },
 
   GOOP_WINDOW: {
@@ -289,15 +289,15 @@ export const UPGRADES = {
   CRACK_DOWN: {
     id: 'CRACK_DOWN',
     name: 'Crack Down',
-    desc: 'When activated, new cracks form on the bottom row for a while.',
+    desc: 'When activated, next cracks form in the bottom 4 rows.',
     type: 'active' as const,
     unlockRank: 35,
     costPerLevel: 1,
-    maxLevel: 1,
-    chargeCost: 10, // Will be replaced by cooldown system
-    effectPerLevel: 1,
-    formatEffect: () => 'Cracks spawn low',
-    maxLevelBonus: undefined
+    maxLevel: 3,
+    chargeCost: 10, // Legacy - charge rate is 3%/sec
+    effectPerLevel: 2, // Cracks: 3 / 5 / 7
+    formatEffect: (lvl: number) => `Next ${1 + lvl * 2} cracks spawn low`,
+    maxLevelBonus: 'Next 7 cracks spawn low'
   },
 
   ACTIVE_EXPANSION_SLOT_2: {
