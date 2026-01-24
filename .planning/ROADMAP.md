@@ -83,7 +83,7 @@ Plans:
 - [x] 15-01: Upgrade ID migration (LASER→CAPACITOR_EFFICIENCY, etc.) + UpgradePanel update — completed 2026-01-24
 - [x] 15-02: Complication upgrade effects (Circuit Stabilizer, Capacitor Efficiency, Gear Lubrication) — completed 2026-01-24
 - [x] 15-03: Game mechanics (Pressure Control, Focus Mode, Dense Goop) — completed 2026-01-24
-- [ ] 15-04: Auto-Popper + Cooldown Booster active
+- [x] 15-04: Auto-Popper + Cooldown Booster active — completed 2026-01-24
 
 #### Phase 16: Junk Band
 
@@ -135,7 +135,7 @@ Plans:
 | 12. State Management & Events | v1.1 | 2/2 | Complete | 2026-01-21 |
 | 13. Testing & Documentation | v1.1 | 2/2 | Complete | 2026-01-21 |
 | 14. Data Architecture | v1.2 | 2/2 | Complete | 2026-01-24 |
-| 15. Onboarding Band | v1.2 | 3/4 | In progress | - |
+| 15. Onboarding Band | v1.2 | 4/4 | Complete | 2026-01-24 |
 | 16. Junk Band | v1.2 | 0/? | Not started | - |
 | 17. Mixer Band | v1.2 | 0/? | Not started | - |
 | 18. Cracked Band | v1.2 | 0/? | Not started | - |
