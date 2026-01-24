@@ -41,6 +41,7 @@ export class GameEngine {
     // Internal state tracking - Public for Commands to access
     public maxTime: number = INITIAL_TIME_MS;
     public lockStartTime: number | null = null;
+    public lockResetCount: number = 0;  // Move reset counter (max 15 resets before force lock)
     public lastGoalSpawnTime: number = 0;
     public lastComplicationCheckTime: number = 0;
     public isSoftDropping: boolean = false;
@@ -595,9 +596,10 @@ export class GameEngine {
         
         piece.y = spawnVisualY;
         piece.startSpawnY = spawnVisualY;
-        piece.state = PieceState.FALLING; 
+        piece.state = PieceState.FALLING;
 
         this.lockStartTime = null;
+        this.lockResetCount = 0;  // Reset move counter for new piece
 
         // Check immediate collision on spawn (Game Over condition)
         if (checkCollision(currentGrid, piece, currentOffset)) {
@@ -1011,7 +1013,8 @@ export class GameEngine {
             const lockedTime = Date.now() - this.lockStartTime;
             const effectiveLockDelay = this.isSoftDropping ? 50 : LOCK_DELAY_MS;
 
-            if (lockedTime > effectiveLockDelay) {
+            // Lock if: timer expired OR hit 15-reset limit (prevents infinite spin)
+            if (lockedTime > effectiveLockDelay || this.lockResetCount >= 15) {
                 this.lockActivePiece();
             }
         } else {

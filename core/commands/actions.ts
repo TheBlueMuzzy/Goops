@@ -42,6 +42,12 @@ export class MoveBoardCommand implements Command {
             engine.state.activePiece = newPiece;
         }
 
+        // Move reset: successful board movement resets lock delay timer
+        if (engine.lockStartTime !== null) {
+            engine.lockStartTime = null;
+            engine.lockResetCount++;
+        }
+
         // Track rotation timestamps for CONTROLS heat detection (circular buffer)
         const now = Date.now();
         engine.state.rotationTimestamps.push(now);
@@ -89,6 +95,13 @@ export class RotatePieceCommand implements Command {
             if (!checkCollision(engine.state.grid, kickedPiece, engine.state.boardOffset)) {
                 gameEventBus.emit(GameEventType.PIECE_ROTATED);
                 engine.state.activePiece = kickedPiece;
+
+                // Move reset: successful rotation resets lock delay timer
+                if (engine.lockStartTime !== null) {
+                    engine.lockStartTime = null;
+                    engine.lockResetCount++;
+                }
+
                 engine.emitChange();
                 return;
             }
