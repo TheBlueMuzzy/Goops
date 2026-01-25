@@ -14,6 +14,7 @@ import {
 } from '../utils/gameLogic';
 import { getGridX, normalizeX } from '../utils/coordinates';
 import { calculateRankDetails } from '../utils/progression';
+import { splitPiece } from '../utils/pieceUtils';
 import { gameEventBus } from './events/EventBus';
 import { GameEventType } from './events/GameEvents';
 import { Command } from './commands/Command';
@@ -188,10 +189,26 @@ export class GameEngine {
         const newTarget = palette.length + startRank;
 
         // Generate next piece for preview
-        const nextPieceDef = {
-            ...PIECES[Math.floor(Math.random() * PIECES.length)],
-            color: palette[Math.floor(Math.random() * palette.length)]
-        };
+        const nextColor = palette[Math.floor(Math.random() * palette.length)];
+        const shouldSplit = startRank >= 20 && Math.random() < 0.25;
+
+        let nextPieceDef: PieceDefinition;
+        if (shouldSplit) {
+            // Pick second color different from first
+            const otherColors = palette.filter(c => c !== nextColor);
+            const secondColor = otherColors[Math.floor(Math.random() * otherColors.length)];
+
+            const basePiece = {
+                ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                color: nextColor
+            };
+            nextPieceDef = splitPiece(basePiece, nextColor, secondColor);
+        } else {
+            nextPieceDef = {
+                ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                color: nextColor
+            };
+        }
 
         this.state = {
             ...this.state,
@@ -553,10 +570,26 @@ export class GameEngine {
                     console.log(`CRACK_MATCHER: Biased next piece to ${nextColor} (lowest crack at y=${lowestCrack.y})`);
                 }
             }
-            const newNext = {
-                ...PIECES[Math.floor(Math.random() * PIECES.length)],
-                color: nextColor
-            };
+            // Multi-color split: 25% chance at rank 20+
+            const shouldSplit = currentRank >= 20 && Math.random() < 0.25;
+
+            let newNext: PieceDefinition;
+            if (shouldSplit) {
+                // Pick second color different from first
+                const otherColors = palette.filter(c => c !== nextColor);
+                const secondColor = otherColors[Math.floor(Math.random() * otherColors.length)];
+
+                const basePiece = {
+                    ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                    color: nextColor
+                };
+                newNext = splitPiece(basePiece, nextColor, secondColor);
+            } else {
+                newNext = {
+                    ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                    color: nextColor
+                };
+            }
             this.state.nextPiece = newNext;
         }
 
@@ -564,10 +597,11 @@ export class GameEngine {
 
         // Apply GOOP_COLORIZER effect if active
         if (this.state.colorizerRemaining > 0 && this.state.colorizerColor) {
-            // Override the piece color
+            // Override piece color AND cellColors to uniform
             piece.definition = {
                 ...piece.definition,
-                color: this.state.colorizerColor
+                color: this.state.colorizerColor,
+                cellColors: undefined  // Clear multi-color, use uniform color
             };
             this.state.colorizerRemaining--;
 
@@ -575,7 +609,8 @@ export class GameEngine {
             if (this.state.nextPiece && this.state.colorizerRemaining > 0) {
                 this.state.nextPiece = {
                     ...this.state.nextPiece,
-                    color: this.state.colorizerColor
+                    color: this.state.colorizerColor,
+                    cellColors: undefined  // Clear multi-color on preview too
                 };
             }
 
