@@ -62,6 +62,29 @@ Use these at transition points — not constantly, but when you need direction.
 
 ## Core Rules
 
+### Before Responding to Any Question
+**Stop and run this checklist:**
+1. What is the user trying to accomplish? (not what they literally asked)
+2. Should I implement/fix/set up this thing, or just explain it?
+3. Is there a better approach they haven't considered?
+
+**Then respond with:**
+- Brief answer to what they asked
+- "I'll [action] now" — then do it
+- If a better approach exists, say so before acting
+
+**Never** just dump information and stop. Always end with action or a concrete offer.
+
+### Context Hygiene (Mandatory)
+**Use subagents (Task tool) when:**
+- Reading more than 2 files to answer a question
+- Exploring/searching the codebase
+- Researching anything (docs, web, how-tos)
+- Running exploratory commands
+
+**Do NOT** read files directly or run grep/glob yourself for exploration.
+Delegate to subagent → get summary back → main context stays clean.
+
 ### After ANY Code Change (Claude's Job)
 1. **Run tests automatically** — don't wait for user to ask
 2. If tests fail → fix immediately, run tests again
@@ -81,6 +104,13 @@ User cannot see token count until it's shown. Claude cannot see it at all.
 - Save early, save often
 - When user says `<save>`, do a FULL save (all docs)
 - If user mentions low context, prioritize saving immediately
+
+### When Context Auto-Compacts (Preserve These)
+- All modified file paths and current changes
+- Test results (pass/fail status)
+- Current branch and recent commits
+- Known Issues from STATE.md
+- The Core Rules from this file (especially the checklists)
 
 ---
 

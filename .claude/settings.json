@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && npm run test:run 2>&1 | tail -20"
+          }
+        ]
+      }
     ]
   }
 }

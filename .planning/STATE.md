@@ -106,28 +106,30 @@ Last session: 2026-01-25
 
 ### This Session Summary (2026-01-25)
 
-**Session auto-startup & new commands**
+**Claude behavior improvements & auto-test hook**
 
-1. **SessionStart hook implemented** (`.claude/settings.json`)
-   - Fires on `/clear`, fresh `claude` invocation, or `--continue`
-   - Auto-injects STATE.md + git status
-   - No more manual `<clear>` command needed
+1. **Added Core Rules checklists** (CLAUDE.md)
+   - "Before Responding to Any Question" — forces Claude to consider intent, not just literal words
+   - "Context Hygiene (Mandatory)" — requires subagents for exploration/research
+   - Concrete triggers, not abstract principles
 
-2. **Removed `<clear>` command** — hook handles it automatically
+2. **Added PostToolUse auto-test hook** (`.claude/settings.json`)
+   - Tests run automatically after every Edit/Write
+   - No longer dependent on Claude remembering — deterministic
 
-3. **Added `<research>` [topic] command**
-   - Deep research on given topic OR current context
-   - Uses claude-code-guide agent or web search
+3. **Added context compaction preservation rules** (CLAUDE.md)
+   - Explicit list of what to keep when auto-compaction happens
 
-4. **Added `<askme>` command**
-   - Forces Claude to ask clarifying questions before acting
-   - Prevents assumptions about intent or approach
+4. **Researched power user Claude Code techniques**
+   - Confirmed: current setup is already well-optimized
+   - Decided against: moving SOP out (user correctly noted it's more token-efficient in CLAUDE.md)
+   - Decided against: game constants skill (over-engineering for 15 lines)
 
-5. **Consolidated Known Issues tracking** (earlier this session)
-   - Deleted stale CONCERNS.md
-   - STATE.md "Known Issues" = bugs + tech debt
+**Previous Session (same day)**
 
-**Previous Session (SOP & Workflow Overhaul)**
+- SessionStart hook implemented
+- Added `<research>` and `<askme>` commands
+- Consolidated Known Issues tracking
 
 **Previous Session (SOP & Workflow Overhaul)**
 
