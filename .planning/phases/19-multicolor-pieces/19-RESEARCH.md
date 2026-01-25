@@ -11,7 +11,7 @@ Researched the existing piece generation/spawning system and algorithms for spli
 
 **Current system:** Pieces are defined in `constants.ts` as arrays of relative coordinates. `GameEngine.spawnNewPiece()` creates pieces with a single color from the rank-based palette. The `PieceDefinition` type has a single `color` property - this needs to change to support per-cell colors.
 
-**Split algorithm:** For small polyominoes (4-7 cells), we can enumerate all valid bipartitions using BFS/DFS. The algorithm models the piece as a grid graph (4-connected adjacency), finds all ways to split into two connected subgraphs, and picks the most balanced (closest to 50/50). This is O(2^n) but with n=4-7 and early pruning, it's fast enough.
+**Split algorithm:** For small polyominoes (2-8 cells), we can enumerate all valid bipartitions using BFS/DFS. The algorithm models the piece as a grid graph (4-connected adjacency), finds all ways to split into two connected subgraphs, and picks the most balanced (closest to 50/50). This is O(2^n) but with n=2-8 and early pruning, it's fast enough (max 256 iterations).
 
 **Primary recommendation:** Add `cellColors?: string[]` to `PieceDefinition` for per-cell color override. Implement a `splitPieceIntoTwoColors()` function that finds the most balanced contiguous partition. Apply at spawn time when roll succeeds (25% chance, rank 20+).
 
@@ -37,7 +37,7 @@ Researched the existing piece generation/spawning system and algorithms for spli
 | `getAdjacentCells()` | Return neighbors in 4-connectivity | `utils/pieceUtils.ts` |
 
 ### No External Libraries Needed
-This is pure algorithmic work on small graphs (4-7 nodes). Standard TypeScript array manipulation suffices.
+This is pure algorithmic work on small graphs (2-8 nodes). Standard TypeScript array manipulation suffices.
 
 </standard_stack>
 
@@ -123,7 +123,7 @@ function isConnected(cells: Coordinate[]): boolean {
 
 ### Pattern 3: Enumerate Valid Partitions
 **What:** Generate all 2^n subsets, filter to valid bipartitions
-**Why:** For n=4-7, this is fast enough (<128 iterations max)
+**Why:** For n=2-8, this is fast enough (max 256 iterations)
 **Example:**
 ```typescript
 function findBestSplit(cells: Coordinate[]): [Coordinate[], Coordinate[]] | null {
@@ -175,7 +175,7 @@ function findBestSplit(cells: Coordinate[]): [Coordinate[], Coordinate[]] | null
 | Connected component | DFS with mutation | BFS with visited set | Cleaner, no stack overflow risk |
 | Shape rendering | SVG path manipulation | Existing cell-by-cell rect rendering | Already works in PiecePreview |
 
-**Key insight:** The algorithm is simple enough to implement directly. No external libraries needed for graph operations on 4-7 node graphs.
+**Key insight:** The algorithm is simple enough to implement directly. No external libraries needed for graph operations on 2-8 node graphs.
 
 </dont_hand_roll>
 
@@ -362,7 +362,7 @@ if (shouldSplit) {
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Complex graph libraries for partitioning | Enumeration for small n | Always valid for n<10 | No dependencies needed |
+| Complex graph libraries for partitioning | Enumeration for small n | Always valid for n≤8 | No dependencies needed |
 
 **New tools/patterns to consider:**
 - None needed - this is a small-scale problem well-suited to brute force enumeration
