@@ -110,7 +110,7 @@ export class GoalManager {
                 parentIds: [],  // Root crack - no parents
                 childIds: [],   // No children yet
                 lastGrowthCheck: now,
-                growthInterval: 3000 + Math.random() * 2000,  // Random 3-5 seconds
+                growthInterval: 7000 + Math.random() * 5000,  // Random 7-12 seconds
                 spawnTime: newGoal.spawnTime
             };
 
@@ -167,7 +167,8 @@ export class GoalManager {
 
     /**
      * Handle consumed cracks using the new CrackCell system.
-     * When a crack cell is consumed, removes the entire connected crack group.
+     * Only removes the specific cells that were covered by matching goop.
+     * Remaining crack cells stay and can continue spreading from uncovered cells.
      */
     handleCrackConsumption(
         state: GameState,
@@ -177,32 +178,45 @@ export class GoalManager {
     ): void {
         if (consumedIds.length === 0) return;
 
-        // For each consumed crack, find and remove the entire connected group
-        const allRemovedIds = new Set<string>();
+        const removedIds = new Set(consumedIds);
 
+        // Update parent/child references before removing cells
         consumedIds.forEach(id => {
-            if (allRemovedIds.has(id)) return; // Already processed
+            const cell = state.crackCells.find(c => c.id === id);
+            if (!cell) return;
 
-            // Get entire connected component for this crack
-            const connectedGroup = this.getConnectedComponent(id, state.crackCells);
-            connectedGroup.forEach(cell => allRemovedIds.add(cell.id));
+            // Remove this cell from its parents' childIds
+            cell.parentIds.forEach(parentId => {
+                const parent = state.crackCells.find(c => c.id === parentId);
+                if (parent) {
+                    parent.childIds = parent.childIds.filter(cid => cid !== id);
+                }
+            });
+
+            // Remove this cell from its children's parentIds
+            cell.childIds.forEach(childId => {
+                const child = state.crackCells.find(c => c.id === childId);
+                if (child) {
+                    child.parentIds = child.parentIds.filter(pid => pid !== id);
+                }
+            });
         });
 
-        // Remove all connected cracks
-        state.crackCells = state.crackCells.filter(c => !allRemovedIds.has(c.id));
+        // Remove only the consumed cells (not the whole connected group)
+        state.crackCells = state.crackCells.filter(c => !removedIds.has(c.id));
 
         // Also sync to goalMarks for backward compatibility
-        state.goalMarks = state.goalMarks.filter(g => !allRemovedIds.has(g.id));
+        state.goalMarks = state.goalMarks.filter(g => !removedIds.has(g.id));
 
-        // Create floating text for captures
-        consumedIds.forEach(id => {
+        // Create floating text for captures (only one per seal action)
+        if (consumedIds.length > 0) {
             const cx = normalizeX(piece.x);
             const cy = Math.floor(piece.y);
             const textId = Math.random().toString(36).substr(2, 9);
 
             state.floatingTexts.push({
                 id: textId,
-                text: 'Laser to Seal',
+                text: consumedIds.length > 1 ? `Sealed ${consumedIds.length}` : 'Sealed',
                 x: cx,
                 y: cy,
                 life: 1,
@@ -214,8 +228,8 @@ export class GoalManager {
                 emitChange();
             }, 1000);
 
-            gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });
-        });
+            gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: consumedIds.length });
+        }
     }
 
     /**

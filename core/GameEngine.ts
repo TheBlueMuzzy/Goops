@@ -1160,12 +1160,15 @@ export class GameEngine {
 
         // Process each crack cell for growth
         for (const cell of this.state.crackCells) {
+            // Skip spreading if this cell is covered by ANY goop (stops growth)
+            if (this.state.grid[cell.y]?.[cell.x]) continue;
+
             // Check if timer elapsed (per-cell timer)
             if (now - cell.lastGrowthCheck < cell.growthInterval) continue;
 
             // Reset timer with new random interval
             cell.lastGrowthCheck = now;
-            cell.growthInterval = 3000 + Math.random() * 2000; // Random 3-5s
+            cell.growthInterval = 7000 + Math.random() * 5000; // Random 7-12s
 
             // Calculate spread chance
             const pressureRatio = Math.max(0, 1 - (this.state.timeLeft / this.maxTime));
@@ -1254,7 +1257,7 @@ export class GameEngine {
                     parentIds: [cell.id],
                     childIds: [],
                     lastGrowthCheck: now,
-                    growthInterval: 3000 + Math.random() * 2000,
+                    growthInterval: 7000 + Math.random() * 5000,  // Random 7-12s
                     spawnTime: now
                 };
 

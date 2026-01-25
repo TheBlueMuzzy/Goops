@@ -234,6 +234,33 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     );
                 });
             })}
+            {/* Crack Cell Circles - render circle at each crack cell position */}
+            {crackCells && crackCells.filter(c => now - c.spawnTime >= 500).map(cell => {
+                let visX = cell.x - boardOffset;
+                if (visX > TOTAL_WIDTH / 2) visX -= TOTAL_WIDTH;
+                if (visX < -TOTAL_WIDTH / 2) visX += TOTAL_WIDTH;
+
+                if (visX >= 0 && visX < VISIBLE_WIDTH) {
+                    const startX = visXToScreenX(visX);
+                    const width = visXToScreenX(visX + 1) - startX;
+                    const yPos = (cell.y - BUFFER_HEIGHT) * BLOCK_SIZE;
+                    const centerX = startX + width / 2;
+                    const centerY = yPos + BLOCK_SIZE / 2;
+                    return (
+                        <circle
+                            key={`crack-${cell.id}`}
+                            cx={centerX}
+                            cy={centerY}
+                            r={BLOCK_SIZE / 4}
+                            fill={cell.color}
+                            stroke="white"
+                            strokeWidth="1"
+                            strokeOpacity={0.5}
+                        />
+                    );
+                }
+                return null;
+            })}
 
             {/* Goal Marks - always render */}
             {goalMarks.filter(m => now - m.spawnTime >= 500).map(mark => {
