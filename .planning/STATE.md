@@ -106,7 +106,34 @@ Last session: 2026-01-25
 
 ### This Session Summary (2026-01-25)
 
-**Bug Fixes & Polish (v1.1.46-50)**
+**SOP & Workflow Overhaul**
+
+1. **Migrated .planning-v2 → .planning** (Obsidian-ready)
+   - Completed phases 1-20 moved to `archive/phases/`
+   - Empty `phases/` ready for future GSD work
+   - HOME.md as navigation hub with wiki links
+
+2. **Created SOP.md** — Reusable workflow documentation
+   - Vertical slice concept (with cake diagrams!)
+   - What tests are and why they matter
+   - Git branches simplified
+   - Full daily flow diagram
+
+3. **Simplified command set:**
+   - `<npm>` — Start dev server
+   - `<test>` — Run tests manually
+   - `<save>` — Full save (replaces commit+handoff)
+   - `<deploy>` — Merge + deploy
+   - `<commands>` — Show all commands + GSD
+   - `<flow>` — Show workflow diagram
+
+4. **New Claude rules:**
+   - Auto-run tests after ANY code change
+   - Full doc updates on every `<save>`
+
+5. **UAT-001 verified fixed** — Crack expansion already working in code
+
+**Previous Session (v1.1.46-50)**
 
 1. **Distance penalty increased to 25%** (v1.1.46)
    - `core/GameEngine.ts:1198` — changed from 0.15 to 0.25
