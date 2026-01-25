@@ -93,40 +93,30 @@ All three complications have player-driven triggers AND mitigations.
 ## Session Continuity
 
 Last session: 2026-01-25
-**Version:** 1.1.45
-Stopped at: Crack system working, needs distance penalty tuning
+**Version:** 1.1.50
+Stopped at: Bug fixes and polish complete
 
 ### This Session Summary (2026-01-25)
 
-**Phase 20: Expanding Cracks Overhaul - FIXED & TUNED**
+**Bug Fixes & Polish (v1.1.46-50)**
 
-Fixed bugs:
-1. `tickGoals()` now uses `trySpawnCrack()` (was using old `trySpawnGoal()`)
-2. Spawned cracks added to BOTH `crackCells` AND `goalMarks` for sealing detection
-3. `handleGoals()` now removes from both arrays when sealed
-4. **PRESSURE BUG FIXED** - `maxTime` was hardcoded to 60000 in Game.tsx, now uses `engine.maxTime`
+1. **Distance penalty increased to 25%** (v1.1.46)
+   - `core/GameEngine.ts:1198` — changed from 0.15 to 0.25
+   - Cracks now limited to ~3 cells instead of ~4-6
 
-Tuning applied:
-- Spread timer: 7-12 seconds (was 3-5s)
-- Circle nodes at all crack cell positions
-- Goop blocks spreading (any color)
-- Partial sealing (only covered cells removed)
-- Distance-from-root penalty: 15% reduction per hop
+2. **Ghost piece visibility improved** (v1.1.46-48)
+   - Added transparent color fill (20% opacity) behind dashed outline
+   - Fixed: `getContourPath` creates disconnected lines (unfillable), switched to `<rect>`
+   - Outline opacity increased to 75%
+   - Helps distinguish orange vs red, and split-color pieces
 
-### NEXT: Increase distance penalty to 25%
+3. **O piece rotation fixed for split-colors** (v1.1.49-50)
+   - Previously skipped rotation entirely (optimization for single-color)
+   - v1.1.49: Enabled rotation but piece jumped (rotated around 0,0)
+   - v1.1.50: Fixed — rotates `cellColors` array instead of cell positions
+   - Shape stays in place, colors rotate visually around center
 
-User feedback: With full upgrades (extra time + crack sealing bonus time), cracks still grew too large by end of run.
-
-**Change needed:** In `core/GameEngine.ts` around line 1197:
-```typescript
-// Current: 15% per hop
-const distanceMultiplier = Math.max(0.10, 1 - (distance * 0.15));
-
-// Change to: 25% per hop
-const distanceMultiplier = Math.max(0.10, 1 - (distance * 0.25));
-```
-
-This will limit cracks to ~3-4 cells instead of ~4-6.
+**All deployed to:** https://thebluemuzzy.github.io/GOOPS/
 
 ## Quick Commands
 
