@@ -1,17 +1,16 @@
 # Claude Code Context for Goops
 
-## On Session Start
+## On Session Start (Automatic)
 
-**When user types `<clear>`**, run the startup protocol:
+A **SessionStart hook** automatically injects `.planning/STATE.md` after `/clear`, fresh `claude` invocation, or `claude --continue`. When you see this injected content:
 
-1. Read `.planning/STATE.md`
-2. Check "Known Issues" section (bugs + tech debt)
-3. Find the "Next Steps" section
-4. Greet: "Welcome back. Last session: [summary]. Next up: [action]"
-5. If Known Issues exist, surface them briefly
-6. Offer to continue or show alternatives
+1. Check "Known Issues" section (bugs + tech debt)
+2. Find "Next Steps" section
+3. Greet: "Welcome back. Last session: [summary]. Next up: [action]"
+4. Surface Known Issues briefly
+5. Offer to continue or show alternatives
 
-**Typical flow:** User runs `/clear` (CLI command), then types `<clear>` to trigger auto-startup.
+**No user command needed** — just run `/clear` and the startup happens automatically.
 
 ---
 
@@ -34,13 +33,14 @@ Goops is a puzzle-action game built with React/TypeScript/Vite. Player clears co
 
 | Command | What Claude Does |
 |---------|------------------|
-| `<clear>` | **Session startup** — Read STATE.md, show status, offer next steps |
 | `<commands>` | Show this command list (including GSD commands) |
 | `<flow>` | Show the daily workflow diagram |
 | `<npm>` | Start dev server (`npm run dev -- --host`) or confirm already running |
 | `<test>` | Run tests manually (`npm run test:run`) |
 | `<save>` | Full save: update all docs + commit + push (see details below) |
 | `<deploy>` | Merge to master + build + deploy to GitHub Pages |
+| `<research>` [topic] | Deep research on topic (or current context if no topic given) |
+| `<askme>` | Stop and ask clarifying questions before acting (prevent assumptions) |
 
 ### GSD Commands (Planning & Tracking)
 
@@ -86,17 +86,6 @@ User cannot see token count until it's shown. Claude cannot see it at all.
 
 ## Command Details
 
-### `<clear>`
-```
-1. Read .planning/STATE.md
-2. Check "Known Issues" section (bugs + tech debt)
-3. Find "Next Steps" section
-4. Greet: "Welcome back. Last session: [summary]. Next up: [action]"
-5. If Known Issues exist, surface them briefly
-6. Offer to continue or show alternatives
-```
-Use after `/clear` to resume, or anytime to check status.
-
 ### `<npm>`
 ```
 1. Check if dev server already running (look for existing process)
@@ -127,7 +116,7 @@ Use after `/clear` to resume, or anytime to check status.
 4. Git add all changes
 5. Generate descriptive commit message
 6. Git commit + push
-7. Say: "Saved and pushed. Ready to <clear> or keep working."
+7. Say: "Saved and pushed. Ready to /clear or keep working."
 ```
 
 ### `<deploy>`
@@ -139,13 +128,37 @@ Use after `/clear` to resume, or anytime to check status.
 5. If fail: Show error message
 ```
 
+### `<research>` [topic]
+```
+1. If topic provided: research that topic deeply
+2. If no topic: research whatever we were just discussing
+3. Use claude-code-guide agent or web search as appropriate
+4. Return comprehensive findings with actionable recommendations
+5. For Claude Code questions: check hooks, settings, CLI options
+6. For game/code questions: explore codebase, check patterns
+```
+Use when you need deep investigation before making decisions.
+
+### `<askme>`
+```
+1. STOP — do not take action yet
+2. Review what was just asked/discussed
+3. Identify any assumptions you'd be making
+4. Ask clarifying questions to fill gaps in understanding
+5. Only skip questions if you TRULY understand with no ambiguity
+6. Wait for answers before proceeding
+```
+Use when you want to ensure Claude doesn't assume intent or approach.
+
 ### `<flow>`
 Show the daily workflow diagram (see SOP.md for full version):
 
 ```
-START SESSION (or after /clear)
+START SESSION
       ↓
-  <clear>  →  "Welcome back. Next up: [action]"
+   /clear  →  Hook auto-injects STATE.md
+      ↓              ↓
+Claude greets: "Welcome back. Next up: [action]"
       ↓
 [Plan if needed: /gsd:plan-phase]
       ↓
@@ -163,7 +176,7 @@ START SESSION (or after /clear)
       ↓
   <deploy> →  Push to live site
       ↓
-   /clear  →  Fresh context, then <clear> to resume
+   /clear  →  Fresh context, auto-startup
 ```
 
 ### `<commands>`

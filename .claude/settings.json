@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "clear|startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '=== SESSION START ===' && cat \"$CLAUDE_PROJECT_DIR/.planning/STATE.md\" && echo '' && echo '=== GIT STATUS ===' && git -C \"$CLAUDE_PROJECT_DIR\" status --short"
+          }
+        ]
+      }
+    ]
+  }
+}

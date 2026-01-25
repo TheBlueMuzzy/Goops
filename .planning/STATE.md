@@ -106,21 +106,28 @@ Last session: 2026-01-25
 
 ### This Session Summary (2026-01-25)
 
-**Consolidated Known Issues tracking**
+**Session auto-startup & new commands**
 
-1. **Deleted CONCERNS.md** — was stale and not maintained
-   - Verified each concern against codebase
-   - "Minigame UI incomplete" was FALSE (fully functional)
-   - "Console.log placeholders" minor, moved to tech debt
+1. **SessionStart hook implemented** (`.claude/settings.json`)
+   - Fires on `/clear`, fresh `claude` invocation, or `--continue`
+   - Auto-injects STATE.md + git status
+   - No more manual `<clear>` command needed
 
-2. **Updated STATE.md Known Issues section**
-   - Now tracks: bugs + tech debt
-   - Cleaned out fixed/completed items
-   - Single source of truth for `<clear>` to check
+2. **Removed `<clear>` command** — hook handles it automatically
 
-3. **Updated CLAUDE.md `<clear>` protocol**
-   - Now explicitly checks "Known Issues" section
-   - Updated GameEngine line count (1177 → 1374)
+3. **Added `<research>` [topic] command**
+   - Deep research on given topic OR current context
+   - Uses claude-code-guide agent or web search
+
+4. **Added `<askme>` command**
+   - Forces Claude to ask clarifying questions before acting
+   - Prevents assumptions about intent or approach
+
+5. **Consolidated Known Issues tracking** (earlier this session)
+   - Deleted stale CONCERNS.md
+   - STATE.md "Known Issues" = bugs + tech debt
+
+**Previous Session (SOP & Workflow Overhaul)**
 
 **Previous Session (SOP & Workflow Overhaul)**
 
@@ -155,7 +162,7 @@ Last session: 2026-01-25
 
 ## Quick Commands
 
-User shortcuts in CLAUDE.md: `<commands>`, `<npm>`, `<test>`, `<commit>`, `<merge>`, `<status>`, `<handoff>`
+User shortcuts in CLAUDE.md: `<commands>`, `<npm>`, `<test>`, `<save>`, `<deploy>`, `<research>`, `<askme>`, `<flow>`
 
 ## Related
 
