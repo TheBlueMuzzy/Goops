@@ -35,7 +35,7 @@ export const PiecePreview: React.FC<PiecePreviewProps> = ({ piece, label, visibl
         y={offsetY + (cell.y - minY) * CELL_SIZE}
         width={CELL_SIZE - 1}
         height={CELL_SIZE - 1}
-        fill={piece.color}
+        fill={piece.cellColors?.[i] ?? piece.color}
         rx={2}
       />
     ));
