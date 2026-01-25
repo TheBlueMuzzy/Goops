@@ -148,7 +148,7 @@ Progression is organized into bands of 10 ranks. See PRD.md for full details.
 
 ## Future Version Ideas
 
-### v2.0 Concept: "Pressure Rework"
+### SlowMode Concept
 
 **Core idea:** Eliminate XP/points, make progression purely crack-based.
 
@@ -176,7 +176,7 @@ Progression is organized into bands of 10 ranks. See PRD.md for full details.
 - Changes fundamental game feel
 - Needs extensive playtesting
 
-**Status:** Captured for future exploration. Create branch `v2-pressure-rework` when ready to prototype.
+**Status:** Captured for future exploration. Create branch `SlowMode` when ready to prototype.
 
 ---
 *Last updated: 2026-01-25 after v1.1.50*
