@@ -17,6 +17,18 @@ updated: 2026-01-25
 **Active feature branches:**
 - None — v1.2 complete, ready for bug fix work
 
+## Next Steps
+
+**Ready to start:** v1.3 milestone (GoopPieceRework - different piece shapes)
+**No bugs or blockers.**
+
+Options:
+1. `/gsd:new-milestone` — Define phases for v1.3
+2. Test current build at https://thebluemuzzy.github.io/GOOPS/
+3. Something else — just tell Claude what you want
+
+---
+
 ## Project Reference
 
 See: [[PROJECT]] (updated 2026-01-24)

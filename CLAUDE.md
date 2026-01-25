@@ -1,5 +1,19 @@
 # Claude Code Context for Goops
 
+## On Session Start
+
+**Do this automatically when user starts a session or after /clear:**
+
+1. Read `.planning/STATE.md`
+2. Find the "Next Steps" section
+3. Greet: "Welcome back. Last session: [summary]. Next up: [action]"
+4. If bugs/blockers exist, surface them first
+5. Offer to continue or show alternatives
+
+This eliminates the need for user to manually run `/gsd:progress` every time.
+
+---
+
 ## About the User
 - **Not a professional engineer** — good with logic, not abstract coding patterns
 - Prefers **human-readable code** over clever abstractions
