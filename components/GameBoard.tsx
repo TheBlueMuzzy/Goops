@@ -359,9 +359,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             {/* Ghost Piece */}
             {activePiece && activePiece.state === PieceState.FALLING && (() => {
                 const ghostY = getGhostY(grid, activePiece, boardOffset);
-                const color = activePiece.definition.color;
-                
+
                 return activePiece.cells.map((cell, idx) => {
+                    const color = activePiece.definition.cellColors?.[idx] ?? activePiece.definition.color;
                     const pieceGridX = normalizeX(activePiece.x + cell.x);
                     const pieceGridY = ghostY + cell.y;
                     if (pieceGridY < BUFFER_HEIGHT) return null;
@@ -448,9 +448,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
             {/* Active Piece */}
             {activePiece && activePiece.state === PieceState.FALLING && (() => {
-                const color = activePiece.definition.color;
-
-                const apCells = activePiece.cells.map(cell => {
+                const apCells = activePiece.cells.map((cell, idx) => {
+                    const color = activePiece.definition.cellColors?.[idx] ?? activePiece.definition.color;
                     const pieceGridX = normalizeX(activePiece.x + cell.x);
                     const pieceGridY = activePiece.y + cell.y;
 
@@ -470,10 +469,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                             l: activePiece.cells.some(o => o.x === cell.x - 1 && o.y === cell.y),
                         };
 
-                        return { screenX: startX, screenY: yPos, width, neighbors };
+                        return { screenX: startX, screenY: yPos, width, neighbors, color };
                     }
                     return null;
-                }).filter(Boolean) as { screenX: number, screenY: number, width: number, neighbors: any }[];
+                }).filter(Boolean) as { screenX: number, screenY: number, width: number, neighbors: any, color: string }[];
 
                 if (apCells.length === 0) return null;
                 
@@ -481,7 +480,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     <g>
                          <g opacity={0.8}>
                              {apCells.map((c, i) => (
-                                <rect key={i} x={c.screenX} y={c.screenY} width={c.width} height={BLOCK_SIZE} fill={color} rx={4} ry={4} />
+                                <rect key={i} x={c.screenX} y={c.screenY} width={c.width} height={BLOCK_SIZE} fill={c.color} rx={4} ry={4} />
                              ))}
                          </g>
                          {apCells.map((c, i) => (
