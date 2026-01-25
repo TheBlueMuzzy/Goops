@@ -87,12 +87,31 @@ export class RotatePieceCommand implements Command {
 
     execute(engine: GameEngine): void {
         if (engine.state.gameOver || engine.state.isPaused || !engine.state.activePiece) return;
-        // O pieces need to rotate now that split-colors exist
 
         const p = engine.state.activePiece;
         const nextRot = (p.rotation + (this.clockwise ? 1 : -1) + 4) % 4;
+
+        // O pieces: shape stays same, just rotate the cellColors array
+        if (p.definition.type === PieceType.O) {
+            const colors = p.definition.cellColors;
+            if (colors && colors.length === 4) {
+                // Rotate colors: cells are [0,0], [1,0], [0,1], [1,1] (indices 0,1,2,3)
+                const rotatedColors = this.clockwise
+                    ? [colors[2], colors[0], colors[3], colors[1]]  // CW: bottom-left→top-left, etc.
+                    : [colors[1], colors[3], colors[0], colors[2]]; // CCW: top-right→top-left, etc.
+
+                gameEventBus.emit(GameEventType.PIECE_ROTATED);
+                engine.state.activePiece = {
+                    ...p,
+                    rotation: nextRot,
+                    definition: { ...p.definition, cellColors: rotatedColors }
+                };
+                engine.emitChange();
+            }
+            return;
+        }
+
         const nextCells = getRotatedCells(p.cells, this.clockwise);
-        
         const tempPiece = { ...p, cells: nextCells, rotation: nextRot };
 
         // Wall kicks: test offset positions when rotation is blocked
