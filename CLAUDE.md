@@ -168,7 +168,7 @@ Do NOT remove the `isMobile` checks without understanding why they exist.
 - **HUD Meters**: Laser capacitor (drains on pop), Controls heat (builds on rotate)
 - **Upgrades**: 17 total (8 Onboarding + 4 Junk + 4 Mixer + 4 Cracked)
 - **Active Abilities**: Equip + charge (1%/sec + 10%/crack) + tap to activate
-- **XP Curve**: `(rank+2) * (1750 + 250*rank)` — Rank 1 = 6,000 XP
+- **XP Curve**: `3500 + (rank * 250)` per rank — Rank 1 = 3,500 XP, flatter progression
 - **XP Floor**: `max(100 * rank, score)` prevents zero-gain runs
 
 ### Key Documents

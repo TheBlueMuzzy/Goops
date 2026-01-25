@@ -1,15 +1,13 @@
 
 import { RankDetails } from '../types';
 
-// Tutorial-Extended XP Curve (Jan 2026 rebalance)
-// Shifted by 3 ranks so tutorial takes longer - a good run shouldn't skip all of ranks 0-3
+// Flattened XP Curve (Jan 2026 rebalance)
+// Linear growth: 3500 base + 250 per rank
 //
-// Old rank 4 threshold (6,000) is now rank 1 threshold
-// Formula: Total XP to rank = (rank + 2) * (1750 + 250 * rank) for rank >= 1
+// XP per rank: 3500 + (rank * 250)
+// Rank 0→1: 3,500 | Rank 1→2: 3,750 | Rank 2→3: 4,000 | Rank 39→40: 13,250
 //
-// Rank 1: 6,000 XP | Rank 2: 9,000 XP | Rank 3: 12,500 XP | Rank 10: 54,000 XP
-//
-// XP per rank: 6000 (0→1), then 2500 + 500*rank for subsequent ranks
+// Total XP to rank 40: ~336,000 (was ~7 million with old curve)
 
 const MAX_RANK = 100;
 
@@ -17,18 +15,20 @@ const MAX_RANK = 100;
 export const getScoreForRank = (rank: number): number => {
   if (rank <= 0) return 0;
 
-  // Shifted formula (equivalent to old formula at rank+3):
-  // Total XP = (rank + 2) * (1750 + 250 * rank)
-  return (rank + 2) * (1750 + 250 * rank);
+  // Sum of (3500 + i*250) for i from 0 to rank-1
+  // = rank * 3500 + 250 * (rank * (rank-1) / 2)
+  // = rank * (3500 + 125 * (rank - 1))
+  // = rank * (3375 + 125 * rank)
+  return rank * (3375 + 125 * rank);
 };
 
 // Returns the XP needed to go from current rank to next rank
 export const getXpToNextRank = (rank: number): number => {
-  if (rank <= 0) return 6000; // Tutorial: 6,000 XP to reach rank 1
+  if (rank < 0) return 3500;
   if (rank >= MAX_RANK) return 0;
 
-  // XP to next = 2500 + 500 * rank
-  return 2500 + 500 * rank;
+  // XP to next = 3500 + 250 * rank
+  return 3500 + 250 * rank;
 };
 
 // Returns the score for 50% progress through a rank
@@ -79,12 +79,12 @@ export const getMilestonesInRange = (fromRank: number, toRank: number): number[]
 // --- Rank Calculation ---
 
 export const calculateRankDetails = (totalScore: number): RankDetails => {
-  // Rank 0 = fresh start or not yet reached rank 1's threshold (6000)
+  // Rank 0 = fresh start or not yet reached rank 1's threshold (3500)
   if (totalScore < getScoreForRank(1)) {
     return {
       rank: 0,
       progress: Math.max(0, totalScore),
-      toNextRank: 6000, // XP needed for rank 1
+      toNextRank: 3500, // XP needed for rank 1
       totalScore: Math.max(0, totalScore),
       isMaxRank: false
     };
