@@ -1136,8 +1136,9 @@ export class GameEngine {
 
     /**
      * Tick crack growth for rank 30+ (Expanding Cracks mechanic).
-     * Every 5s per crack, there's a chance to spawn an adjacent crack.
-     * Growth chance = pressureRatio - SLOW_CRACKS offset.
+     * Uses per-cell timers with random 3-5s intervals.
+     * Spread chance = 10% base + pressureRatio, with leaf penalty.
+     * Supports 8-direction spread and same-color merge.
      */
     private tickCrackGrowth(): void {
         // Only active at rank 30+
@@ -1148,88 +1149,125 @@ export class GameEngine {
         if (this.state.phase === GamePhase.CONSOLE ||
             this.state.phase === GamePhase.COMPLICATION_MINIGAME) return;
 
-        // Cap at max active cracks
-        if (this.state.goalMarks.length >= MAX_ACTIVE_CRACKS) return;
-
         const now = Date.now();
-        const palette = getPaletteForRank(startingRank);
 
-        // Initialize timers for any new cracks that don't have one
-        for (const goal of this.state.goalMarks) {
-            if (this.state.crackGrowthTimers[goal.id] === undefined) {
-                this.state.crackGrowthTimers[goal.id] = now;
-            }
-        }
+        // Process each crack cell for growth
+        for (const cell of this.state.crackCells) {
+            // Check if timer elapsed (per-cell timer)
+            if (now - cell.lastGrowthCheck < cell.growthInterval) continue;
 
-        // Clean up timers for goals that no longer exist
-        const activeGoalIds = new Set(this.state.goalMarks.map(g => g.id));
-        for (const id of Object.keys(this.state.crackGrowthTimers)) {
-            if (!activeGoalIds.has(id)) {
-                delete this.state.crackGrowthTimers[id];
-            }
-        }
+            // Reset timer with new random interval
+            cell.lastGrowthCheck = now;
+            cell.growthInterval = 3000 + Math.random() * 2000; // Random 3-5s
 
-        // Check each crack for growth
-        for (const goal of this.state.goalMarks) {
-            const lastCheck = this.state.crackGrowthTimers[goal.id];
-            if (now - lastCheck < CRACK_GROWTH_INTERVAL_MS) continue;
-
-            // Update timer
-            this.state.crackGrowthTimers[goal.id] = now;
-
-            // Cap check again (in case we've hit max during this tick)
-            if (this.state.goalMarks.length >= MAX_ACTIVE_CRACKS) break;
-
-            // Calculate growth chance = pressure ratio
+            // Calculate spread chance
             const pressureRatio = Math.max(0, 1 - (this.state.timeLeft / this.maxTime));
+            const baseChance = Math.min(1.0, 0.10 + pressureRatio);
 
             // Apply SLOW_CRACKS offset: -5% per level
             const slowCracksLevel = this.powerUps['SLOW_CRACKS'] || 0;
             const slowCracksOffset = slowCracksLevel * 0.05;
-            const effectiveGrowthChance = Math.max(0, pressureRatio - slowCracksOffset);
+            let effectiveChance = Math.max(0, baseChance - slowCracksOffset);
 
-            // Roll for growth
-            if (Math.random() > effectiveGrowthChance) continue;
+            // Leaf penalty: 50% chance if no children
+            const isLeaf = cell.childIds.length === 0;
+            if (isLeaf) {
+                effectiveChance *= 0.5;
+            }
 
-            // Try to spawn an adjacent crack
+            // Roll for spread
+            if (Math.random() > effectiveChance) continue;
+
+            // Get all 8 adjacent positions (orthogonal + diagonal)
             const adjacentSpots = [
-                { x: normalizeX(goal.x + 1), y: goal.y },
-                { x: normalizeX(goal.x - 1), y: goal.y },
-                { x: goal.x, y: goal.y + 1 },
-                { x: goal.x, y: goal.y - 1 }
-            ].filter(spot =>
-                spot.y >= BUFFER_HEIGHT &&
-                spot.y < TOTAL_HEIGHT &&
-                !this.state.grid[spot.y][spot.x] &&
-                !this.state.goalMarks.some(m => m.x === spot.x && m.y === spot.y)
-            );
+                { x: normalizeX(cell.x + 1), y: cell.y },      // Right
+                { x: normalizeX(cell.x - 1), y: cell.y },      // Left
+                { x: cell.x, y: cell.y + 1 },                   // Down
+                { x: cell.x, y: cell.y - 1 },                   // Up
+                { x: normalizeX(cell.x + 1), y: cell.y - 1 },  // Up-Right
+                { x: normalizeX(cell.x - 1), y: cell.y - 1 },  // Up-Left
+                { x: normalizeX(cell.x + 1), y: cell.y + 1 },  // Down-Right
+                { x: normalizeX(cell.x - 1), y: cell.y + 1 }   // Down-Left
+            ];
 
-            if (adjacentSpots.length === 0) continue;
+            // Filter to valid targets
+            const validTargets: { x: number; y: number; existingCrack?: CrackCell }[] = [];
 
-            // Pick a random adjacent spot and spawn a new crack with a color from the palette
-            const spot = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
+            for (const spot of adjacentSpots) {
+                // Must be in valid grid range
+                if (spot.y < BUFFER_HEIGHT || spot.y >= TOTAL_HEIGHT) continue;
 
-            // Filter colors that already have a goal mark
-            const activeColors = new Set(this.state.goalMarks.map(m => m.color));
-            const availableColors = palette.filter(c => !activeColors.has(c));
+                // Check for existing same-color crack (merge target)
+                const existingCrack = this.state.crackCells.find(
+                    c => c.x === spot.x && c.y === spot.y && c.color === cell.color
+                );
 
-            // If no available colors, use a random one from palette
-            const color = availableColors.length > 0
-                ? availableColors[Math.floor(Math.random() * availableColors.length)]
-                : palette[Math.floor(Math.random() * palette.length)];
+                if (existingCrack) {
+                    // Can merge if not already connected
+                    if (!cell.childIds.includes(existingCrack.id) &&
+                        !cell.parentIds.includes(existingCrack.id)) {
+                        validTargets.push({ ...spot, existingCrack });
+                    }
+                    continue;
+                }
 
-            const newCrack = {
-                id: Math.random().toString(36).substr(2, 9),
-                x: spot.x,
-                y: spot.y,
-                color,
-                spawnTime: now
-            };
+                // Check for any existing crack (can't grow into different color)
+                const anyExistingCrack = this.state.crackCells.find(
+                    c => c.x === spot.x && c.y === spot.y
+                );
+                if (anyExistingCrack) continue;
 
-            this.state.goalMarks.push(newCrack);
-            this.state.crackGrowthTimers[newCrack.id] = now;
+                // Check for empty cell (can grow into empty cells only)
+                if (!this.state.grid[spot.y][spot.x]) {
+                    validTargets.push(spot);
+                }
+            }
 
-            console.log(`Crack grew: ${goal.id} -> ${newCrack.id} at (${spot.x}, ${spot.y}), color: ${color}, pressure: ${(pressureRatio * 100).toFixed(1)}%, effective chance: ${(effectiveGrowthChance * 100).toFixed(1)}%`);
+            if (validTargets.length === 0) continue;
+
+            // Pick random valid target
+            const target = validTargets[Math.floor(Math.random() * validTargets.length)];
+
+            if (target.existingCrack) {
+                // MERGE: Connect to existing same-color crack
+                target.existingCrack.parentIds.push(cell.id);
+                cell.childIds.push(target.existingCrack.id);
+                console.log(`Crack merged: ${cell.id} -> ${target.existingCrack.id} at (${target.x}, ${target.y})`);
+            } else {
+                // NEW CRACK: Check if we can add more crack groups
+                const currentCrackCount = goalManager.countCracks(this.state.crackCells);
+                if (currentCrackCount >= MAX_ACTIVE_CRACKS) continue;
+
+                // Create new crack cell connected to parent
+                const newCrack: CrackCell = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    x: target.x,
+                    y: target.y,
+                    color: cell.color,  // Same color as parent
+                    parentIds: [cell.id],
+                    childIds: [],
+                    lastGrowthCheck: now,
+                    growthInterval: 3000 + Math.random() * 2000,
+                    spawnTime: now
+                };
+
+                // Add child reference to parent
+                cell.childIds.push(newCrack.id);
+
+                // Add to crackCells array
+                this.state.crackCells.push(newCrack);
+
+                // Also add to goalMarks for backward compatibility
+                this.state.goalMarks.push({
+                    id: newCrack.id,
+                    x: newCrack.x,
+                    y: newCrack.y,
+                    color: newCrack.color,
+                    spawnTime: newCrack.spawnTime
+                });
+
+                console.log(`Crack grew: ${cell.id} -> ${newCrack.id} at (${target.x}, ${target.y}), pressure: ${(pressureRatio * 100).toFixed(1)}%, chance: ${(effectiveChance * 100).toFixed(1)}%`);
+            }
         }
     }
 
