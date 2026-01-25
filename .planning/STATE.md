@@ -93,8 +93,8 @@ All three complications have player-driven triggers AND mitigations.
 ## Session Continuity
 
 Last session: 2026-01-25
-**Version:** 1.1.50
-Stopped at: Bug fixes and polish complete
+**Version:** 1.1.51
+**Branch:** master (GoopPieceRework branch ready for next milestone)
 
 ### This Session Summary (2026-01-25)
 
@@ -115,6 +115,17 @@ Stopped at: Bug fixes and polish complete
    - v1.1.49: Enabled rotation but piece jumped (rotated around 0,0)
    - v1.1.50: Fixed — rotates `cellColors` array instead of cell positions
    - Shape stays in place, colors rotate visually around center
+
+4. **XP curve flattened** (v1.1.51)
+   - Old: `(rank+2) * (1750 + 250*rank)` — ~7M to rank 40
+   - New: `3500 + (rank * 250)` per rank — ~336K to rank 40
+   - Much more achievable progression
+
+**Future ideas captured:**
+- `SlowMode` concept in PROJECT.md (pressure from goop volume, crack-based leveling)
+- `GoopPieceRework` branch created for next milestone (different goop shapes)
+
+**Next session:** Start GoopPieceRework milestone — different piece shapes to facilitate faster stacking
 
 **All deployed to:** https://thebluemuzzy.github.io/GOOPS/
 
