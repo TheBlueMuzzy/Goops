@@ -460,7 +460,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                 <path
                                     d={getContourPath(startX, yPos, width, BLOCK_SIZE, neighbors)}
                                     fill={color}
-                                    fillOpacity={0.15}
+                                    fillOpacity={0.25}
                                     stroke="none"
                                 />
                                 {/* Dashed outline */}
@@ -470,7 +470,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                     stroke={color}
                                     strokeWidth="1"
                                     strokeDasharray="4 2"
-                                    opacity="0.4"
+                                    opacity="0.75"
                                 />
                             </g>
                         );
