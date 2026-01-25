@@ -2,15 +2,16 @@
 
 ## On Session Start
 
-**Do this automatically when user starts a session or after /clear:**
+**When user types `<clear>`**, run the startup protocol:
 
 1. Read `.planning/STATE.md`
-2. Find the "Next Steps" section
-3. Greet: "Welcome back. Last session: [summary]. Next up: [action]"
-4. If bugs/blockers exist, surface them first
-5. Offer to continue or show alternatives
+2. Check "Known Issues" section (bugs + tech debt)
+3. Find the "Next Steps" section
+4. Greet: "Welcome back. Last session: [summary]. Next up: [action]"
+5. If Known Issues exist, surface them briefly
+6. Offer to continue or show alternatives
 
-This eliminates the need for user to manually run `/gsd:progress` every time.
+**Typical flow:** User runs `/clear` (CLI command), then types `<clear>` to trigger auto-startup.
 
 ---
 
@@ -33,6 +34,7 @@ Goops is a puzzle-action game built with React/TypeScript/Vite. Player clears co
 
 | Command | What Claude Does |
 |---------|------------------|
+| `<clear>` | **Session startup** — Read STATE.md, show status, offer next steps |
 | `<commands>` | Show this command list (including GSD commands) |
 | `<flow>` | Show the daily workflow diagram |
 | `<npm>` | Start dev server (`npm run dev -- --host`) or confirm already running |
@@ -84,6 +86,17 @@ User cannot see token count until it's shown. Claude cannot see it at all.
 
 ## Command Details
 
+### `<clear>`
+```
+1. Read .planning/STATE.md
+2. Check "Known Issues" section (bugs + tech debt)
+3. Find "Next Steps" section
+4. Greet: "Welcome back. Last session: [summary]. Next up: [action]"
+5. If Known Issues exist, surface them briefly
+6. Offer to continue or show alternatives
+```
+Use after `/clear` to resume, or anytime to check status.
+
 ### `<npm>`
 ```
 1. Check if dev server already running (look for existing process)
@@ -114,7 +127,7 @@ User cannot see token count until it's shown. Claude cannot see it at all.
 4. Git add all changes
 5. Generate descriptive commit message
 6. Git commit + push
-7. Say: "Saved and pushed. Ready to /clear or keep working."
+7. Say: "Saved and pushed. Ready to <clear> or keep working."
 ```
 
 ### `<deploy>`
@@ -130,9 +143,9 @@ User cannot see token count until it's shown. Claude cannot see it at all.
 Show the daily workflow diagram (see SOP.md for full version):
 
 ```
-START SESSION
+START SESSION (or after /clear)
       ↓
-/gsd:progress  →  "Where am I? What's next?"
+  <clear>  →  "Welcome back. Next up: [action]"
       ↓
 [Plan if needed: /gsd:plan-phase]
       ↓
@@ -150,7 +163,7 @@ START SESSION
       ↓
   <deploy> →  Push to live site
       ↓
-   /clear  →  Fresh context (STATE.md has everything)
+   /clear  →  Fresh context, then <clear> to resume
 ```
 
 ### `<commands>`
@@ -210,5 +223,5 @@ Format: **X.Y.Z.B** (Major.Minor.Patch.Build)
 - **X** bumped for release to friends
 
 ### File Sizes to Watch
-- `GameEngine.ts` ~1177 lines (consider extracting CrackManager if grows)
+- `GameEngine.ts` ~1374 lines (consider extracting CrackManager if grows)
 - `GameBoard.tsx` ~758 lines (manageable)

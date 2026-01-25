@@ -89,26 +89,14 @@ All three complications have player-driven triggers AND mitigations.
 | Goop Colorizer | 25s | 6 match | 7 match | 8 match |
 | Crack Down | 30s | 3 cracks low | 5 cracks | 7 cracks |
 
-## Known Issues (Post v1.2)
+## Known Issues
 
-**Fixed:**
-- Gravity pieces now interact with cracks (v1.1.27)
-- Non-matching color pieces no longer destroy cracks (they persist under goop)
-- UAT-001: Crack expansion now uses `trySpawnCrack()` → `crackCells` (verified 2026-01-25)
-
-**Researched (see [[INVESTIGATIONS]]):**
-- Tetris movement feel — IMPLEMENTED (v1.1.29-33)
+**Bugs:**
 - Pressure not rising bug — debug logging added, waiting for next occurrence
 
-### Tetris Movement Feel — COMPLETE
-
-| Feature | Version | Status |
-|---------|---------|--------|
-| Move reset lock delay | v1.1.29 | ✓ Done |
-| 10-reset limit | v1.1.30 | ✓ Done |
-| Upward kicks (y:-2) | v1.1.31 | ✓ Done |
-| Slide into gaps while falling | v1.1.32 | ✓ Done |
-| Snap to grid when sliding into tight gaps | v1.1.33 | ✓ Done |
+**Tech Debt:**
+- `GameEngine.ts` at 1374 lines — consider extracting CrackManager if it grows more
+- Console.log placeholders in `ConsoleView.tsx:253-255` — minor cleanup when convenient
 
 ## Session Continuity
 
@@ -118,34 +106,23 @@ Last session: 2026-01-25
 
 ### This Session Summary (2026-01-25)
 
-**SOP & Workflow Overhaul**
+**Consolidated Known Issues tracking**
 
-1. **Migrated .planning-v2 → .planning** (Obsidian-ready)
-   - Completed phases 1-20 moved to `archive/phases/`
-   - Empty `phases/` ready for future GSD work
-   - HOME.md as navigation hub with wiki links
+1. **Deleted CONCERNS.md** — was stale and not maintained
+   - Verified each concern against codebase
+   - "Minigame UI incomplete" was FALSE (fully functional)
+   - "Console.log placeholders" minor, moved to tech debt
 
-2. **Created SOP.md** — Reusable workflow documentation
-   - Vertical slice concept (with cake diagrams!)
-   - What tests are and why they matter
-   - Git branches simplified
-   - Full daily flow diagram
+2. **Updated STATE.md Known Issues section**
+   - Now tracks: bugs + tech debt
+   - Cleaned out fixed/completed items
+   - Single source of truth for `<clear>` to check
 
-3. **Simplified command set:**
-   - `<npm>` — Start dev server
-   - `<test>` — Run tests manually
-   - `<save>` — Full save (replaces commit+handoff)
-   - `<deploy>` — Merge + deploy
-   - `<commands>` — Show all commands + GSD
-   - `<flow>` — Show workflow diagram
+3. **Updated CLAUDE.md `<clear>` protocol**
+   - Now explicitly checks "Known Issues" section
+   - Updated GameEngine line count (1177 → 1374)
 
-4. **New Claude rules:**
-   - Auto-run tests after ANY code change
-   - Full doc updates on every `<save>`
-
-5. **UAT-001 verified fixed** — Crack expansion already working in code
-
-**Previous Session (v1.1.46-50)**
+**Previous Session (SOP & Workflow Overhaul)**
 
 1. **Distance penalty increased to 25%** (v1.1.46)
    - `core/GameEngine.ts:1198` — changed from 0.15 to 0.25
