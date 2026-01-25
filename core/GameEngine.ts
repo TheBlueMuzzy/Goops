@@ -693,10 +693,11 @@ export class GameEngine {
     }
 
     /**
-     * Spawn goal marks at regular intervals.
+     * Spawn crack cells at regular intervals.
+     * Uses new CrackCell system for expanding cracks mechanic.
      */
     private tickGoals(): void {
-        const { goal, newLastSpawnTime } = goalManager.trySpawnGoal(
+        const { crack, newLastSpawnTime } = goalManager.trySpawnCrack(
             this.state,
             this.state.grid,
             this.initialTotalScore,
@@ -707,8 +708,9 @@ export class GameEngine {
 
         this.lastGoalSpawnTime = newLastSpawnTime;
 
-        if (goal) {
-            this.state.goalMarks.push(goal);
+        if (crack) {
+            this.state.crackCells.push(crack);
+            console.log('[CRACK DEBUG] Spawned crack:', crack.id, 'at', crack.x, crack.y, '- crackCells count:', this.state.crackCells.length);
         }
     }
 
@@ -1153,6 +1155,7 @@ export class GameEngine {
         if (this.state.phase === GamePhase.CONSOLE ||
             this.state.phase === GamePhase.COMPLICATION_MINIGAME) return;
 
+        console.log('[CRACK DEBUG] tickCrackGrowth: processing', this.state.crackCells.length, 'cells');
         const now = Date.now();
 
         // Process each crack cell for growth
