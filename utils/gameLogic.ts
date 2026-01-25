@@ -296,16 +296,17 @@ export const mergePiece = (
 
   const groupSize = piece.cells.length;
 
-  piece.cells.forEach(cell => {
+  piece.cells.forEach((cell, idx) => {
     const x = normalizeX(piece.x + cell.x);
     const y = Math.floor(piece.y + cell.y);
-    
+    const cellColor = piece.definition.cellColors?.[idx] ?? piece.definition.color;
+
     if (y >= 0 && y < TOTAL_HEIGHT) {
-      // Check for Goal Interaction
+      // Check for Goal Interaction (per-cell color matching)
       const hitGoal = goalMarks.find(g => g.x === x && g.y === y);
-      
+
       let isMatch = false;
-      if (hitGoal && hitGoal.color === piece.definition.color) {
+      if (hitGoal && hitGoal.color === cellColor) {
           consumedGoals.push(hitGoal.id);
           isMatch = true;
       }
@@ -315,7 +316,7 @@ export const mergePiece = (
         id: Math.random().toString(36).substr(2, 9),
         groupId,
         timestamp: now,
-        color: piece.definition.color,
+        color: cellColor,
         groupMinY: minY,
         groupMaxY: maxY,
         groupSize,
