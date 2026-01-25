@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UPGRADES } from '../constants';
 import { ChevronLeft } from 'lucide-react';
 
@@ -63,21 +63,27 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
   // Default to first unlocked tab
   const [activeTab, setActiveTab] = useState<TabId>(unlockedTabs[0]?.id || 'complications');
 
-  // Swipe handling
-  const touchStartX = useRef<number>(0);
-  const touchStartY = useRef<number>(0);
+  // Swipe handling (follows periscope drag pattern)
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const SWIPE_THRESHOLD = 50;
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+  const handleSwipeStart = (x: number, y: number) => {
+    setIsDragging(true);
+    startX.current = x;
+    startY.current = y;
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+  const handleSwipeEnd = (x: number, y: number) => {
+    if (!isDragging) return;
+    setIsDragging(false);
 
-    // Only register horizontal swipes (more horizontal than vertical, min 50px)
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+    const deltaX = x - startX.current;
+    const deltaY = y - startY.current;
+
+    // Only register horizontal swipes (more horizontal than vertical, min threshold)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
       const currentIndex = unlockedTabs.findIndex(t => t.id === activeTab);
       if (deltaX < 0 && currentIndex < unlockedTabs.length - 1) {
         // Swipe left = next tab
@@ -88,6 +94,27 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
       }
     }
   };
+
+  // Global event listeners for swipe (follows periscope pattern)
+  useEffect(() => {
+    const mouseUp = (e: MouseEvent) => {
+      if (isDragging) handleSwipeEnd(e.clientX, e.clientY);
+    };
+    const touchEnd = (e: TouchEvent) => {
+      if (isDragging && e.changedTouches[0]) {
+        handleSwipeEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+      }
+    };
+
+    if (isDragging) {
+      window.addEventListener('mouseup', mouseUp);
+      window.addEventListener('touchend', touchEnd);
+    }
+    return () => {
+      window.removeEventListener('mouseup', mouseUp);
+      window.removeEventListener('touchend', touchEnd);
+    };
+  }, [isDragging, activeTab, unlockedTabs]);
 
   // Filter upgrades based on active tab
   const getFilteredUpgrades = () => {
@@ -319,8 +346,8 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
               scrollbarWidth: 'none',  /* Firefox */
               msOverflowStyle: 'none'  /* IE/Edge */
             }}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+            onMouseDown={(e) => handleSwipeStart(e.clientX, e.clientY)}
+            onTouchStart={(e) => handleSwipeStart(e.touches[0].clientX, e.touches[0].clientY)}
           >
             {!hasAnyUpgrades ? (
               // Empty state
