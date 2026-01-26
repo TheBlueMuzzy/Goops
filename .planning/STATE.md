@@ -95,7 +95,7 @@ All three complications have player-driven triggers AND mitigations.
 - None currently tracked
 
 **Tech Debt:**
-- Console.log placeholders in `ConsoleView.tsx:253-255` — minor cleanup when convenient
+- None currently tracked
 
 ## Session Continuity
 

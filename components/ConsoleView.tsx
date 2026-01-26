@@ -250,10 +250,7 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalSc
                         onUpgradesClick={() => setShowSystemUpgrades(true)}
                         onSetRank={onSetRank}
                         onAbortClick={handleAbort}
-                        onBlueClick={() => console.log('Blue Click')}
-                        onGreenClick={() => console.log('Green Click')}
-                        onPurpleClick={() => console.log('Purple Click')}
-                        
+
                         // State
                         upgradeCount={powerUpPoints}
                         screenContent={!state.gameOver ? <MonitorScreen /> : null}
