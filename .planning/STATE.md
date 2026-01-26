@@ -27,6 +27,16 @@ Options:
 2. Bug hunting / polish pass
 3. Start GoopPieceRework branch — different piece shapes for faster stacking
 
+## Future Plans
+
+- **Title unlock system** — unlock titles as progression rewards
+- **Piece shape changes** — different goop shapes for faster stacking
+- **Naming standardization** — audit and standardize game element terminology in code:
+  - piece vs goop (used interchangeably)
+  - unit vs cell (used interchangeably)
+  - Create glossary of official terms for designer reference
+  - Make this part of the pipeline going forward
+
 ---
 
 ## Project Reference
@@ -92,7 +102,7 @@ All three complications have player-driven triggers AND mitigations.
 ## Known Issues
 
 **Bugs:**
-- None currently tracked
+- **iPhone Chrome swipe controls broken** — Multiple testers report swipe controls don't work on iPhone using Chrome. Needs research.
 
 **Tech Debt:**
 - None currently tracked

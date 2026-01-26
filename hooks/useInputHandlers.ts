@@ -16,6 +16,7 @@ import { VISIBLE_WIDTH, VISIBLE_HEIGHT, TOTAL_HEIGHT, TOTAL_WIDTH, BUFFER_HEIGHT
 import { normalizeX } from '../utils/gameLogic';
 import { gameEventBus } from '../core/events/EventBus';
 import { GameEventType, RotatePayload, DragPayload, SoftDropPayload, BlockTapPayload } from '../core/events/GameEvents';
+import { isIOSWebKit } from '../utils/device';
 
 // Input timing constants
 const BASE_HOLD_DURATION = 1500; // 1.5s base for hold-to-swap (PRD spec)
@@ -336,11 +337,87 @@ export function useInputHandlers({
         }
     }, [clearHold, getViewportCoords, getHitData]);
 
+    // === iOS WebKit Touch Event Fallbacks ===
+    // iOS Chrome/Safari have unreliable Pointer Events support.
+    // These handlers wrap the pointer handlers with touch-specific adaptations.
+
+    /**
+     * Handle touch start - wrapper for handlePointerDown on iOS.
+     */
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length !== 1) return; // Single touch only
+        e.preventDefault(); // Prevent iOS scroll/zoom
+
+        const touch = e.touches[0];
+        // Create a minimal pointer-like event object
+        const syntheticEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            pointerId: touch.identifier,
+            currentTarget: {
+                ...e.currentTarget,
+                setPointerCapture: () => {}, // No-op for touch
+                releasePointerCapture: () => {}
+            }
+        } as unknown as React.PointerEvent;
+
+        handlePointerDown(syntheticEvent);
+    }, [handlePointerDown]);
+
+    /**
+     * Handle touch move - wrapper for handlePointerMove on iOS.
+     */
+    const handleTouchMove = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        e.preventDefault();
+
+        const touch = e.touches[0];
+        const syntheticEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            pointerId: touch.identifier,
+            currentTarget: e.currentTarget
+        } as unknown as React.PointerEvent;
+
+        handlePointerMove(syntheticEvent);
+    }, [handlePointerMove]);
+
+    /**
+     * Handle touch end - wrapper for handlePointerUp on iOS.
+     */
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+        e.preventDefault();
+
+        // Use changedTouches for the ended touch
+        const touch = e.changedTouches[0];
+        if (!touch) return;
+
+        const syntheticEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            pointerId: touch.identifier,
+            currentTarget: {
+                ...e.currentTarget,
+                setPointerCapture: () => {},
+                releasePointerCapture: () => {}
+            }
+        } as unknown as React.PointerEvent;
+
+        handlePointerUp(syntheticEvent);
+    }, [handlePointerUp]);
+
     return {
         handlers: {
             onPointerDown: handlePointerDown,
             onPointerMove: handlePointerMove,
-            onPointerUp: handlePointerUp
+            onPointerUp: handlePointerUp,
+            // Touch handlers only included on iOS WebKit
+            ...(isIOSWebKit ? {
+                onTouchStart: handleTouchStart,
+                onTouchMove: handleTouchMove,
+                onTouchEnd: handleTouchEnd,
+                onTouchCancel: handleTouchEnd
+            } : {})
         },
         holdState: {
             progress: holdProgress,

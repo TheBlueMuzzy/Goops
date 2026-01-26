@@ -175,14 +175,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   // --- Rendering ---
   return (
-    <div 
+    <div
         // OPTIMIZATION: 'contain: strict' improves paint performance by isolating the board
         className="w-full h-full bg-slate-950 relative shadow-2xl border-x-4 border-slate-900 overflow-hidden select-none touch-none"
-        style={{ touchAction: 'none', contain: 'strict' }}
+        style={{ touchAction: 'manipulation', contain: 'strict' }}
         onPointerDown={handlers.onPointerDown}
         onPointerMove={handlers.onPointerMove}
         onPointerUp={handlers.onPointerUp}
         onPointerLeave={handlers.onPointerUp}
+        // iOS WebKit touch fallback (Pointer Events unreliable on iOS Chrome/Safari)
+        onTouchStart={handlers.onTouchStart}
+        onTouchMove={handlers.onTouchMove}
+        onTouchEnd={handlers.onTouchEnd}
+        onTouchCancel={handlers.onTouchCancel}
     >
         {/* OPTIMIZATION: CRT Scanline disabled on mobile */}
         {!isMobile && (

@@ -6,11 +6,17 @@ import { GridCell } from '../types';
 
 /**
  * Pointer event handlers returned by useInputHandlers hook.
+ * Touch handlers are included for iOS WebKit fallback (Pointer Events unreliable on iOS).
  */
 export interface InputHandlers {
     onPointerDown: (e: React.PointerEvent) => void;
     onPointerMove: (e: React.PointerEvent) => void;
     onPointerUp: (e: React.PointerEvent) => void;
+    // Touch event fallbacks for iOS WebKit (Chrome/Safari on iPhone/iPad)
+    onTouchStart?: (e: React.TouchEvent) => void;
+    onTouchMove?: (e: React.TouchEvent) => void;
+    onTouchEnd?: (e: React.TouchEvent) => void;
+    onTouchCancel?: (e: React.TouchEvent) => void;
 }
 
 /**

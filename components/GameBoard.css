@@ -114,3 +114,13 @@
 .wild-fill {
     /* Fill uses same animation as stroke */
 }
+
+/* === iOS WebKit Touch Handling === */
+/* Prevents callout menu, text selection, and tap highlight on iOS */
+@supports (-webkit-touch-callout: none) {
+    .touch-none {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+}
