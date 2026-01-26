@@ -65,6 +65,10 @@ export function useInputHandlers({
     const pointerRef = useRef<PointerState | null>(null);
     const holdIntervalRef = useRef<number | null>(null);
 
+    // Touch-specific refs (for iOS window listener pattern)
+    const touchTargetRef = useRef<HTMLElement | null>(null);
+    const [isTouching, setIsTouching] = useState(false);
+
     // ViewBox constants
     const { x: vbX, y: vbY, w: vbW, h: vbH } = VIEWBOX;
 
@@ -336,74 +340,235 @@ export function useInputHandlers({
         }
     }, [clearHold, getViewportCoords, getHitData]);
 
-    // === iOS WebKit Touch Event Fallbacks ===
-    // iOS Chrome/Safari have unreliable Pointer Events support.
-    // These handlers wrap the pointer handlers with touch-specific adaptations.
+    // === iOS Touch Event Handling ===
+    // iOS browsers have unreliable Pointer Events. We use the ConsoleView-proven pattern:
+    // - touchstart: element-level handler, stores target ref
+    // - touchmove/touchend: window-level listeners (iOS ignores element-level move/end)
 
     /**
-     * Handle touch start - wrapper for handlePointerDown on iOS.
+     * Handle touch start - stores real DOM element and initializes touch state.
+     * Uses real touch coordinates, not synthetic pointer events.
      */
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         if (e.touches.length !== 1) return; // Single touch only
+        if (pointerRef.current) return; // Already tracking a pointer/touch
         e.preventDefault(); // Prevent iOS scroll/zoom
 
         const touch = e.touches[0];
-        // Create a minimal pointer-like event object
-        const syntheticEvent = {
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-            pointerId: touch.identifier,
-            currentTarget: {
-                ...e.currentTarget,
-                setPointerCapture: () => {}, // No-op for touch
-                releasePointerCapture: () => {}
+        const target = e.currentTarget as HTMLElement;
+
+        // Store real DOM element for coordinate transforms
+        touchTargetRef.current = target;
+        setIsTouching(true);
+
+        // Get viewport coords using real element
+        const { relX, relY, vx, vy } = getViewportCoords(touch.clientX, touch.clientY, target);
+
+        // Initialize pointer state (shared with pointer events)
+        pointerRef.current = {
+            startX: touch.clientX,
+            startY: touch.clientY,
+            startTime: Date.now(),
+            isDragLocked: false,
+            lockedAxis: null,
+            activePointerId: touch.identifier,
+            actionConsumed: false
+        };
+
+        // Start Hold Timer
+        setHoldPosition({ x: relX, y: relY });
+        setHoldProgress(0);
+
+        const startHoldTime = Date.now();
+        holdIntervalRef.current = window.setInterval(() => {
+            const now = Date.now();
+            const totalElapsed = now - startHoldTime;
+
+            if (totalElapsed < HOLD_DELAY) return;
+
+            const effectiveElapsed = totalElapsed - HOLD_DELAY;
+            const progress = Math.min(100, (effectiveElapsed / holdDuration) * 100);
+            setHoldProgress(progress);
+
+            if (progress >= 100) {
+                if (pointerRef.current) pointerRef.current.actionConsumed = true;
+                gameEventBus.emit(GameEventType.INPUT_SWAP);
+                onSwap?.();
+                clearHold();
+                if (navigator.vibrate) navigator.vibrate(50);
             }
-        } as unknown as React.PointerEvent;
+        }, 16);
 
-        handlePointerDown(syntheticEvent);
-    }, [handlePointerDown]);
+        // Visual feedback for tapping blocks
+        const hit = getHitData(vx, vy);
+        if (hit.type === 'BLOCK' && hit.cell) {
+            const totalDuration = hit.cell.groupSize * PER_BLOCK_DURATION;
+            const elapsed = Date.now() - hit.cell.timestamp;
+            const thresholdY = (TOTAL_HEIGHT - 1) - (pressureRatio * (VISIBLE_HEIGHT - 1));
 
-    /**
-     * Handle touch move - wrapper for handlePointerMove on iOS.
-     */
+            if (hit.cell.groupMinY < thresholdY) {
+                setShakingGroupId(hit.cell.groupId);
+                gameEventBus.emit(GameEventType.ACTION_REJECTED);
+                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.groupId ? null : prev), 300);
+            } else if (elapsed < totalDuration) {
+                setShakingGroupId(hit.cell.groupId);
+                gameEventBus.emit(GameEventType.ACTION_REJECTED);
+                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.groupId ? null : prev), 300);
+            } else {
+                setHighlightedGroupId(hit.cell.groupId);
+            }
+        }
+    }, [getViewportCoords, getHitData, pressureRatio, clearHold, holdDuration, onSwap]);
+
+    // Window-level touch listeners (iOS-proven pattern from ConsoleView)
+    useEffect(() => {
+        if (!isTouching) return;
+
+        const handleWindowTouchMove = (e: TouchEvent) => {
+            if (!pointerRef.current || e.touches.length !== 1) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            if (touch.identifier !== pointerRef.current.activePointerId) return;
+
+            const { startX, startY, isDragLocked } = pointerRef.current;
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+
+            if (!isDragLocked) {
+                if (absDx > DRAG_LOCK_THRESHOLD || absDy > DRAG_LOCK_THRESHOLD) {
+                    clearHold();
+                    pointerRef.current.isDragLocked = true;
+                    setHighlightedGroupId(null);
+
+                    if (absDx > absDy) {
+                        pointerRef.current.lockedAxis = 'H';
+                    } else {
+                        pointerRef.current.lockedAxis = 'V';
+                        if (dy > 0) {
+                            gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: true } as SoftDropPayload);
+                            onSoftDrop?.(true);
+                        }
+                    }
+                }
+            }
+
+            if (pointerRef.current.isDragLocked) {
+                const axis = pointerRef.current.lockedAxis;
+
+                if (axis === 'H') {
+                    if (dx < -HORIZONTAL_DRAG_THRESHOLD) {
+                        gameEventBus.emit(GameEventType.INPUT_DRAG, { direction: 1 } as DragPayload);
+                        onDragInput?.(1);
+                    } else if (dx > HORIZONTAL_DRAG_THRESHOLD) {
+                        gameEventBus.emit(GameEventType.INPUT_DRAG, { direction: -1 } as DragPayload);
+                        onDragInput?.(-1);
+                    } else {
+                        gameEventBus.emit(GameEventType.INPUT_DRAG, { direction: 0 } as DragPayload);
+                        onDragInput?.(0);
+                    }
+                } else if (axis === 'V') {
+                    if (dy > HORIZONTAL_DRAG_THRESHOLD) {
+                        gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: true } as SoftDropPayload);
+                        onSoftDrop?.(true);
+                    } else {
+                        gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: false } as SoftDropPayload);
+                        onSoftDrop?.(false);
+                    }
+                }
+            }
+        };
+
+        const handleWindowTouchEnd = (e: TouchEvent) => {
+            if (!pointerRef.current) return;
+
+            const touch = e.changedTouches[0];
+            if (!touch || touch.identifier !== pointerRef.current.activePointerId) return;
+
+            const { startTime, isDragLocked, actionConsumed, startX, startY } = pointerRef.current;
+            const dt = Date.now() - startTime;
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+
+            // Cleanup
+            clearHold();
+            gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: false } as SoftDropPayload);
+            onSoftDrop?.(false);
+            gameEventBus.emit(GameEventType.INPUT_DRAG, { direction: 0 } as DragPayload);
+            onDragInput?.(0);
+            setHighlightedGroupId(null);
+            pointerRef.current = null;
+            touchTargetRef.current = null;
+            setIsTouching(false);
+
+            if (actionConsumed) return;
+            if (dt >= HOLD_DELAY) return;
+
+            // Gesture Resolution
+            if (!isDragLocked) {
+                // TAP - need target for coordinate transform
+                const target = touchTargetRef.current;
+                if (target) {
+                    const { vx, vy, relX, contentW } = getViewportCoords(touch.clientX, touch.clientY, target);
+                    const hit = getHitData(vx, vy);
+
+                    if (hit.type === 'BLOCK' && hit.cell) {
+                        gameEventBus.emit(GameEventType.INPUT_BLOCK_TAP, { x: hit.x, y: hit.y } as BlockTapPayload);
+                        onBlockTap?.(hit.x, hit.y);
+                    } else {
+                        if (relX < contentW / 2) {
+                            gameEventBus.emit(GameEventType.INPUT_ROTATE, { clockwise: false } as RotatePayload);
+                            onRotate?.(-1);
+                        } else {
+                            gameEventBus.emit(GameEventType.INPUT_ROTATE, { clockwise: true } as RotatePayload);
+                            onRotate?.(1);
+                        }
+                    }
+                }
+            } else {
+                // SWIPE
+                if (dt < 300) {
+                    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
+                        if (dy < 0) {
+                            gameEventBus.emit(GameEventType.INPUT_SWIPE_UP);
+                            onSwipeUp?.();
+                        } else {
+                            gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: true } as SoftDropPayload);
+                            onSoftDrop?.(true);
+                            setTimeout(() => {
+                                gameEventBus.emit(GameEventType.INPUT_SOFT_DROP, { active: false } as SoftDropPayload);
+                                onSoftDrop?.(false);
+                            }, 150);
+                        }
+                    }
+                }
+            }
+        };
+
+        // Add window listeners with passive: false for preventDefault
+        window.addEventListener('touchmove', handleWindowTouchMove, { passive: false });
+        window.addEventListener('touchend', handleWindowTouchEnd);
+        window.addEventListener('touchcancel', handleWindowTouchEnd);
+
+        return () => {
+            window.removeEventListener('touchmove', handleWindowTouchMove);
+            window.removeEventListener('touchend', handleWindowTouchEnd);
+            window.removeEventListener('touchcancel', handleWindowTouchEnd);
+        };
+    }, [isTouching, clearHold, getViewportCoords, getHitData, onBlockTap, onRotate, onDragInput, onSoftDrop, onSwipeUp]);
+
+    // Element-level touch handlers (only touchstart needed, move/end handled by window)
     const handleTouchMove = useCallback((e: React.TouchEvent) => {
-        if (e.touches.length !== 1) return;
+        // Handled by window listener, but prevent default here too
         e.preventDefault();
+    }, []);
 
-        const touch = e.touches[0];
-        const syntheticEvent = {
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-            pointerId: touch.identifier,
-            currentTarget: e.currentTarget
-        } as unknown as React.PointerEvent;
-
-        handlePointerMove(syntheticEvent);
-    }, [handlePointerMove]);
-
-    /**
-     * Handle touch end - wrapper for handlePointerUp on iOS.
-     */
     const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+        // Handled by window listener
         e.preventDefault();
-
-        // Use changedTouches for the ended touch
-        const touch = e.changedTouches[0];
-        if (!touch) return;
-
-        const syntheticEvent = {
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-            pointerId: touch.identifier,
-            currentTarget: {
-                ...e.currentTarget,
-                setPointerCapture: () => {},
-                releasePointerCapture: () => {}
-            }
-        } as unknown as React.PointerEvent;
-
-        handlePointerUp(syntheticEvent);
-    }, [handlePointerUp]);
+    }, []);
 
     return {
         handlers: {
