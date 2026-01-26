@@ -102,7 +102,7 @@ All three complications have player-driven triggers AND mitigations.
 ## Known Issues
 
 **Bugs:**
-- **iPhone Chrome swipe controls broken** — Multiple testers report swipe controls don't work on iPhone using Chrome. Needs research.
+- None currently tracked
 
 **Tech Debt:**
 - None currently tracked
@@ -114,6 +114,24 @@ Last session: 2026-01-25
 **Branch:** master
 
 ### This Session Summary (2026-01-25)
+
+**iOS Touch Controls Fix (Build 24-29)**
+
+Fixed swipe/drag controls not working on iPhone Chrome/Safari/DuckDuckGo:
+
+1. **Root cause:** iOS WebKit has incomplete Pointer Events support
+2. **Initial attempts that failed:**
+   - Synthetic PointerEvents from TouchEvents (iOS ignores synthetic currentTarget)
+   - useEffect-based window listeners (too slow for fast swipes)
+   - User agent detection (missed DuckDuckGo and other browsers)
+3. **Final fix (multiple parts):**
+   - Added Touch Events handlers alongside Pointer Events
+   - Window listeners added SYNCHRONOUSLY in touchstart (not via async useEffect)
+   - Fixed vertical drag threshold (was 20px, now 0px for soft drop)
+   - Added `pointer-events: none` to SVG so touches pass through to parent div
+4. **Verified working** on iPhone Chrome and DuckDuckGo by external tester
+
+**Previous Session (same day)**
 
 **Color Schedule Rework + Wild Pieces**
 
