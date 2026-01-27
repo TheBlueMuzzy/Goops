@@ -2,14 +2,14 @@
 title: Project Definition
 type: reference
 tags: [requirements, context, decisions]
-updated: 2026-01-25
+updated: 2026-01-26
 ---
 
 # Goops
 
 ## What This Is
 
-A puzzle-action game where players operate as tank maintenance technicians clearing colored goop from a cylindrical pressure tank. Features complication systems with player-controlled triggers, HUD meters for real-time feedback, and a 40-rank progression system with 20 upgrades across 4 bands. Built with React/TypeScript/Vite. Mobile-optimized with touch controls.
+A puzzle-action game where players operate as tank maintenance technicians clearing colored goop from a cylindrical pressure tank. Features complication systems with player-controlled triggers, HUD meters for real-time feedback, a 40-rank progression system with 20 upgrades, and 54 polyomino piece shapes that grow larger as games progress. Built with React/TypeScript/Vite. Mobile-optimized with touch controls.
 
 ## Core Value
 
@@ -51,6 +51,14 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 - ✓ Expanding cracks mechanic
 - ✓ Hold and next piece previews
 
+**v1.3 Shape Changes:**
+- ✓ Extended game to 75 seconds (3 zones of 25s each)
+- ✓ 54 new polyomino pieces (10 Tetra + 22 Penta + 22 Hexa)
+- ✓ Zone-based piece spawning (bigger pieces as game progresses)
+- ✓ Corruption system (15% non-contiguous variants)
+- ✓ Mirror system (50% flip for asymmetric pieces)
+- ✓ Snappier fast drop (8x factor)
+
 ### Active
 
 **Research:**
@@ -69,18 +77,15 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 
 ## Context
 
-**Current state:** v1.2 shipped + Phases 19-20 complete. 20 phases, 53 plans complete. Version 1.1.13.
+**Current state:** v1.3 shipped. 21 phases, 56 plans complete. ~13,300 lines TypeScript. Version 1.1.13.
 
-**Shipped in v1.2:**
-- 20 upgrades across 4 bands (Onboarding, Junk, Mixer, Cracked)
-- Active ability system with per-ability charge times
-- 8 Onboarding Band upgrades (ranks 2-9)
-- 4 Junk Band upgrades: JUNK_UNIFORMER, GOOP_SWAP, GOOP_DUMP, SEALING_BONUS
-- 4 Mixer Band upgrades: ACTIVE_EXPANSION_SLOT, GOOP_HOLD_VIEWER, GOOP_COLORIZER, GOOP_WINDOW
-- 4 Cracked Band upgrades: SLOW_CRACKS, CRACK_MATCHER, CRACK_DOWN, ACTIVE_EXPANSION_SLOT_2
-- Lights malfunction rework (soft drop to charge, idle to dim)
-- Expanding cracks mechanic (cracks grow to adjacent cells)
-- 3 new colors: Orange@10, Purple@20, White@30
+**Shipped in v1.3:**
+- Extended game to 75 seconds with 3 time zones (25s each)
+- 54 new polyomino pieces (10 Tetra + 22 Penta + 22 Hexa)
+- Zone-based spawning: Tetra (0-25s) → Penta (25-50s) → Hexa (50-75s)
+- 15% corruption chance (non-contiguous variants)
+- 50% mirror chance for asymmetric pieces
+- Snappier fast drop (8x factor vs 6x)
 
 **Complication System:**
 | Type | Trigger | Player Mitigation | Unlock |
@@ -151,6 +156,11 @@ Progression is organized into bands of 10 ranks. See PRD.md (root) for full deta
 | Dense Goop increases fall speed | Optional difficulty increase, respecable | ✓ v1.2 |
 | CRACK_MATCHER applies to next piece | Provides preview benefit | ✓ v1.2 |
 | CRACK_DOWN restricts Y to bottom 4 rows | Most strategic placement for catching cracks | ✓ v1.2 |
+| 75-second game with 3 zones | 25s per piece size tier for balanced progression | ✓ v1.3 |
+| Zone-based piece spawning | Bigger pieces (Penta/Hexa) help reach higher cracks | ✓ v1.3 |
+| Keep original tetromino values | Backwards compatibility with existing save data | ✓ v1.3 |
+| Use maxTime for zone calculation | Supports PRESSURE_CONTROL upgrade scaling | ✓ v1.3 |
+| 15% corruption, 50% mirror | Adds variety without overwhelming players | ✓ v1.3 |
 
 ---
 
@@ -196,4 +206,4 @@ Progression is organized into bands of 10 ranks. See PRD.md (root) for full deta
 - [[DESIGN_VISION]] - Design philosophy
 
 ---
-*Last updated: 2026-01-25 (validated against master)*
+*Last updated: 2026-01-26 after v1.3 milestone*

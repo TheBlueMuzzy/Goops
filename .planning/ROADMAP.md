@@ -2,7 +2,7 @@
 title: Roadmap
 type: roadmap
 tags: [milestones, phases, progress]
-updated: 2026-01-25
+updated: 2026-01-26
 ---
 
 # Roadmap: Goops Complications & Progression
@@ -20,7 +20,7 @@ None
 - [[v1.0-ROADMAP|v1.0 MVP]] — Phases 1-7 (shipped 2026-01-21)
 - [[v1.1-ROADMAP|v1.1 Architecture Refactor]] — Phases 8-13 (shipped 2026-01-21)
 - [[v1.2-ROADMAP|v1.2 Progression System]] — Phases 14-20 (shipped 2026-01-25)
-- 🚧 **v1.3 Shape Changes** — Phase 21 (in progress)
+- [[v1.3-ROADMAP|v1.3 Shape Changes]] — Phase 21 (shipped 2026-01-26)
 
 ## Completed Milestones
 
@@ -88,24 +88,21 @@ See [[v1.2-ROADMAP]] for full details.
 
 </details>
 
----
+<details>
+<summary>v1.3 Shape Changes (Phase 21) — SHIPPED 2026-01-26</summary>
 
-### 🚧 v1.3 Shape Changes (In Progress)
+- [x] Phase 21: Piece Shapes (3/3 plans) — completed 2026-01-26
 
-**Milestone Goal:** Different goop piece shapes for faster stacking + gravity piece calculation improvements
+**Total:** 1 phase, 3 plans, 10 tasks
 
-#### Phase 21: Piece Shapes
+**Key accomplishments:**
+- Extended game to 75 seconds with 3 time zones
+- 54 new polyomino pieces (Tetra/Penta/Hexa)
+- Zone-based spawning, corruption, and mirroring
 
-**Goal**: Implement new goop shapes beyond standard tetrominos, review and improve gravity piece calculation
-**Depends on**: v1.2 complete
-**Research**: Likely (shape design decisions, gravity mechanics)
-**Research topics**: What shapes work best for faster stacking? How are gravity pieces calculated? What changes needed for new shapes to work with gravity?
-**Plans**: TBD
+See [[v1.3-ROADMAP]] for full details.
 
-Plans:
-- [x] 21-01: Timing + Types (3 tasks) - completed 2026-01-26
-- [x] 21-02: Piece Definitions (3 tasks) - completed 2026-01-26
-- [x] 21-03: Spawn Logic (4 tasks) - completed 2026-01-27
+</details>
 
 ---
 
@@ -133,7 +130,7 @@ Plans:
 | 18. Cracked Band | v1.2 | 2/2 | Complete | 2026-01-24 |
 | 19. Multi-Color Pieces | v1.2 | 3/3 | Complete | 2026-01-24 |
 | 20. Expanding Cracks Overhaul | v1.2 | 1/1 | Complete | 2026-01-25 |
-| 21. Piece Shapes | v1.3 | 3/3 | Complete | 2026-01-27 |
+| 21. Piece Shapes | v1.3 | 3/3 | Shipped | 2026-01-26 |
 
 ## Related
 

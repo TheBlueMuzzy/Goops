@@ -2,10 +2,38 @@
 title: Shipped Milestones
 type: reference
 tags: [milestones, history, shipped]
-updated: 2026-01-25
+updated: 2026-01-26
 ---
 
 # Project Milestones: Goops
+
+## v1.3 Shape Changes (Shipped: 2026-01-26)
+
+**Delivered:** Progressive piece sizes (Tetra → Penta → Hexa) with 54 new polyomino shapes, corruption variants, and mirroring support.
+
+**Phases completed:** 21 (3 plans total)
+
+**Key accomplishments:**
+
+- Extended game to 75 seconds with 3 time zones (25s each)
+- 54 new polyomino pieces: 10 Tetra + 22 Penta + 22 Hexa
+- Zone-based spawning: bigger pieces as game progresses
+- 15% corruption chance (non-contiguous variants)
+- 50% mirror chance for asymmetric pieces
+- Snappier fast drop (8x factor vs 6x)
+
+**Stats:**
+
+- 8 files modified
+- 587 lines of TypeScript added
+- 1 phase, 3 plans, 10 tasks
+- 1 day (2026-01-26)
+
+**Git range:** `feat(21-01)` → `docs(21-03)`
+
+**What's next:** Title unlock system or tutorial system
+
+---
 
 ## v1.2 Progression System (Shipped: 2026-01-24)
 

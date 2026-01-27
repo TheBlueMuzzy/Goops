@@ -2,7 +2,7 @@
 title: Project State
 type: session
 tags: [active, continuity, status]
-updated: 2026-01-25
+updated: 2026-01-26
 ---
 
 # Project State
@@ -19,10 +19,10 @@ updated: 2026-01-25
 
 ## Next Steps
 
-**Current:** Phase 21 complete (all 3 plans)
-**Status:** v1.3 milestone complete
+**Current:** v1.3 Shape Changes milestone complete
+**Status:** Ready for next milestone planning
 
-Run `/gsd:complete-milestone` to archive and prepare for next milestone.
+Run `/gsd:discuss-milestone` to plan v1.4 or `/gsd:new-milestone` if scope is clear.
 
 ## Future Plans
 
@@ -40,21 +40,33 @@ Run `/gsd:complete-milestone` to archive and prepare for next milestone.
 
 ## Project Reference
 
-See: [[PROJECT]] (updated 2026-01-24)
+See: [[PROJECT]] (updated 2026-01-26)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** v1.2 shipped — bug fixes and testing before next milestone
+**Current focus:** v1.3 shipped — ready for next milestone planning
 
 ## Current Position
 
-Phase: 21 (Piece Shapes)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-01-27 — Completed 21-03-PLAN.md
+Phase: 21 complete (v1.3 shipped)
+Plan: N/A — between milestones
+Status: Ready for next milestone
+Last activity: 2026-01-26 — v1.3 milestone archived
 
-Progress: ██████████ 3/3 plans (v1.3 complete)
+Progress: ██████████ 4 milestones shipped (v1.0, v1.1, v1.2, v1.3)
 
 ## What's Done
+
+### v1.3 Shape Changes (Shipped 2026-01-26)
+
+Extended game with progressive piece sizes and 54 new polyomino shapes.
+
+Key features:
+- 75-second game with 3 zones (Tetra → Penta → Hexa)
+- 54 pieces: 10 Tetra + 22 Penta + 22 Hexa
+- 15% corruption, 50% mirror for variety
+- Zone-based spawning by elapsed time
+
+See [[v1.3-ROADMAP]] for full details.
 
 ### v1.2 Progression System (Shipped 2026-01-24)
 
@@ -164,7 +176,7 @@ All three complications have player-driven triggers AND mitigations.
 Last session: 2026-01-26
 **Version:** 1.1.13
 **Branch:** master
-**Milestone:** v1.3 Shape Changes (Phase 21)
+**Milestone:** v1.3 Shape Changes (SHIPPED 2026-01-26)
 
 ### This Session Summary (2026-01-26)
 
