@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { PieceDefinition } from '../types';
+import { GoopTemplate } from '../types';
 import { getPaletteForRank } from '../utils/gameLogic';
 
 interface PiecePreviewProps {
-  piece: PieceDefinition | null;
+  piece: GoopTemplate | null;
   label: string;  // "HOLD" or "NEXT"
   visible: boolean;  // Show/hide based on upgrade ownership
   rank?: number;  // For wild color cycling

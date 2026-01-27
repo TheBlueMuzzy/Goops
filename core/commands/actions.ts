@@ -1,7 +1,7 @@
 
 import { Command } from './Command';
 import { GameEngine } from '../GameEngine';
-import { GamePhase, PieceState, GoopShape, ActivePiece, GameState, ComplicationType } from '../../types';
+import { GamePhase, GoopState, GoopShape, ActivePiece, GameState, ComplicationType } from '../../types';
 import { normalizeX, checkCollision, getRotatedCells, getGhostY, mergePiece, findContiguousGroup, getFloatingBlocks, spawnGoalBurst, calculateAdjacencyBonus, calculateHeightBonus, calculateOffScreenBonus, calculateMultiplier, updateGroups } from '../../utils/gameLogic';
 import { getGridX, getScreenX } from '../../utils/coordinates';
 import { gameEventBus } from '../events/EventBus';
@@ -219,7 +219,7 @@ export class SwapPieceCommand implements Command {
                 screenX: currentPiece.screenX,
                 x: currentPiece.x,
                 y: currentPiece.y,
-                state: PieceState.FALLING
+                state: GoopState.FALLING
             };
 
             if (checkCollision(engine.state.grid, testPiece, engine.state.boardOffset)) {

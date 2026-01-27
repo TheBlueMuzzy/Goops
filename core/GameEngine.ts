@@ -1,5 +1,5 @@
 
-import { GameState, GridCell, ActivePiece, PieceDefinition, FallingBlock, ScoreBreakdown, GameStats, FloatingText, GoalMark, CrackCell, GamePhase, PieceState, GoopShape, Complication, ComplicationType, DumpPiece } from '../types';
+import { GameState, GridCell, ActivePiece, GoopTemplate, FallingBlock, ScoreBreakdown, GameStats, FloatingText, GoalMark, CrackCell, GamePhase, GoopState, GoopShape, Complication, ComplicationType, DumpPiece } from '../types';
 import {
     TOTAL_WIDTH, TOTAL_HEIGHT, VISIBLE_WIDTH, VISIBLE_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, INITIAL_TIME_MS,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS,
@@ -224,7 +224,7 @@ export class GameEngine {
         const startPieceIndex = Math.floor(Math.random() * startPool.length);
         const startBasePiece = this.maybeApplyMirror({ ...startPool[startPieceIndex] });
 
-        let nextPieceDef: PieceDefinition;
+        let nextPieceDef: GoopTemplate;
         if (shouldSplit) {
             // Pick second color different from first
             const otherColors = palette.filter(c => c !== nextColor);
@@ -583,7 +583,7 @@ export class GameEngine {
      * Get the appropriate piece pool based on elapsed game time.
      * Zone selection: Tetra (0-25s), Penta (25-50s), Hexa (50-75s)
      */
-    private getPiecePoolByZone(): PieceDefinition[] {
+    private getPiecePoolByZone(): GoopTemplate[] {
         const elapsedMs = this.maxTime - this.state.timeLeft;
         const elapsedSec = elapsedMs / 1000;
 
@@ -610,7 +610,7 @@ export class GameEngine {
      * Mirror a piece's cells horizontally (flip around Y axis).
      * Only applies to asymmetric pieces based on MIRROR_CHANCE.
      */
-    private maybeApplyMirror(definition: PieceDefinition): PieceDefinition {
+    private maybeApplyMirror(definition: GoopTemplate): GoopTemplate {
         // 50% chance to mirror
         if (Math.random() >= MIRROR_CHANCE) {
             return definition;
@@ -633,7 +633,7 @@ export class GameEngine {
         };
     }
 
-    public spawnNewPiece(pieceDef?: PieceDefinition, gridOverride?: GridCell[][], offsetOverride?: number) {
+    public spawnNewPiece(pieceDef?: GoopTemplate, gridOverride?: GridCell[][], offsetOverride?: number) {
         const currentGrid = gridOverride || this.state.grid;
         const currentOffset = offsetOverride !== undefined ? offsetOverride : this.state.boardOffset;
         const currentTotalScore = this.initialTotalScore + this.state.score;
@@ -671,7 +671,7 @@ export class GameEngine {
             // Multi-color split: 25% chance at rank 20+
             const shouldSplit = currentRank >= 20 && Math.random() < 0.25;
 
-            let newNext: PieceDefinition;
+            let newNext: GoopTemplate;
             if (shouldSplit) {
                 // Pick second color different from first
                 const otherColors = palette.filter(c => c !== nextColor);
@@ -744,7 +744,7 @@ export class GameEngine {
         
         piece.y = spawnVisualY;
         piece.startSpawnY = spawnVisualY;
-        piece.state = PieceState.FALLING;
+        piece.state = GoopState.FALLING;
 
         this.lockStartTime = null;
         this.lockResetCount = 0;  // Reset move counter for new piece

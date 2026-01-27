@@ -1,5 +1,5 @@
 
-import { PieceDefinition, GoopShape } from './types';
+import { GoopTemplate, GoopShape } from './types';
 
 export const VISIBLE_WIDTH = 12; // 12 units wide
 export const TOTAL_WIDTH = 30;   // Cylindrical width (3 screens wide approx)
@@ -374,14 +374,14 @@ export const COLORS = {
   GRID_EMPTY: '#1e293b', // Dark slate for grid lines
 };
 
-const makePiece = (type: GoopShape, coords: number[][]): PieceDefinition => ({
+const makePiece = (type: GoopShape, coords: number[][]): GoopTemplate => ({
   type,
   color: COLORS.RED, // Default placeholder, will be randomized on spawn
   cells: coords.map(([x, y]) => ({ x, y })),
 });
 
 // SRS-ish definitions (original tetrominoes - kept for backwards compatibility)
-export const PIECES: PieceDefinition[] = [
+export const PIECES: GoopTemplate[] = [
   // I
   makePiece(GoopShape.I, [[-1, 0], [0, 0], [1, 0], [2, 0]]),
   // J

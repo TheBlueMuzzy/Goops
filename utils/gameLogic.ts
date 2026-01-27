@@ -1,5 +1,5 @@
 
-import { ActivePiece, Coordinate, GridCell, PieceDefinition, GoopShape, BlockData, FallingBlock, GoalMark, PieceState } from '../types';
+import { ActivePiece, Coordinate, GridCell, GoopTemplate, GoopShape, BlockData, FallingBlock, GoalMark, GoopState } from '../types';
 import { TOTAL_WIDTH, TOTAL_HEIGHT, PIECES, GAME_COLORS, VISIBLE_WIDTH, BUFFER_HEIGHT, COLORS, VISIBLE_HEIGHT } from '../constants';
 
 // Re-export normalizeX from coordinates to maintain API compatibility
@@ -24,7 +24,7 @@ export const getPaletteForRank = (rank: number): string[] => {
   return palette;
 };
 
-export const spawnPiece = (definition?: PieceDefinition, rank: number = 1): ActivePiece => {
+export const spawnPiece = (definition?: GoopTemplate, rank: number = 1): ActivePiece => {
   const def = definition || PIECES[Math.floor(Math.random() * PIECES.length)];
   const palette = getPaletteForRank(rank);
   // Use definition's color if it's a valid game color, otherwise generate random
@@ -40,7 +40,7 @@ export const spawnPiece = (definition?: PieceDefinition, rank: number = 1): Acti
     cells: [...def.cells],
     spawnTimestamp: Date.now(),
     startSpawnY: 0, // Set by caller
-    state: PieceState.SPAWNED
+    state: GoopState.SPAWNED
   };
 };
 

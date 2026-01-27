@@ -81,7 +81,7 @@ export enum GoopShape {
   H_W_C = 'H_W_C',
 }
 
-export interface PieceDefinition {
+export interface GoopTemplate {
   type: GoopShape;
   cells: Coordinate[]; // Relative coordinates
   color: string;
@@ -89,14 +89,14 @@ export interface PieceDefinition {
   isWild?: boolean;      // Wild piece - seals any crack, converts adjacent goop
 }
 
-export enum PieceState {
+export enum GoopState {
   SPAWNED = 'SPAWNED', 
   FALLING = 'FALLING', // Default state for active piece
   LOCKED = 'LOCKED'    // Hit bottom, about to merge
 }
 
 export interface ActivePiece {
-  definition: PieceDefinition;
+  definition: GoopTemplate;
   x: number; // Logical grid X (0-TOTAL_WIDTH)
   y: number; // Logical grid Y
   screenX: number; // Viewport-relative X coordinate (floating point allowed)
@@ -104,7 +104,7 @@ export interface ActivePiece {
   cells: Coordinate[]; // Current relative cells after rotation
   spawnTimestamp: number; // When this piece was created
   startSpawnY: number;    // Where it started falling from
-  state: PieceState;      // State of the piece lifecycle
+  state: GoopState;      // State of the piece lifecycle
 }
 
 export interface BlockData {
@@ -204,8 +204,8 @@ export interface GameState {
   grid: GridCell[][]; // [y][x]
   boardOffset: number; // 0-TOTAL_WIDTH
   activePiece: ActivePiece | null;
-  storedPiece: PieceDefinition | null;
-  nextPiece: PieceDefinition | null;  // Preview of upcoming piece
+  storedPiece: GoopTemplate | null;
+  nextPiece: GoopTemplate | null;  // Preview of upcoming piece
   score: number;
   gameOver: boolean;
   isPaused: boolean;

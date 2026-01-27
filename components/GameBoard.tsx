@@ -1,6 +1,6 @@
 // --- Imports ---
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
-import { GameState, PieceState, ComplicationType, GamePhase, PieceDefinition, DumpPiece, CrackCell } from '../types';
+import { GameState, GoopState, ComplicationType, GamePhase, GoopTemplate, DumpPiece, CrackCell } from '../types';
 import { VISIBLE_WIDTH, VISIBLE_HEIGHT, COLORS, TOTAL_WIDTH, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 import { normalizeX, getGhostY, getPaletteForRank } from '../utils/gameLogic';
 import { isMobile } from '../utils/device';
@@ -29,8 +29,8 @@ interface GameBoardProps {
   activeCharges?: Record<string, number>;  // Active ID -> charge (0-100)
   onActivateAbility?: (upgradeId: string) => void;  // Called when ability activated
   powerUps?: Record<string, number>;  // Upgrade levels for GOOP_SWAP effect
-  storedPiece?: PieceDefinition | null;  // Held piece for preview
-  nextPiece?: PieceDefinition | null;    // Next piece for preview
+  storedPiece?: GoopTemplate | null;  // Held piece for preview
+  nextPiece?: GoopTemplate | null;    // Next piece for preview
 }
 
 // --- Component ---
@@ -482,7 +482,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             })}
 
             {/* Ghost Piece */}
-            {activePiece && activePiece.state === PieceState.FALLING && (() => {
+            {activePiece && activePiece.state === GoopState.FALLING && (() => {
                 const ghostY = getGhostY(grid, activePiece, boardOffset);
                 const isWild = activePiece.definition.isWild;
 
@@ -587,7 +587,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             })}
 
             {/* Active Piece */}
-            {activePiece && activePiece.state === PieceState.FALLING && (() => {
+            {activePiece && activePiece.state === GoopState.FALLING && (() => {
                 const isWild = activePiece.definition.isWild;
                 const apCells = activePiece.cells.map((cell, idx) => {
                     const color = activePiece.definition.cellColors?.[idx] ?? activePiece.definition.color;

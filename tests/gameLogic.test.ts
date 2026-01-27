@@ -11,7 +11,7 @@ import {
   calculateAdjacencyBonus,
 } from '../utils/gameLogic';
 import { TOTAL_WIDTH, TOTAL_HEIGHT, COLORS } from '../constants';
-import { GridCell, ActivePiece, GoopShape, PieceState } from '../types';
+import { GridCell, ActivePiece, GoopShape, GoopState } from '../types';
 
 // Helper to create an empty grid
 const createEmptyGrid = (): GridCell[][] => {
@@ -28,7 +28,7 @@ const createMockPiece = (x: number, y: number, cells: { x: number; y: number }[]
   cells,
   spawnTimestamp: Date.now(),
   startSpawnY: 0,
-  state: PieceState.FALLING,
+  state: GoopState.FALLING,
 });
 
 // Helper to place a cell on the grid

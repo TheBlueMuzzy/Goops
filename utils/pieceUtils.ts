@@ -1,7 +1,7 @@
 // Piece utility functions for multi-color splitting
 // Used when rank >= 20 to split pieces into two contiguous color groups
 
-import { Coordinate, PieceDefinition } from '../types';
+import { Coordinate, GoopTemplate } from '../types';
 
 /**
  * Create a string key from a coordinate for Set lookups.
@@ -110,10 +110,10 @@ export function findBestSplit(cells: Coordinate[]): [number[], number[]] | null 
  * returns a single-color piece using colorA.
  */
 export function splitPiece(
-  definition: PieceDefinition,
+  definition: GoopTemplate,
   colorA: string,
   colorB: string
-): PieceDefinition {
+): GoopTemplate {
   const split = findBestSplit(definition.cells);
 
   if (!split) {
