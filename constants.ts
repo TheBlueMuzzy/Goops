@@ -380,7 +380,7 @@ const makePiece = (type: PieceType, coords: number[][]): PieceDefinition => ({
   cells: coords.map(([x, y]) => ({ x, y })),
 });
 
-// SRS-ish definitions
+// SRS-ish definitions (original tetrominoes - kept for backwards compatibility)
 export const PIECES: PieceDefinition[] = [
   // I
   makePiece(PieceType.I, [[-1, 0], [0, 0], [1, 0], [2, 0]]),
@@ -397,3 +397,33 @@ export const PIECES: PieceDefinition[] = [
   // Z
   makePiece(PieceType.Z, [[-1, 0], [0, 0], [0, 1], [1, 1]]),
 ];
+
+// =============================================================================
+// NEW PIECE SYSTEM: Tetra, Penta, Hexa (from Minos.svg)
+// =============================================================================
+// Coordinates parsed from art/Minos.svg (36px grid cells)
+// Each piece is normalized to be centered around (0,0) for rotation
+// Normal pieces: contiguous cells (edge-touching)
+// Corrupted pieces: non-contiguous cells (corner-touching only)
+
+// -----------------------------------------------------------------------------
+// TETRA PIECES (4 cells each) - 5 Normal + 5 Corrupted = 10 total
+// -----------------------------------------------------------------------------
+
+// Tetra Normal (from SVG cls-5 dark green)
+const PIECE_T_I = makePiece(PieceType.T_I, [[0, -1], [0, 0], [0, 1], [0, 2]]);         // Vertical bar
+const PIECE_T_L = makePiece(PieceType.T_L, [[0, 0], [0, 1], [0, 2], [1, 0]]);          // L-shape
+const PIECE_T_T = makePiece(PieceType.T_T, [[0, 0], [0, 1], [0, 2], [1, 1]]);          // T-shape
+const PIECE_T_S = makePiece(PieceType.T_S, [[0, 0], [0, 1], [1, 1], [1, 2]]);          // S-shape
+const PIECE_T_O = makePiece(PieceType.T_O, [[0, 0], [0, 1], [1, 0], [1, 1]]);          // 2x2 square
+
+// Tetra Corrupted (from SVG cls-3 light green) - non-contiguous patterns
+const PIECE_T_I_C = makePiece(PieceType.T_I_C, [[0, 2], [0, 3], [1, 0], [1, 1]]);      // Split Z (2+2 diagonal)
+const PIECE_T_L_C = makePiece(PieceType.T_L_C, [[0, 0], [0, 1], [1, 0], [1, 2]]);      // L with gap
+const PIECE_T_T_C = makePiece(PieceType.T_T_C, [[0, 0], [0, 2], [1, 1], [2, 1]]);      // Spread T
+const PIECE_T_S_C = makePiece(PieceType.T_S_C, [[0, 2], [1, 0], [1, 1], [2, 1]]);      // Corrupted S
+const PIECE_T_O_C = makePiece(PieceType.T_O_C, [[0, 0], [0, 2], [1, 1], [1, 2]]);      // Diagonal corners
+
+export const TETRA_NORMAL = [PIECE_T_I, PIECE_T_L, PIECE_T_T, PIECE_T_S, PIECE_T_O];
+export const TETRA_CORRUPTED = [PIECE_T_I_C, PIECE_T_L_C, PIECE_T_T_C, PIECE_T_S_C, PIECE_T_O_C];
+export const TETRA_PIECES = [...TETRA_NORMAL, ...TETRA_CORRUPTED];
