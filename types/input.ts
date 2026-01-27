@@ -2,7 +2,7 @@
  * Input handling types for GameBoard pointer/touch interactions.
  */
 
-import { GridCell } from '../types';
+import { TankCell } from '../types';
 
 /**
  * Pointer event handlers returned by useInputHandlers hook.
@@ -44,7 +44,7 @@ export interface HoldState {
  * Result of hit testing - what was tapped/clicked.
  */
 export type HitData =
-    | { type: 'BLOCK'; x: number; y: number; cell: GridCell }
+    | { type: 'BLOCK'; x: number; y: number; cell: TankCell }
     | { type: 'EMPTY' };
 
 /**

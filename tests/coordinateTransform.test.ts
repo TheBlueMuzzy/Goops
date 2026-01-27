@@ -61,7 +61,7 @@ describe('coordinateTransform', () => {
   });
 
   describe('svgToVisual', () => {
-    it('converts center of viewport correctly', () => {
+    it('converts center of tankViewport correctly', () => {
       const svgX = 0; // Center
       const svgY = 30 * 8; // Middle row (8 blocks from top)
       const { visX, visY } = svgToVisual(svgX, svgY);

@@ -1,5 +1,5 @@
 
-import { GameState, GoalMark, CrackCell, ActivePiece, FloatingText, GridCell } from '../types';
+import { GameState, GoalMark, CrackCell, ActivePiece, FloatingText, TankCell } from '../types';
 import { spawnGoalMark, normalizeX } from '../utils/gameLogic';
 import { gameEventBus } from './events/EventBus';
 import { GameEventType } from './events/GameEvents';
@@ -20,7 +20,7 @@ export class GoalManager {
      */
     trySpawnGoal(
         state: GameState,
-        grid: GridCell[][],
+        grid: TankCell[][],
         initialTotalScore: number,
         timeLeft: number,
         maxTime: number,
@@ -65,7 +65,7 @@ export class GoalManager {
      */
     trySpawnCrack(
         state: GameState,
-        grid: GridCell[][],
+        grid: TankCell[][],
         initialTotalScore: number,
         timeLeft: number,
         maxTime: number,

@@ -39,7 +39,7 @@ export const VIEWBOX = (() => {
  * Convert a visual X position (column in visible area) to screen X coordinate.
  * Uses cylindrical projection: columns near edges appear narrower.
  *
- * @param visX - Visual column position (0 = left edge of viewport)
+ * @param visX - Visual column position (0 = left edge of tankViewport)
  * @returns SVG X coordinate
  */
 export function visXToScreenX(visX: number): number {
@@ -102,7 +102,7 @@ export function clientToSvg(
 
 /**
  * Convert SVG coordinates to visual grid coordinates.
- * Visual coordinates are relative to the visible viewport, not the full cylinder.
+ * Visual coordinates are relative to the visible tankViewport, not the full cylinder.
  *
  * @param svgX - SVG X coordinate
  * @param svgY - SVG Y coordinate
@@ -143,7 +143,7 @@ export function visualToGrid(
  * @param gridX - Grid column
  * @param gridY - Grid row
  * @param tankRotation - Current board rotation offset
- * @returns X and Y as percentages of the viewport (0-100)
+ * @returns X and Y as percentages of the tankViewport (0-100)
  */
 export function gridToPercentage(
   gridX: number,
@@ -165,7 +165,7 @@ export function gridToPercentage(
 }
 
 /**
- * Check if a visual coordinate is within the visible viewport.
+ * Check if a visual coordinate is within the visible tankViewport.
  *
  * @param visX - Visual column position
  * @returns True if the position is within the visible columns

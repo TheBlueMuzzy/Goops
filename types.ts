@@ -99,7 +99,7 @@ export interface ActivePiece {
   definition: GoopTemplate;
   x: number; // Logical grid X (0-TANK_WIDTH)
   y: number; // Logical grid Y
-  screenX: number; // Viewport-relative X coordinate (floating point allowed)
+  screenX: number; // TankViewport-relative X coordinate (floating point allowed)
   rotation: number; // 0-3 (0, 90, 180, 270)
   cells: Coordinate[]; // Current relative cells after rotation
   spawnTimestamp: number; // When this piece was created
@@ -119,7 +119,7 @@ export interface BlockData {
   isWild?: boolean;    // Wild goop - converts adjacent goop and matches any crack
 }
 
-export type GridCell = BlockData | null;
+export type TankCell = BlockData | null;
 
 export interface FallingBlock {
   data: BlockData;
@@ -201,7 +201,7 @@ export interface Complication {
 }
 
 export interface GameState {
-  grid: GridCell[][]; // [y][x]
+  grid: TankCell[][]; // [y][x]
   tankRotation: number; // 0-TANK_WIDTH
   activeGoop: ActivePiece | null;
   storedPiece: GoopTemplate | null;

@@ -1,5 +1,5 @@
 
-import { GameState, GridCell, ActivePiece, GoopTemplate, FallingBlock, ScoreBreakdown, GameStats, FloatingText, GoalMark, CrackCell, GamePhase, GoopState, GoopShape, Complication, ComplicationType, DumpPiece } from '../types';
+import { GameState, TankCell, ActivePiece, GoopTemplate, FallingBlock, ScoreBreakdown, GameStats, FloatingText, GoalMark, CrackCell, GamePhase, GoopState, GoopShape, Complication, ComplicationType, DumpPiece } from '../types';
 import {
     TANK_WIDTH, TANK_HEIGHT, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, INITIAL_TIME_MS,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS,
@@ -68,7 +68,7 @@ export class GameEngine {
     }
 
     // Check if piece has any adjacent wild cells in the grid (for wild conversion)
-    private hasAdjacentWild(grid: GridCell[][], piece: ActivePiece): boolean {
+    private hasAdjacentWild(grid: TankCell[][], piece: ActivePiece): boolean {
         for (const cell of piece.cells) {
             const x = normalizeX(piece.x + cell.x);
             const y = Math.floor(piece.y + cell.y);
@@ -633,7 +633,7 @@ export class GameEngine {
         };
     }
 
-    public spawnNewPiece(pieceDef?: GoopTemplate, gridOverride?: GridCell[][], offsetOverride?: number) {
+    public spawnNewPiece(pieceDef?: GoopTemplate, gridOverride?: TankCell[][], offsetOverride?: number) {
         const currentGrid = gridOverride || this.state.grid;
         const currentOffset = offsetOverride !== undefined ? offsetOverride : this.state.tankRotation;
         const currentTotalScore = this.initialTotalScore + this.state.score;
@@ -734,7 +734,7 @@ export class GameEngine {
             }
         }
 
-        // LOGIC: Spawn at top center of visible viewport
+        // LOGIC: Spawn at top center of visible tankViewport
         // Map visible center to grid coordinate based on board offset
         const spawnVisualX = Math.floor((TANK_VIEWPORT_WIDTH - 1) / 2);
         const spawnVisualY = 0;

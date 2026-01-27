@@ -11,10 +11,10 @@ import {
   calculateAdjacencyBonus,
 } from '../utils/gameLogic';
 import { TANK_WIDTH, TANK_HEIGHT, COLORS } from '../constants';
-import { GridCell, ActivePiece, GoopShape, GoopState } from '../types';
+import { TankCell, ActivePiece, GoopShape, GoopState } from '../types';
 
 // Helper to create an empty grid
-const createEmptyGrid = (): GridCell[][] => {
+const createEmptyGrid = (): TankCell[][] => {
   return Array(TANK_HEIGHT).fill(null).map(() => Array(TANK_WIDTH).fill(null));
 };
 
@@ -33,7 +33,7 @@ const createMockPiece = (x: number, y: number, cells: { x: number; y: number }[]
 
 // Helper to place a cell on the grid
 const placeCell = (
-  grid: GridCell[][],
+  grid: TankCell[][],
   x: number,
   y: number,
   color: string,
@@ -314,7 +314,7 @@ describe('Scoring Functions', () => {
     });
 
     it('returns 50 for off-screen blocks', () => {
-      // Block far from viewport center
+      // Block far from tankViewport center
       const bonus = calculateOffScreenBonus(25, 0); // x=25 with offset 0 is off-screen
       expect(bonus).toBe(50);
     });

@@ -1,5 +1,5 @@
 
-import { ActivePiece, Coordinate, GridCell, GoopTemplate, GoopShape, BlockData, FallingBlock, GoalMark, GoopState } from '../types';
+import { ActivePiece, Coordinate, TankCell, GoopTemplate, GoopShape, BlockData, FallingBlock, GoalMark, GoopState } from '../types';
 import { TANK_WIDTH, TANK_HEIGHT, PIECES, GAME_COLORS, TANK_VIEWPORT_WIDTH, BUFFER_HEIGHT, COLORS, TANK_VIEWPORT_HEIGHT } from '../constants';
 
 // Re-export normalizeX from coordinates to maintain API compatibility
@@ -44,7 +44,7 @@ export const spawnPiece = (definition?: GoopTemplate, rank: number = 1): ActiveP
   };
 };
 
-export const createInitialGrid = (rank: number, powerUps?: Record<string, number>): GridCell[][] => {
+export const createInitialGrid = (rank: number, powerUps?: Record<string, number>): TankCell[][] => {
   const grid = Array(TANK_HEIGHT).fill(null).map(() => Array(TANK_WIDTH).fill(null));
 
   // Starting Junk Logic (Section 11.2)
@@ -100,7 +100,7 @@ export const createInitialGrid = (rank: number, powerUps?: Record<string, number
   return grid;
 };
 
-export const checkCollision = (grid: GridCell[][], piece: ActivePiece, tankRotation: number): boolean => {
+export const checkCollision = (grid: TankCell[][], piece: ActivePiece, tankRotation: number): boolean => {
   for (const cell of piece.cells) {
     const x = normalizeX(piece.x + cell.x);
     const y = piece.y + cell.y;
@@ -127,7 +127,7 @@ export const checkCollision = (grid: GridCell[][], piece: ActivePiece, tankRotat
   return false;
 };
 
-export const getGhostY = (grid: GridCell[][], piece: ActivePiece, tankRotation: number): number => {
+export const getGhostY = (grid: TankCell[][], piece: ActivePiece, tankRotation: number): number => {
   const startY = Math.floor(piece.y);
   let y = startY;
 
@@ -139,7 +139,7 @@ export const getGhostY = (grid: GridCell[][], piece: ActivePiece, tankRotation: 
   return Math.max(startY, y);
 };
 
-export const findContiguousGroup = (grid: GridCell[][], startX: number, startY: number): Coordinate[] => {
+export const findContiguousGroup = (grid: TankCell[][], startX: number, startY: number): Coordinate[] => {
   const startCell = grid[startY][startX];
   if (!startCell) return [];
 
@@ -179,7 +179,7 @@ export const findContiguousGroup = (grid: GridCell[][], startX: number, startY: 
   return group;
 };
 
-export const updateGroups = (grid: GridCell[][]): GridCell[][] => {
+export const updateGroups = (grid: TankCell[][]): TankCell[][] => {
     const newGrid = grid.map(row => [...row]);
     const visited = new Set<string>();
 
@@ -277,10 +277,10 @@ export const updateGroups = (grid: GridCell[][]): GridCell[][] => {
 
 // Returns updated grid AND any consumed goal marks AND destroyed goal marks (wrong color)
 export const mergePiece = (
-    grid: GridCell[][], 
+    grid: TankCell[][], 
     piece: ActivePiece, 
     goalMarks: GoalMark[]
-): { grid: GridCell[][], consumedGoals: string[], destroyedGoals: string[] } => {
+): { grid: TankCell[][], consumedGoals: string[], destroyedGoals: string[] } => {
   
   const newGrid = grid.map(row => [...row]);
   const groupId = Math.random().toString(36).substr(2, 9);
@@ -342,9 +342,9 @@ export const mergePiece = (
  * Affects whole connected groups, not just immediate neighbors.
  */
 export const processWildConversions = (
-    grid: GridCell[][],
+    grid: TankCell[][],
     piece: ActivePiece
-): GridCell[][] => {
+): TankCell[][] => {
     const newGrid = grid.map(row => [...row]);
     const pieceIsWild = piece.definition.isWild;
     const pieceColor = piece.definition.color;
@@ -416,7 +416,7 @@ export const processWildConversions = (
     return updateGroups(newGrid);
 };
 
-export const getFloatingBlocks = (grid: GridCell[][], columnsToCheck?: number[]): { grid: GridCell[][], falling: FallingBlock[] } => {
+export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[]): { grid: TankCell[][], falling: FallingBlock[] } => {
     // Implements "Sticky Gravity": 
     // An entire connected Group falls only if NO block in that group is supported.
     // A block is supported if it is on the floor (y=MAX) or on top of a supported group.
@@ -500,7 +500,7 @@ export const getFloatingBlocks = (grid: GridCell[][], columnsToCheck?: number[])
 
 export const updateFallingBlocks = (
     blocks: FallingBlock[], 
-    grid: GridCell[][], 
+    grid: TankCell[][], 
     dt: number,
     gameSpeed: number
 ): { active: FallingBlock[], landed: FallingBlock[] } => {
@@ -551,7 +551,7 @@ export const calculateMultiplier = (combo: number): number => {
     return 1 + (combo * 0.1);
 };
 
-export const calculateAdjacencyBonus = (grid: GridCell[][], group: Coordinate[]): number => {
+export const calculateAdjacencyBonus = (grid: TankCell[][], group: Coordinate[]): number => {
     let neighborsCount = 0;
     const groupKeys = new Set(group.map(g => `${g.x},${g.y}`));
     
@@ -578,7 +578,7 @@ export const calculateAdjacencyBonus = (grid: GridCell[][], group: Coordinate[])
 // --- Goal Mark Logic ---
 
 export const spawnGoalMark = (
-    grid: GridCell[][],
+    grid: TankCell[][],
     existingMarks: GoalMark[],
     rank: number,
     timeLeft: number,
@@ -633,7 +633,7 @@ export const spawnGoalMark = (
 };
 
 export const spawnGoalBurst = (
-    grid: GridCell[][],
+    grid: TankCell[][],
     existingMarks: GoalMark[],
     rank: number,
     timeLeft: number,

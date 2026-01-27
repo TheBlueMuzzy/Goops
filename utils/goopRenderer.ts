@@ -3,7 +3,7 @@
  * Pure functions for SVG path generation and group building.
  */
 
-import { GridCell, FallingBlock } from '../types';
+import { TankCell, FallingBlock } from '../types';
 import { TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, TANK_WIDTH, TANK_HEIGHT, BUFFER_HEIGHT } from '../constants';
 import { BLOCK_SIZE, visXToScreenX } from './coordinateTransform';
 import { normalizeX } from './gameLogic';
@@ -26,7 +26,7 @@ export interface RenderableCell {
     screenX: number;
     screenY: number;
     width: number;
-    cell: GridCell;
+    cell: TankCell;
     color: string;
     neighbors: Neighbors;
     isFalling?: boolean;
@@ -107,7 +107,7 @@ export function getContourPath(
  * Returns a map of groupId → RenderableCell[] for rendering.
  */
 export function buildRenderableGroups(
-    grid: (GridCell | null)[][],
+    grid: (TankCell | null)[][],
     tankRotation: number,
     fallingBlocks: FallingBlock[]
 ): Map<string, RenderableCell[]> {

@@ -9,7 +9,7 @@
  */
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { GridCell } from '../types';
+import { TankCell } from '../types';
 import { InputHandlers, InputCallbacks, HoldState, HitData, PointerState } from '../types/input';
 import { VIEWBOX, BLOCK_SIZE, screenXToVisX } from '../utils/coordinateTransform';
 import { TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, TANK_HEIGHT, TANK_WIDTH, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
@@ -26,7 +26,7 @@ const HORIZONTAL_DRAG_THRESHOLD = 20;
 interface UseInputHandlersParams {
     callbacks: InputCallbacks;
     tankRotation: number;
-    grid: (GridCell | null)[][];
+    grid: (TankCell | null)[][];
     pressureRatio: number;
     powerUps?: Record<string, number>; // For GOOP_SWAP upgrade effect
 }
@@ -73,7 +73,7 @@ export function useInputHandlers({
     const { x: vbX, y: vbY, w: vbW, h: vbH } = VIEWBOX;
 
     /**
-     * Convert client coordinates to viewport coordinates for block picking.
+     * Convert client coordinates to tankViewport coordinates for block picking.
      */
     const getViewportCoords = useCallback((clientX: number, clientY: number, target: Element) => {
         const container = target as HTMLElement;
