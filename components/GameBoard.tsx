@@ -22,7 +22,7 @@ interface GameBoardProps {
   rank: number;
   maxTime: number;
   lightsBrightness?: number; // 5-110: brightness level (100 = normal, lower = dimmer, 110 = overflare)
-  laserCapacitor?: number;  // HUD meter: 0-100 (100 = full)
+  laserCharge?: number;  // HUD meter: 0-100 (100 = full)
   controlsHeat?: number;    // HUD meter: 0-100 (0 = cool)
   complicationCooldowns?: Record<TankSystem, number>;  // Cooldown timestamps
   equippedActives?: string[];  // Active ability IDs equipped
@@ -36,7 +36,7 @@ interface GameBoardProps {
 // --- Component ---
 export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, lightsBrightness = 100,
-    laserCapacitor = 100, controlsHeat = 0, complicationCooldowns,
+    laserCharge = 100, controlsHeat = 0, complicationCooldowns,
     equippedActives = [], activeCharges = {}, onActivateAbility,
     powerUps, storedPiece, nextPiece
 }) => {
@@ -353,9 +353,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 const sample = cells[0];
                 const color = sample.color;
                 const isHighlighted = gid === highlightedGroupId;
-                const isShaking = gid === shakingGroupId || state.primedGroups.has(gid); // Shake primed groups too
+                const isShaking = gid === shakingGroupId || state.prePoppedGoopGroups.has(gid); // Shake pre-popped groups too
                 const isGlowing = cells.some(c => c.cell.isGlowing);
-                const isPrimed = state.primedGroups.has(gid); // LASER effect: primed for 2nd tap
+                const isPrePopped = state.prePoppedGoopGroups.has(gid); // LASER effect: pre-popped, waiting for 2nd tap
                 const hasWildCells = cells.some(c => c.cell.isWild);
 
                 // Calculate bounds FIRST (before using minX for fillColor)
@@ -433,10 +433,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                     key={`cnt-${c.cell.id}`}
                                     d={getContourPath(c.screenX, c.screenY, c.width, BLOCK_SIZE, c.neighbors)}
                                     fill="none"
-                                    stroke={isPrimed ? "#ff6b6b" : (isGlowing ? "white" : (c.cell.isWild ? getWildColorAtX(c.screenX) : color))}
-                                    strokeWidth={isPrimed ? 3 : (isGlowing ? 3 : 2)}
-                                    strokeDasharray={isPrimed ? "4 2" : undefined}
-                                    className={c.cell.isWild && !isPrimed && !isGlowing ? "wild-stroke" : undefined}
+                                    stroke={isPrePopped ? "#ff6b6b" : (isGlowing ? "white" : (c.cell.isWild ? getWildColorAtX(c.screenX) : color))}
+                                    strokeWidth={isPrePopped ? 3 : (isGlowing ? 3 : 2)}
+                                    strokeDasharray={isPrePopped ? "4 2" : undefined}
+                                    className={c.cell.isWild && !isPrePopped && !isGlowing ? "wild-stroke" : undefined}
                                 />
                             ))}
                             {isHighlighted && <rect x={minX} y={minY} width={maxX - minX} height={maxY - minY} fill="white" fillOpacity={0.3} />}
@@ -470,11 +470,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                 key={`cnt-${c.cell.id}`}
                                 d={getContourPath(c.screenX, c.screenY, c.width, BLOCK_SIZE, c.neighbors)}
                                 fill="none"
-                                stroke={isPrimed ? "#ff6b6b" : (isGlowing ? "white" : (c.cell.isWild ? getWildColorAtX(c.screenX) : color))}
-                                strokeWidth={isPrimed ? "3" : (isGlowing ? "3" : "2")}
-                                strokeDasharray={isPrimed ? "4 2" : undefined}
-                                className={!isMobile && !isPrimed ? (c.cell.isWild ? "wild-stroke" : (isGlowing ? "super-glowing-stroke" : "glow-stroke")) : undefined}
-                                style={!isMobile && !isPrimed && !c.cell.isWild ? { color: isGlowing ? 'white' : color } : undefined}
+                                stroke={isPrePopped ? "#ff6b6b" : (isGlowing ? "white" : (c.cell.isWild ? getWildColorAtX(c.screenX) : color))}
+                                strokeWidth={isPrePopped ? "3" : (isGlowing ? "3" : "2")}
+                                strokeDasharray={isPrePopped ? "4 2" : undefined}
+                                className={!isMobile && !isPrePopped ? (c.cell.isWild ? "wild-stroke" : (isGlowing ? "super-glowing-stroke" : "glow-stroke")) : undefined}
+                                style={!isMobile && !isPrePopped && !c.cell.isWild ? { color: isGlowing ? 'white' : color } : undefined}
                              />
                         ))}
                     </g>
@@ -666,7 +666,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                 </text>
                             )}
                             <HudMeter
-                                value={laserCapacitor}
+                                value={laserCharge}
                                 colorMode="drain"
                                 x={vbX + 8}
                                 y={vbH * 0.04}

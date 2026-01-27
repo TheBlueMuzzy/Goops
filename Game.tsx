@@ -320,7 +320,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             rank={startingRank}
             maxTime={engine.maxTime}
             lightsBrightness={gameState.phase === GamePhase.PERISCOPE ? gameState.lightsBrightness : 100}
-            laserCapacitor={gameState.laserCapacitor}
+            laserCharge={gameState.laserCharge}
             controlsHeat={gameState.controlsHeat}
             complicationCooldowns={gameState.complicationCooldowns}
             equippedActives={equippedActives}

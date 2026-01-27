@@ -137,8 +137,8 @@ export class GameEngine {
                 controls: this.randomThreshold(),
                 laser: this.randomThreshold()
             },
-            primedGroups: new Set(),
-            laserCapacitor: 100,  // Starts full
+            prePoppedGoopGroups: new Set(),
+            laserCharge: 100,  // Starts full
             controlsHeat: 0,      // Starts cool
             lightsBrightness: 100,     // Starts at full brightness
             lightsGraceStart: null,    // null = fast dropping, starts as if fast dropping
@@ -286,8 +286,8 @@ export class GameEngine {
                 controls: this.randomThreshold(),
                 laser: this.randomThreshold()
             },
-            primedGroups: new Set(),
-            laserCapacitor: 100,  // Starts full
+            prePoppedGoopGroups: new Set(),
+            laserCharge: 100,  // Starts full
             controlsHeat: 0,      // Starts cool
             lightsBrightness: 100,     // Starts at full brightness
             lightsGraceStart: null,    // null = fast dropping, starts as if fast dropping
@@ -573,7 +573,7 @@ export class GameEngine {
         // 5. Clear any active complications so they don't show on end screen
         this.state.complications = [];
         this.state.activeComplicationId = null;
-        this.state.primedGroups.clear();
+        this.state.prePoppedGoopGroups.clear();
 
         gameEventBus.emit(GameEventType.GAME_OVER);
         this.emitChange();
@@ -1220,7 +1220,7 @@ export class GameEngine {
         // Laser capacitor refill: +15% on piece lock (only when no active LASER complication)
         const hasActiveLaser = this.state.complications.some(c => c.type === TankSystem.LASER);
         if (!hasActiveLaser) {
-            this.state.laserCapacitor = Math.min(100, this.state.laserCapacitor + 10);
+            this.state.laserCharge = Math.min(100, this.state.laserCharge + 10);
         }
 
         gameEventBus.emit(GameEventType.PIECE_DROPPED);

@@ -45,7 +45,7 @@ export class ComplicationManager {
         if (!hasComplication(TankSystem.LASER) &&
             !isOnCooldown(TankSystem.LASER) &&
             isComplicationUnlocked(TankSystem.LASER, rank) &&
-            state.laserCapacitor <= 0) {
+            state.laserCharge <= 0) {
             spawned = TankSystem.LASER;
         }
         // CONTROLS: Triggered when heat meter reaches max
@@ -97,8 +97,8 @@ export class ComplicationManager {
             // Reset the corresponding counter so next trigger starts fresh
             switch (complication.type) {
                 case TankSystem.LASER:
-                    state.laserCapacitor = COMPLICATION_CONFIG[TankSystem.LASER].capacitorMax;
-                    state.primedGroups.clear();
+                    state.laserCharge = COMPLICATION_CONFIG[TankSystem.LASER].capacitorMax;
+                    state.prePoppedGoopGroups.clear();
                     break;
                 case TankSystem.CONTROLS:
                     state.controlsHeat = 0;

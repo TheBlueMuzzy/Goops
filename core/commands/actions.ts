@@ -184,7 +184,7 @@ export class HardDropCommand implements Command {
         // Laser capacitor refill: +15% on piece lock (only when no active LASER complication)
         const hasActiveLaser = engine.state.complications.some(c => c.type === TankSystem.LASER);
         if (!hasActiveLaser) {
-            engine.state.laserCapacitor = Math.min(100, engine.state.laserCapacitor + 10);
+            engine.state.laserCharge = Math.min(100, engine.state.laserCharge + 10);
         }
 
         gameEventBus.emit(GameEventType.PIECE_DROPPED);
@@ -278,9 +278,9 @@ export class BlockTapCommand implements Command {
             const laserComplication = engine.state.complications.find(c => c.type === TankSystem.LASER);
             if (laserComplication) {
                 const groupId = cell.groupId;
-                if (!engine.state.primedGroups.has(groupId)) {
+                if (!engine.state.prePoppedGoopGroups.has(groupId)) {
                     // First tap: prime the group and restart fill animation
-                    engine.state.primedGroups.add(groupId);
+                    engine.state.prePoppedGoopGroups.add(groupId);
 
                     // Reset timestamp on all cells in this group to restart fill animation
                     const resetTime = Date.now();
@@ -297,7 +297,7 @@ export class BlockTapCommand implements Command {
                 }
                 // Group is primed - remove from primed set and proceed with pop
                 // (fill check already happened above, so it's ready to pop)
-                engine.state.primedGroups.delete(groupId);
+                engine.state.prePoppedGoopGroups.delete(groupId);
             }
 
             gameEventBus.emit(GameEventType.GOOP_POPPED, { combo: engine.state.combo, count: group.length });
@@ -314,7 +314,7 @@ export class BlockTapCommand implements Command {
                 const laserLevel = engine.powerUps['CAPACITOR_EFFICIENCY'] || 0;
                 const drainMultiplier = 1 - (laserConfig.drainUpgradeEffect * laserLevel);
                 const drainAmount = group.length * laserConfig.drainPerUnit * drainMultiplier;
-                engine.state.laserCapacitor = Math.max(0, engine.state.laserCapacitor - drainAmount);
+                engine.state.laserCharge = Math.max(0, engine.state.laserCharge - drainAmount);
             }
 
             const groupSize = group.length;

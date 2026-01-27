@@ -251,11 +251,11 @@ export interface GameState {
     laser: number;
   };
 
-  // LASER complication: tracks groups that have been tapped once (primed)
-  primedGroups: Set<string>;
+  // LASER system: tracks groups that have been pre-popped (first tap)
+  prePoppedGoopGroups: Set<string>;
 
-  // HUD meters for complication feedback
-  laserCapacitor: number;  // 0-100 (100 = full, 0 = empty/triggers LASER)
+  // HUD meters for TankSystem feedback
+  laserCharge: number;  // 0-100 (100 = full, 0 = empty/triggers LASER)
   controlsHeat: number;    // 0-100 (0 = cool, 100 = overheated/triggers CONTROLS)
 
   // Lights brightness system (player-controlled via fast drop)
