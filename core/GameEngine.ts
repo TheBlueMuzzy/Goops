@@ -3,7 +3,11 @@ import { GameState, GridCell, ActivePiece, PieceDefinition, FallingBlock, ScoreB
 import {
     TOTAL_WIDTH, TOTAL_HEIGHT, VISIBLE_WIDTH, VISIBLE_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, INITIAL_TIME_MS,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS,
-    PIECES
+    PIECES,
+    TETRA_NORMAL, TETRA_CORRUPTED,
+    PENTA_NORMAL, PENTA_CORRUPTED,
+    HEXA_NORMAL, HEXA_CORRUPTED,
+    CORRUPTION_CHANCE, MIRROR_CHANCE
 } from '../constants';
 import { COMPLICATION_CONFIG, isComplicationUnlocked } from '../complicationConfig';
 import {
@@ -562,6 +566,60 @@ export class GameEngine {
 
         gameEventBus.emit(GameEventType.GAME_OVER);
         this.emitChange();
+    }
+
+    /**
+     * Get the appropriate piece pool based on elapsed game time.
+     * Zone selection: Tetra (0-25s), Penta (25-50s), Hexa (50-75s)
+     */
+    private getPiecePoolByZone(): PieceDefinition[] {
+        const elapsedMs = this.maxTime - this.state.timeLeft;
+        const elapsedSec = elapsedMs / 1000;
+
+        // Determine which size zone we're in
+        // 75 sec game = 25 sec per zone (adjusts for PRESSURE_CONTROL bonus time)
+        const zoneLength = this.maxTime / 3 / 1000; // seconds per zone
+
+        // Use corruption chance to select normal vs corrupted
+        const useCorrupted = Math.random() < CORRUPTION_CHANCE;
+
+        if (elapsedSec < zoneLength) {
+            // Tetra zone (0-25s for base time)
+            return useCorrupted ? TETRA_CORRUPTED : TETRA_NORMAL;
+        } else if (elapsedSec < zoneLength * 2) {
+            // Penta zone (25-50s for base time)
+            return useCorrupted ? PENTA_CORRUPTED : PENTA_NORMAL;
+        } else {
+            // Hexa zone (50-75s for base time)
+            return useCorrupted ? HEXA_CORRUPTED : HEXA_NORMAL;
+        }
+    }
+
+    /**
+     * Mirror a piece's cells horizontally (flip around Y axis).
+     * Only applies to asymmetric pieces based on MIRROR_CHANCE.
+     */
+    private maybeApplyMirror(definition: PieceDefinition): PieceDefinition {
+        // 50% chance to mirror
+        if (Math.random() >= MIRROR_CHANCE) {
+            return definition;
+        }
+
+        // Check if piece is symmetric (mirroring would have no effect)
+        // A piece is symmetric if for every cell (x, y), there exists (-x, y)
+        const isSymmetric = definition.cells.every(cell =>
+            definition.cells.some(other => other.x === -cell.x && other.y === cell.y)
+        );
+
+        if (isSymmetric) {
+            return definition;
+        }
+
+        // Apply horizontal mirror: negate x coordinates
+        return {
+            ...definition,
+            cells: definition.cells.map(cell => ({ x: -cell.x, y: cell.y }))
+        };
     }
 
     public spawnNewPiece(pieceDef?: PieceDefinition, gridOverride?: GridCell[][], offsetOverride?: number) {
