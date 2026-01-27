@@ -21,15 +21,15 @@ export class MoveBoardCommand implements Command {
 
         const newOffset = normalizeX(engine.state.boardOffset + this.dir);
         
-        let newPiece = engine.state.activePiece;
+        let newPiece = engine.state.activeGoop;
 
         // Decoupled Movement:
         // Board moves, but piece stays at same SCREEN coordinate.
         // Therefore, its GRID coordinate must change relative to the new board offset.
-        if (engine.state.activePiece) {
+        if (engine.state.activeGoop) {
              // Calculate new Grid X based on existing Screen X and new Board Offset
-             const newGridX = getGridX(engine.state.activePiece.screenX, newOffset);
-             newPiece = { ...engine.state.activePiece, x: newGridX };
+             const newGridX = getGridX(engine.state.activeGoop.screenX, newOffset);
+             newPiece = { ...engine.state.activeGoop, x: newGridX };
 
              // For horizontal movement, check collision at nearest integer Y.
              // This allows sliding into gaps that would fit when the piece lands,
@@ -51,7 +51,7 @@ export class MoveBoardCommand implements Command {
 
         engine.state.boardOffset = newOffset;
         if (newPiece) {
-            engine.state.activePiece = newPiece;
+            engine.state.activeGoop = newPiece;
         }
 
         // Move reset: successful board movement resets lock delay timer
@@ -86,9 +86,9 @@ export class RotatePieceCommand implements Command {
     constructor(public clockwise: boolean) {}
 
     execute(engine: GameEngine): void {
-        if (engine.state.gameOver || engine.state.isPaused || !engine.state.activePiece) return;
+        if (engine.state.gameOver || engine.state.isPaused || !engine.state.activeGoop) return;
 
-        const p = engine.state.activePiece;
+        const p = engine.state.activeGoop;
         const nextRot = (p.rotation + (this.clockwise ? 1 : -1) + 4) % 4;
 
         // O pieces: shape stays same, just rotate the cellColors array
@@ -101,7 +101,7 @@ export class RotatePieceCommand implements Command {
                     : [colors[1], colors[3], colors[0], colors[2]]; // CCW: top-right→top-left, etc.
 
                 gameEventBus.emit(GameEventType.PIECE_ROTATED);
-                engine.state.activePiece = {
+                engine.state.activeGoop = {
                     ...p,
                     rotation: nextRot,
                     definition: { ...p.definition, cellColors: rotatedColors }
@@ -133,7 +133,7 @@ export class RotatePieceCommand implements Command {
             
             if (!checkCollision(engine.state.grid, kickedPiece, engine.state.boardOffset)) {
                 gameEventBus.emit(GameEventType.PIECE_ROTATED);
-                engine.state.activePiece = kickedPiece;
+                engine.state.activeGoop = kickedPiece;
 
                 // Move reset: successful rotation resets lock delay timer
                 if (engine.lockStartTime !== null) {
@@ -162,10 +162,10 @@ export class HardDropCommand implements Command {
     constructor() {}
 
     execute(engine: GameEngine): void {
-        if (engine.state.gameOver || engine.state.isPaused || !engine.state.activePiece) return;
+        if (engine.state.gameOver || engine.state.isPaused || !engine.state.activeGoop) return;
 
-        const y = getGhostY(engine.state.grid, engine.state.activePiece, engine.state.boardOffset);
-        const droppedPiece = { ...engine.state.activePiece, y };
+        const y = getGhostY(engine.state.grid, engine.state.activeGoop, engine.state.boardOffset);
+        const droppedPiece = { ...engine.state.activeGoop, y };
         
         const { grid: newGrid, consumedGoals, destroyedGoals } = mergePiece(engine.state.grid, droppedPiece, engine.state.goalMarks);
 
@@ -178,7 +178,7 @@ export class HardDropCommand implements Command {
             engine.state.totalUnitsAdded += droppedPiece.cells.length;
         }
 
-        const distance = Math.floor(y - engine.state.activePiece.y);
+        const distance = Math.floor(y - engine.state.activeGoop.y);
         engine.updateScoreAndStats(distance * 2, { speed: distance * 2 });
 
         // Laser capacitor refill: +15% on piece lock (only when no active LASER complication)
@@ -202,9 +202,9 @@ export class SwapPieceCommand implements Command {
     constructor() {}
 
     execute(engine: GameEngine): void {
-        if (engine.state.gameOver || engine.state.isPaused || !engine.state.activePiece) return;
+        if (engine.state.gameOver || engine.state.isPaused || !engine.state.activeGoop) return;
 
-        const currentPiece = engine.state.activePiece;
+        const currentPiece = engine.state.activeGoop;
         const currentDef = currentPiece.definition;
         const nextDef = engine.state.storedPiece;
 
@@ -232,7 +232,7 @@ export class SwapPieceCommand implements Command {
             gameEventBus.emit(GameEventType.PIECE_ROTATED);
             engine.state.storedPiece = currentDef;
             engine.lockStartTime = null;
-            engine.state.activePiece = testPiece;
+            engine.state.activeGoop = testPiece;
         } else {
             // No stored piece - store current and spawn new
             gameEventBus.emit(GameEventType.PIECE_ROTATED);

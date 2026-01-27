@@ -104,7 +104,7 @@ export class GameEngine {
         this.state = {
             grid: createInitialGrid(startRank, powerUps),
             boardOffset: 0,
-            activePiece: null,
+            activeGoop: null,
             storedPiece: null,
             nextPiece: null,
             score: 0,
@@ -254,7 +254,7 @@ export class GameEngine {
             score: 0,
             gameOver: false,
             isPaused: false,
-            activePiece: null,
+            activeGoop: null,
             storedPiece: {
                 ...storedBasePiece,
                 color: palette[Math.floor(Math.random() * palette.length)]
@@ -412,7 +412,7 @@ export class GameEngine {
                 // Drop same-color blocks from the top (rain effect)
                 // Use the current falling piece's color if available, else random from palette
                 const palette = getPaletteForRank(calculateRankDetails(this.initialTotalScore).rank);
-                const targetColor = this.state.activePiece?.definition.color
+                const targetColor = this.state.activeGoop?.definition.color
                     || palette[Math.floor(Math.random() * palette.length)];
 
                 // Level determines number of waves: 1 / 2 / 3
@@ -444,7 +444,7 @@ export class GameEngine {
             case 'GOOP_COLORIZER': {
                 // Lock next N pieces to current falling piece's color
                 // Level 1: 6 pieces, Level 2: 7 pieces, Level 3: 8 pieces
-                const targetColor = this.state.activePiece?.definition.color;
+                const targetColor = this.state.activeGoop?.definition.color;
                 if (!targetColor) {
                     console.log('GOOP_COLORIZER: No active piece to match color');
                     break;
@@ -754,7 +754,7 @@ export class GameEngine {
              this.finalizeGame();
         }
 
-        this.state.activePiece = piece;
+        this.state.activeGoop = piece;
         this.state.canSwap = true;
         
         this.emitChange();
@@ -1158,7 +1158,7 @@ export class GameEngine {
      * Handle active piece gravity, locking, and LIGHTS complication trigger.
      */
     private tickActivePiece(dt: number): void {
-        if (!this.state.activePiece) return;
+        if (!this.state.activeGoop) return;
 
         // DENSE_GOOP: +12.5% fall speed per level (reduces interval between drops)
         const denseLevel = this.powerUps['DENSE_GOOP'] || 0;
@@ -1170,11 +1170,11 @@ export class GameEngine {
             : adjustedSpeed;
 
         const moveAmount = dt / gravitySpeed;
-        const nextY = this.state.activePiece.y + moveAmount;
+        const nextY = this.state.activeGoop.y + moveAmount;
 
         // Maintain Grid X based on Screen X and Board Offset
-        const currentGridX = getGridX(this.state.activePiece.screenX, this.state.boardOffset);
-        const nextPiece = { ...this.state.activePiece, y: nextY, x: currentGridX };
+        const currentGridX = getGridX(this.state.activeGoop.screenX, this.state.boardOffset);
+        const nextPiece = { ...this.state.activeGoop, y: nextY, x: currentGridX };
 
         if (checkCollision(this.state.grid, nextPiece, this.state.boardOffset)) {
             if (this.lockStartTime === null) {
@@ -1189,7 +1189,7 @@ export class GameEngine {
                 this.lockActivePiece();
             }
         } else {
-            this.state.activePiece = nextPiece;
+            this.state.activeGoop = nextPiece;
             this.lockStartTime = null;
         }
     }
@@ -1198,10 +1198,10 @@ export class GameEngine {
      * Lock the active piece, handle goals, check LIGHTS trigger, spawn new piece.
      */
     private lockActivePiece(): void {
-        if (!this.state.activePiece) return;
+        if (!this.state.activeGoop) return;
 
-        const y = getGhostY(this.state.grid, this.state.activePiece, this.state.boardOffset);
-        const finalPiece = { ...this.state.activePiece, y };
+        const y = getGhostY(this.state.grid, this.state.activeGoop, this.state.boardOffset);
+        const finalPiece = { ...this.state.activeGoop, y };
 
         let { grid: newGrid, consumedGoals, destroyedGoals } = mergePiece(this.state.grid, finalPiece, this.state.goalMarks);
 

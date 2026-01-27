@@ -40,7 +40,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     equippedActives = [], activeCharges = {}, onActivateAbility,
     powerUps, storedPiece, nextPiece
 }) => {
-  const { grid, boardOffset, activePiece, fallingBlocks, floatingTexts, timeLeft, goalMarks, crackCells, dumpPieces } = state;
+  const { grid, boardOffset, activeGoop, fallingBlocks, floatingTexts, timeLeft, goalMarks, crackCells, dumpPieces } = state;
 
   const palette = useMemo(() => getPaletteForRank(rank), [rank]);
 
@@ -482,13 +482,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             })}
 
             {/* Ghost Piece */}
-            {activePiece && activePiece.state === GoopState.FALLING && (() => {
-                const ghostY = getGhostY(grid, activePiece, boardOffset);
-                const isWild = activePiece.definition.isWild;
+            {activeGoop && activeGoop.state === GoopState.FALLING && (() => {
+                const ghostY = getGhostY(grid, activeGoop, boardOffset);
+                const isWild = activeGoop.definition.isWild;
 
-                return activePiece.cells.map((cell, idx) => {
-                    const color = activePiece.definition.cellColors?.[idx] ?? activePiece.definition.color;
-                    const pieceGridX = normalizeX(activePiece.x + cell.x);
+                return activeGoop.cells.map((cell, idx) => {
+                    const color = activeGoop.definition.cellColors?.[idx] ?? activeGoop.definition.color;
+                    const pieceGridX = normalizeX(activeGoop.x + cell.x);
                     const pieceGridY = ghostY + cell.y;
                     if (pieceGridY < BUFFER_HEIGHT) return null;
 
@@ -502,10 +502,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                         const yPos = (pieceGridY - BUFFER_HEIGHT) * BLOCK_SIZE;
 
                         const neighbors = {
-                            t: activePiece.cells.some(o => o.x === cell.x && o.y === cell.y - 1),
-                            r: activePiece.cells.some(o => o.x === cell.x + 1 && o.y === cell.y),
-                            b: activePiece.cells.some(o => o.x === cell.x && o.y === cell.y + 1),
-                            l: activePiece.cells.some(o => o.x === cell.x - 1 && o.y === cell.y),
+                            t: activeGoop.cells.some(o => o.x === cell.x && o.y === cell.y - 1),
+                            r: activeGoop.cells.some(o => o.x === cell.x + 1 && o.y === cell.y),
+                            b: activeGoop.cells.some(o => o.x === cell.x && o.y === cell.y + 1),
+                            l: activeGoop.cells.some(o => o.x === cell.x - 1 && o.y === cell.y),
                         };
 
                         return (
@@ -587,12 +587,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             })}
 
             {/* Active Piece */}
-            {activePiece && activePiece.state === GoopState.FALLING && (() => {
-                const isWild = activePiece.definition.isWild;
-                const apCells = activePiece.cells.map((cell, idx) => {
-                    const color = activePiece.definition.cellColors?.[idx] ?? activePiece.definition.color;
-                    const pieceGridX = normalizeX(activePiece.x + cell.x);
-                    const pieceGridY = activePiece.y + cell.y;
+            {activeGoop && activeGoop.state === GoopState.FALLING && (() => {
+                const isWild = activeGoop.definition.isWild;
+                const apCells = activeGoop.cells.map((cell, idx) => {
+                    const color = activeGoop.definition.cellColors?.[idx] ?? activeGoop.definition.color;
+                    const pieceGridX = normalizeX(activeGoop.x + cell.x);
+                    const pieceGridY = activeGoop.y + cell.y;
 
                     let visX = pieceGridX - boardOffset;
                     if (visX > TOTAL_WIDTH / 2) visX -= TOTAL_WIDTH;
@@ -604,10 +604,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                         const yPos = (pieceGridY - BUFFER_HEIGHT) * BLOCK_SIZE;
 
                         const neighbors = {
-                            t: activePiece.cells.some(o => o.x === cell.x && o.y === cell.y - 1),
-                            r: activePiece.cells.some(o => o.x === cell.x + 1 && o.y === cell.y),
-                            b: activePiece.cells.some(o => o.x === cell.x && o.y === cell.y + 1),
-                            l: activePiece.cells.some(o => o.x === cell.x - 1 && o.y === cell.y),
+                            t: activeGoop.cells.some(o => o.x === cell.x && o.y === cell.y - 1),
+                            r: activeGoop.cells.some(o => o.x === cell.x + 1 && o.y === cell.y),
+                            b: activeGoop.cells.some(o => o.x === cell.x && o.y === cell.y + 1),
+                            l: activeGoop.cells.some(o => o.x === cell.x - 1 && o.y === cell.y),
                         };
 
                         return { screenX: startX, screenY: yPos, width, neighbors, color };

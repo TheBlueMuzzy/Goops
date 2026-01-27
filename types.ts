@@ -203,7 +203,7 @@ export interface Complication {
 export interface GameState {
   grid: GridCell[][]; // [y][x]
   boardOffset: number; // 0-TOTAL_WIDTH
-  activePiece: ActivePiece | null;
+  activeGoop: ActivePiece | null;
   storedPiece: GoopTemplate | null;
   nextPiece: GoopTemplate | null;  // Preview of upcoming piece
   score: number;
