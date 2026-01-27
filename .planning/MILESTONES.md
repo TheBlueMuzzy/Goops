@@ -2,10 +2,38 @@
 title: Shipped Milestones
 type: reference
 tags: [milestones, history, shipped]
-updated: 2026-01-26
+updated: 2026-01-27
 ---
 
 # Project Milestones: Goops
+
+## v1.4 Naming Standardization (Shipped: 2026-01-27)
+
+**Delivered:** Official terminology glossary and systematic codebase rename — 50+ variables, types, and functions standardized across 62 files.
+
+**Phases completed:** 22-24 (9 plans total)
+
+**Key accomplishments:**
+
+- Created official GLOSSARY.md with 9 core term categories and usage examples
+- Renamed core types: PieceType → GoopShape, activePiece → activeGoop
+- Standardized tank terminology: GridCell → TankCell, boardOffset → tankRotation
+- Unified progression naming: score → sessionXP, rank → operatorRank, powerUpPoints → scraps
+- Updated complication system: ComplicationType → TankSystem
+- Aligned all UI text with official terminology (HowToPlay, Upgrades, constants)
+
+**Stats:**
+
+- 62 files modified
+- 13,294 lines of TypeScript
+- 3 phases, 9 plans, 43 commits
+- 2 days (Jan 26-27, 2026)
+
+**Git range:** `0a52484` → `29b1cb1`
+
+**What's next:** Next milestone planning (title unlock system, tutorial, or new features)
+
+---
 
 ## v1.3 Shape Changes (Shipped: 2026-01-26)
 

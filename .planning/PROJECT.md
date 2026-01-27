@@ -2,7 +2,7 @@
 title: Project Definition
 type: reference
 tags: [requirements, context, decisions]
-updated: 2026-01-26
+updated: 2026-01-27
 ---
 
 # Goops
@@ -59,6 +59,13 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 - ✓ Mirror system (50% flip for asymmetric pieces)
 - ✓ Snappier fast drop (8x factor)
 
+**v1.4 Naming Standardization:**
+- ✓ Official terminology glossary (GLOSSARY.md)
+- ✓ Core type renames (GoopShape, GoopTemplate, TankCell)
+- ✓ Tank system terminology (tankRotation, tankPressure)
+- ✓ Progression naming (sessionXP, operatorRank, scraps)
+- ✓ UI text alignment (all user-facing text matches glossary)
+
 ### Active
 
 **Research:**
@@ -77,15 +84,15 @@ The game feels satisfying to play on mobile - responsive controls, smooth animat
 
 ## Context
 
-**Current state:** v1.3 shipped. 21 phases, 56 plans complete. ~13,300 lines TypeScript. Version 1.1.13.
+**Current state:** v1.4 shipped. 24 phases, 65 plans complete. ~13,300 lines TypeScript. Version 1.1.13.
 
-**Shipped in v1.3:**
-- Extended game to 75 seconds with 3 time zones (25s each)
-- 54 new polyomino pieces (10 Tetra + 22 Penta + 22 Hexa)
-- Zone-based spawning: Tetra (0-25s) → Penta (25-50s) → Hexa (50-75s)
-- 15% corruption chance (non-contiguous variants)
-- 50% mirror chance for asymmetric pieces
-- Snappier fast drop (8x factor vs 6x)
+**Shipped in v1.4:**
+- Official terminology glossary with 9 core categories
+- 50+ variable/type/function renames across 62 files
+- Core types: PieceType → GoopShape, activePiece → activeGoop
+- Grid system: GridCell → TankCell, boardOffset → tankRotation
+- Progression: score → sessionXP, rank → operatorRank, powerUpPoints → scraps
+- All UI text aligned with official terminology
 
 **Complication System:**
 | Type | Trigger | Player Mitigation | Unlock |
@@ -206,4 +213,4 @@ Progression is organized into bands of 10 ranks. See PRD.md (root) for full deta
 - [[DESIGN_VISION]] - Design philosophy
 
 ---
-*Last updated: 2026-01-26 after v1.3 milestone*
+*Last updated: 2026-01-27 after v1.4 milestone*

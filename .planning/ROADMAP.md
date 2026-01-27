@@ -2,7 +2,7 @@
 title: Roadmap
 type: roadmap
 tags: [milestones, phases, progress]
-updated: 2026-01-26
+updated: 2026-01-27
 ---
 
 # Roadmap: Goops Complications & Progression
@@ -21,7 +21,7 @@ None
 - [[v1.1-ROADMAP|v1.1 Architecture Refactor]] — Phases 8-13 (shipped 2026-01-21)
 - [[v1.2-ROADMAP|v1.2 Progression System]] — Phases 14-20 (shipped 2026-01-25)
 - [[v1.3-ROADMAP|v1.3 Shape Changes]] — Phase 21 (shipped 2026-01-26)
-- 🚧 **v1.4 Naming Standardization** — Phases 22-24 (in progress)
+- [[v1.4-ROADMAP|v1.4 Naming Standardization]] — Phases 22-24 (shipped 2026-01-27)
 
 ## Completed Milestones
 
@@ -105,47 +105,24 @@ See [[v1.3-ROADMAP]] for full details.
 
 </details>
 
----
+<details>
+<summary>v1.4 Naming Standardization (Phases 22-24) — SHIPPED 2026-01-27</summary>
 
-### 🚧 v1.4 Naming Standardization (In Progress)
+- [x] Phase 22: Audit & Glossary (1/1 plans) — completed 2026-01-27
+- [x] Phase 23: Code Rename (7/7 plans) — completed 2026-01-27
+- [x] Phase 24: UI & Documentation (1/1 plans) — completed 2026-01-27
 
-**Milestone Goal:** Clean up terminology inconsistencies and establish official naming conventions throughout the codebase.
+**Total:** 3 phases, 9 plans, 43 commits
 
-#### Phase 22: Audit & Glossary
+**Key accomplishments:**
+- Official terminology glossary with 9 core categories
+- 50+ variable/type/function renames across 62 files
+- Tank, Goop, Operator terminology standardization
+- All UI text aligned with official terms
 
-**Goal**: Catalog all naming inconsistencies across codebase, create official glossary document
-**Depends on**: v1.3 complete
-**Research**: Unlikely (internal analysis)
-**Plans**: 1
+See [[v1.4-ROADMAP]] for full details.
 
-Plans:
-- [x] 22-01: Audit & Glossary — completed 2026-01-27
-
-#### Phase 23: Code Rename
-
-**Goal**: Apply glossary throughout codebase — rename variables, functions, comments
-**Depends on**: Phase 22
-**Research**: Unlikely (refactoring, established patterns)
-**Plans**: 7
-
-Plans:
-- [x] 23-01: softDrop -> fastDrop — completed 2026-01-26
-- [x] 23-02: Core Goop lifecycle (PieceType, activePiece) — completed 2026-01-27
-- [x] 23-03: Tank dimensions & coordinates (TANK_WIDTH, tankRotation, TankCell) — completed 2026-01-27
-- [x] 23-04: TankSystem & actions (ComplicationType, goopGroupId, PopGoopCommand) — completed 2026-01-27
-- [x] 23-05: Progression system (score, rank, powerUpPoints, timing) — completed 2026-01-27
-- [x] 23-06: Screen/Phase types & Cracks (GamePhase, CrackCell) — completed 2026-01-27
-- [x] 23-07: Remaining Goop terms (storedGoop, LooseGoop, tankPressure) — completed 2026-01-27
-
-#### Phase 24: UI & Documentation
-
-**Goal**: Update user-facing text and documentation to use official terms
-**Depends on**: Phase 23
-**Research**: Unlikely (internal patterns)
-**Plans**: 1
-
-Plans:
-- [x] 24-01: UI Text Updates — completed 2026-01-27
+</details>
 
 ---
 
@@ -174,9 +151,9 @@ Plans:
 | 19. Multi-Color Pieces | v1.2 | 3/3 | Complete | 2026-01-24 |
 | 20. Expanding Cracks Overhaul | v1.2 | 1/1 | Complete | 2026-01-25 |
 | 21. Piece Shapes | v1.3 | 3/3 | Shipped | 2026-01-26 |
-| 22. Audit & Glossary | v1.4 | 1/1 | Complete | 2026-01-27 |
-| 23. Code Rename | v1.4 | 7/7 | Complete | 2026-01-27 |
-| 24. UI & Documentation | v1.4 | 1/1 | Complete | 2026-01-27 |
+| 22. Audit & Glossary | v1.4 | 1/1 | Shipped | 2026-01-27 |
+| 23. Code Rename | v1.4 | 7/7 | Shipped | 2026-01-27 |
+| 24. UI & Documentation | v1.4 | 1/1 | Shipped | 2026-01-27 |
 
 ## Related
 

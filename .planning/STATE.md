@@ -19,18 +19,19 @@ updated: 2026-01-27
 
 ## Next Steps
 
-**Current:** v1.4 Naming Standardization — MILESTONE COMPLETE
-**Status:** Phase 24 COMPLETE (1/1 plans), all phases done
+**Current:** v1.4 Naming Standardization — SHIPPED 2026-01-27
+**Status:** Milestone archived and tagged
 
-**Completed this session:**
-- 24-01: UI Text Updates (HowToPlay, Upgrades, constants terminology)
+**Completed:**
+- v1.4 milestone archived to `.planning/milestones/v1.4-ROADMAP.md`
+- All planning docs updated (MILESTONES.md, ROADMAP.md, PROJECT.md)
+- Git tag v1.4 created
 
 **Next:**
-- v1.4 milestone complete - ready for `/gsd:complete-milestone`
+- Plan next milestone (`/gsd:discuss-milestone` or `/gsd:new-milestone`)
+- Options: title unlock system, tutorial system, sound design, or new features
 
-**Resume command:** `/gsd:complete-milestone`
-
-**Key reference:** `.planning/GLOSSARY.md` has the complete migration table.
+**Resume command:** `/gsd:discuss-milestone`
 
 ## Future Plans
 
@@ -48,21 +49,34 @@ updated: 2026-01-27
 
 ## Project Reference
 
-See: [[PROJECT]] (updated 2026-01-26)
+See: [[PROJECT]] (updated 2026-01-27)
 
 **Core value:** The game feels satisfying to play on mobile - responsive controls, smooth animations, no input lag.
-**Current focus:** v1.3 shipped — ready for next milestone planning
+**Current focus:** v1.4 shipped — ready for next milestone planning
 
 ## Current Position
 
-Phase: 24 of 24 (UI & Documentation) — COMPLETE
-Plan: 1 of 1 in current phase — ALL DONE
-Status: v1.4 MILESTONE COMPLETE
-Last activity: 2026-01-27 — Completed 24-01-PLAN.md (UI Text Updates)
+Phase: 24 of 24 (UI & Documentation) — SHIPPED
+Plan: All plans complete
+Status: v1.4 MILESTONE SHIPPED
+Last activity: 2026-01-27 — Archived v1.4 milestone
 
-Progress: ██████████ 100% (v1.4 Naming Standardization)
+Progress: ██████████ 100% (v1.4 Naming Standardization) — SHIPPED
 
 ## What's Done
+
+### v1.4 Naming Standardization (Shipped 2026-01-27)
+
+Codebase terminology cleanup with official glossary.
+
+Key features:
+- Official GLOSSARY.md with 9 core term categories
+- 50+ variable/type/function renames across 62 files
+- Core: GoopShape, GoopTemplate, TankCell, tankRotation
+- Progression: sessionXP, operatorRank, scraps
+- All UI text aligned with official terminology
+
+See [[v1.4-ROADMAP]] for full details.
 
 ### v1.3 Shape Changes (Shipped 2026-01-26)
 
@@ -183,8 +197,8 @@ All three complications have player-driven triggers AND mitigations.
 
 Last session: 2026-01-27
 **Version:** 1.1.13
-**Branch:** phase-23-01-code-rename
-**Milestone:** v1.4 Naming Standardization (Phase 23 COMPLETE, Phase 24 pending)
+**Branch:** phase-23-01-code-rename (ready to merge)
+**Milestone:** v1.4 Naming Standardization — SHIPPED
 
 ### This Session Summary (2026-01-27)
 
