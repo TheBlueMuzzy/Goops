@@ -1,7 +1,7 @@
 
 import { GameState, TankCell, ActivePiece, GoopTemplate, FallingBlock, ScoreBreakdown, GameStats, FloatingText, GoalMark, CrackCell, GamePhase, GoopState, GoopShape, Complication, TankSystem, DumpPiece } from '../types';
 import {
-    TANK_WIDTH, TANK_HEIGHT, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, INITIAL_TIME_MS,
+    TANK_WIDTH, TANK_HEIGHT, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, SESSION_DURATION,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS,
     PIECES,
     TETRA_NORMAL, TETRA_CORRUPTED,
@@ -28,7 +28,7 @@ import { UPGRADES } from '../constants';
 import { goalManager } from './GoalManager';
 import { CrackManager } from './CrackManager';
 
-const INITIAL_SPEED = 780; // ms per block
+const ACTIVE_GOOP_SPEED = 780; // ms per block
 const MIN_SPEED = 100;
 const FAST_DROP_FACTOR = 8; // Snappier fast drop for new piece system
 const LOCK_DELAY_MS = 500;
@@ -42,7 +42,7 @@ export class GameEngine {
     private listeners: Set<() => void> = new Set();
     
     // Internal state tracking - Public for Commands to access
-    public maxTime: number = INITIAL_TIME_MS;
+    public maxTime: number = SESSION_DURATION;
     public lockStartTime: number | null = null;
     public lockResetCount: number = 0;  // Move reset counter (max 10 resets before force lock)
     public lastGoalSpawnTime: number = 0;
@@ -117,7 +117,7 @@ export class GameEngine {
             fallingBlocks: [],
             dumpPieces: [],
             dumpQueue: [],
-            sessionTime: INITIAL_TIME_MS,
+            sessionTime: SESSION_DURATION,
             scoreBreakdown: { base: 0, height: 0, offscreen: 0, adjacency: 0, speed: 0 },
             gameStats: { startTime: 0, totalBonusTime: 0, maxGroupSize: 0 },
             floatingTexts: [],
@@ -171,7 +171,7 @@ export class GameEngine {
 
     private applyUpgrades() {
         // Base time from constants
-        let baseTime = INITIAL_TIME_MS;
+        let baseTime = SESSION_DURATION;
 
         // PRESSURE_CONTROL: +5 seconds per level (max 8 levels = +40s)
         const pressureLevel = this.powerUps['PRESSURE_CONTROL'] || 0;
@@ -1031,7 +1031,7 @@ export class GameEngine {
     private tickFallingBlocks(dt: number): void {
         if (this.state.fallingBlocks.length === 0) return;
 
-        const gameSpeed = INITIAL_SPEED;
+        const gameSpeed = ACTIVE_GOOP_SPEED;
         const { active, landed } = updateFallingBlocks(this.state.fallingBlocks, this.state.grid, dt, gameSpeed);
 
         if (landed.length > 0) {
@@ -1163,7 +1163,7 @@ export class GameEngine {
         // DENSE_GOOP: +12.5% fall speed per level (reduces interval between drops)
         const denseLevel = this.powerUps['DENSE_GOOP'] || 0;
         const speedMultiplier = 1 + (denseLevel * 0.125); // 1.0, 1.125, 1.25, 1.375, 1.5
-        const adjustedSpeed = INITIAL_SPEED / speedMultiplier;
+        const adjustedSpeed = ACTIVE_GOOP_SPEED / speedMultiplier;
 
         const gravitySpeed = this.isFastDropping
             ? adjustedSpeed / FAST_DROP_FACTOR

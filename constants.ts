@@ -19,7 +19,7 @@ export const BASE_FILL_DURATION = 0; // Base time
 export const PER_BLOCK_DURATION = 375;  // Extra time per block in group
 
 // Timer Constants
-export const INITIAL_TIME_MS = 75 * 1000;
+export const SESSION_DURATION = 75 * 1000;
 
 // Piece size zone thresholds (based on pressure row)
 // Pressure rises from bottom (row 0) toward top as time elapses
