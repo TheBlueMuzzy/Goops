@@ -116,10 +116,10 @@ See [[v1.3-ROADMAP]] for full details.
 **Goal**: Catalog all naming inconsistencies across codebase, create official glossary document
 **Depends on**: v1.3 complete
 **Research**: Unlikely (internal analysis)
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
-- [ ] 22-01: TBD (run /gsd:plan-phase 22 to break down)
+- [x] 22-01: Audit & Glossary — completed 2026-01-27
 
 #### Phase 23: Code Rename
 
@@ -168,7 +168,7 @@ Plans:
 | 19. Multi-Color Pieces | v1.2 | 3/3 | Complete | 2026-01-24 |
 | 20. Expanding Cracks Overhaul | v1.2 | 1/1 | Complete | 2026-01-25 |
 | 21. Piece Shapes | v1.3 | 3/3 | Shipped | 2026-01-26 |
-| 22. Audit & Glossary | v1.4 | 0/? | Not started | - |
+| 22. Audit & Glossary | v1.4 | 1/1 | Complete | 2026-01-27 |
 | 23. Code Rename | v1.4 | 0/? | Not started | - |
 | 24. UI & Documentation | v1.4 | 0/? | Not started | - |
 
