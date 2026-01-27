@@ -19,7 +19,7 @@ export const BASE_FILL_DURATION = 0; // Base time
 export const PER_BLOCK_DURATION = 375;  // Extra time per block in group
 
 // Timer Constants
-export const INITIAL_TIME_MS = 60 * 1000;
+export const INITIAL_TIME_MS = 75 * 1000;
 
 // Rotation tracking (for CONTROLS heat detection)
 export const ROTATION_BUFFER_SIZE = 30; // Max rotations tracked (circular buffer)

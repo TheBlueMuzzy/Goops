@@ -24,9 +24,9 @@ import { UPGRADES } from '../constants';
 import { goalManager } from './GoalManager';
 import { CrackManager } from './CrackManager';
 
-const INITIAL_SPEED = 800; // ms per block
+const INITIAL_SPEED = 780; // ms per block
 const MIN_SPEED = 100;
-const SOFT_DROP_FACTOR = 6; // Reduced from 20 to make it feel less like a hard drop
+const SOFT_DROP_FACTOR = 8; // Snappier fast drop for new piece system
 const LOCK_DELAY_MS = 500;
 
 // Dump piece constants (GOOP_DUMP ability)
