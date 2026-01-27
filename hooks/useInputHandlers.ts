@@ -27,7 +27,7 @@ interface UseInputHandlersParams {
     callbacks: InputCallbacks;
     tankRotation: number;
     grid: (TankCell | null)[][];
-    pressureRatio: number;
+    tankPressure: number;
     powerUps?: Record<string, number>; // For GOOP_SWAP upgrade effect
 }
 
@@ -44,7 +44,7 @@ export function useInputHandlers({
     callbacks,
     tankRotation,
     grid,
-    pressureRatio,
+    tankPressure,
     powerUps
 }: UseInputHandlersParams): UseInputHandlersReturn {
     // Destructure optional callbacks
@@ -193,7 +193,7 @@ export function useInputHandlers({
         if (hit.type === 'BLOCK' && hit.cell) {
             const totalDuration = hit.cell.groupSize * PER_BLOCK_DURATION;
             const elapsed = Date.now() - hit.cell.timestamp;
-            const thresholdY = (TANK_HEIGHT - 1) - (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
+            const thresholdY = (TANK_HEIGHT - 1) - (tankPressure * (TANK_VIEWPORT_HEIGHT - 1));
 
             if (hit.cell.groupMinY < thresholdY) {
                 setShakingGroupId(hit.cell.goopGroupId);
@@ -207,7 +207,7 @@ export function useInputHandlers({
                 setHighlightedGroupId(hit.cell.goopGroupId);
             }
         }
-    }, [getViewportCoords, getHitData, pressureRatio, clearHold, holdDuration]);
+    }, [getViewportCoords, getHitData, tankPressure, clearHold, holdDuration]);
 
     /**
      * Handle pointer move - detect drag direction and apply input.
@@ -404,7 +404,7 @@ export function useInputHandlers({
         if (hit.type === 'BLOCK' && hit.cell) {
             const totalDuration = hit.cell.groupSize * PER_BLOCK_DURATION;
             const elapsed = Date.now() - hit.cell.timestamp;
-            const thresholdY = (TANK_HEIGHT - 1) - (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
+            const thresholdY = (TANK_HEIGHT - 1) - (tankPressure * (TANK_VIEWPORT_HEIGHT - 1));
 
             if (hit.cell.groupMinY < thresholdY) {
                 setShakingGroupId(hit.cell.goopGroupId);
@@ -544,7 +544,7 @@ export function useInputHandlers({
         window.addEventListener('touchend', handleEnd);
         window.addEventListener('touchcancel', handleEnd);
 
-    }, [getViewportCoords, getHitData, pressureRatio, clearHold, holdDuration, onSwap, onFastDrop, onDragInput, onBlockTap, onRotate, onSwipeUp, removeTouchListeners]);
+    }, [getViewportCoords, getHitData, tankPressure, clearHold, holdDuration, onSwap, onFastDrop, onDragInput, onBlockTap, onRotate, onSwipeUp, removeTouchListeners]);
 
     // Cleanup listeners on unmount
     useEffect(() => {

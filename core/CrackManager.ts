@@ -12,7 +12,7 @@ export class CrackManager {
     /**
      * Tick crack growth for rank 30+ (Expanding Cracks mechanic).
      * Uses per-cell timers with random 3-5s intervals.
-     * Spread chance = 10% base + pressureRatio, with leaf penalty.
+     * Spread chance = 10% base + tankPressure, with leaf penalty.
      * Supports 8-direction spread and same-color merge.
      *
      * All parameters passed fresh each tick to avoid stale references after startRun().
@@ -55,8 +55,8 @@ export class CrackManager {
             cell.crackBranchInterval = 5000 + Math.random() * 5000; // Random 7-12s
 
             // Calculate spread chance
-            const pressureRatio = Math.max(0, 1 - (state.sessionTime / maxTime));
-            const baseChance = Math.min(1.0, 0.10 + pressureRatio);
+            const tankPressure = Math.max(0, 1 - (state.sessionTime / maxTime));
+            const baseChance = Math.min(1.0, 0.10 + tankPressure);
 
             // Apply SLOW_CRACKS offset: -5% per level
             const slowCracksLevel = powerUps['SLOW_CRACKS'] || 0;
@@ -165,7 +165,7 @@ export class CrackManager {
                     spawnTime: newCrack.spawnTime
                 });
 
-                console.log(`Crack grew: ${cell.id} -> ${newCrack.id} at (${target.x}, ${target.y}), pressure: ${(pressureRatio * 100).toFixed(1)}%, chance: ${(effectiveChance * 100).toFixed(1)}%`);
+                console.log(`Crack grew: ${cell.id} -> ${newCrack.id} at (${target.x}, ${target.y}), pressure: ${(tankPressure * 100).toFixed(1)}%, chance: ${(effectiveChance * 100).toFixed(1)}%`);
             }
         }
     }

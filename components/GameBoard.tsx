@@ -45,15 +45,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const palette = useMemo(() => getPaletteForRank(rank), [rank]);
 
   // --- Derived Values ---
-  const pressureRatio = useMemo(() => {
+  const tankPressure = useMemo(() => {
     if (timeLeft <= 0) return 1;
     return Math.max(0, 1 - (timeLeft / maxTime));
   }, [timeLeft, maxTime]);
 
-  const pressureHue = Math.max(0, 120 * (1 - pressureRatio));
+  const pressureHue = Math.max(0, 120 * (1 - tankPressure));
   const pressureColor = `hsla(${pressureHue}, 100%, 50%, 0.15)`;
 
-  const waterHeightBlocks = 1 + (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
+  const waterHeightBlocks = 1 + (tankPressure * (TANK_VIEWPORT_HEIGHT - 1));
 
   // ViewBox values from module-level constants (no useMemo needed - these never change)
   const { x: vbX, y: vbY, w: vbW, h: vbH } = VIEWBOX;
@@ -82,7 +82,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       callbacks: {}, // Callbacks optional - events emitted regardless
       tankRotation,
       grid,
-      pressureRatio,
+      tankPressure,
       powerUps  // For GOOP_SWAP: reduces hold-to-swap duration
   });
 

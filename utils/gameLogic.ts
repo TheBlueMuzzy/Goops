@@ -604,8 +604,8 @@ export const spawnGoalMark = (
         spawnY = minY + Math.floor(Math.random() * (maxY - minY + 1));
     } else {
         // Normal spawning: Calculate Pressure Line Y index
-        const pressureRatio = Math.max(0, 1 - (timeLeft / maxTime));
-        const waterHeightBlocks = 1 + (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
+        const tankPressure = Math.max(0, 1 - (timeLeft / maxTime));
+        const waterHeightBlocks = 1 + (tankPressure * (TANK_VIEWPORT_HEIGHT - 1));
         const pressureLineY = Math.floor(TANK_HEIGHT - waterHeightBlocks);
 
         // Valid Y range: [pressureLineY, TANK_HEIGHT - 1]
@@ -644,8 +644,8 @@ export const spawnGoalBurst = (
     const currentMarks = [...existingMarks];
 
     // Calculate Pressure Line Y
-    const pressureRatio = Math.max(0, 1 - (timeLeft / maxTime));
-    const waterHeightBlocks = 1 + (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
+    const tankPressure = Math.max(0, 1 - (timeLeft / maxTime));
+    const waterHeightBlocks = 1 + (tankPressure * (TANK_VIEWPORT_HEIGHT - 1));
     const pressureLineY = Math.floor(TANK_HEIGHT - waterHeightBlocks);
     
     // Spawn area: Above pressure line (y < pressureLineY), but within buffer/visible

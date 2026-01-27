@@ -254,8 +254,8 @@ export class PopGoopCommand implements Command {
          const cell = engine.state.grid[this.y][this.x];
          if (!cell) return;
          
-         const pressureRatio = Math.max(0, 1 - (engine.state.sessionTime / engine.maxTime));
-         const thresholdY = (TANK_HEIGHT - 1) - (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
+         const tankPressure = Math.max(0, 1 - (engine.state.sessionTime / engine.maxTime));
+         const thresholdY = (TANK_HEIGHT - 1) - (tankPressure * (TANK_VIEWPORT_HEIGHT - 1));
          
          if (cell.groupMinY < thresholdY) {
              gameEventBus.emit(GameEventType.ACTION_REJECTED);
@@ -417,10 +417,10 @@ export class PopGoopCommand implements Command {
             // Burst Logic
             if (infusedCount > 0) {
                 if (engine.state.goalsCleared >= engine.state.goalsTarget) {
-                     const pressureRatio = Math.max(0, 1 - (engine.state.sessionTime / engine.maxTime));
+                     const tankPressure = Math.max(0, 1 - (engine.state.sessionTime / engine.maxTime));
                      const currentRank = calculateRankDetails(engine.initialTotalScore + engine.state.sessionXP).rank;
 
-                     if (pressureRatio < 0.9) {
+                     if (tankPressure < 0.9) {
                          const burst = spawnGoalBurst(cleanGrid, engine.state.goalMarks, currentRank, engine.state.sessionTime, engine.maxTime);
                          engine.state.goalMarks.push(...burst);
                          gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });

@@ -17,9 +17,9 @@ export const Controls: React.FC<ControlsProps> = ({
   const { score, gameOver, combo, timeLeft } = state;
   
   // Timer Formatting (Pressure)
-  const pressureRatio = Math.max(0, Math.min(1, 1 - (timeLeft / maxTime)));
-  const isHighPressure = pressureRatio > 0.8;
-  const isCriticalPressure = pressureRatio > 0.9;
+  const tankPressure = Math.max(0, Math.min(1, 1 - (timeLeft / maxTime)));
+  const isHighPressure = tankPressure > 0.8;
+  const isCriticalPressure = tankPressure > 0.9;
   
   return (
     <>
@@ -36,7 +36,7 @@ export const Controls: React.FC<ControlsProps> = ({
               <span className="text-[10px] uppercase font-bold tracking-widest mb-0.5 text-slate-400/90">Pressure</span>
               <div className={`flex items-baseline gap-1 ${isHighPressure ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
                   <Activity className="w-5 h-5 opacity-90" />
-                  <span className="text-4xl font-mono font-black leading-none tracking-tighter">{(pressureRatio * 100).toFixed(0)}%</span>
+                  <span className="text-4xl font-mono font-black leading-none tracking-tighter">{(tankPressure * 100).toFixed(0)}%</span>
               </div>
           </div>
 
