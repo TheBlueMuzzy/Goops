@@ -133,7 +133,7 @@ Plans:
 - [x] 23-02: Core Goop lifecycle (PieceType, activePiece) — completed 2026-01-27
 - [x] 23-03: Tank dimensions & coordinates (TANK_WIDTH, tankRotation, TankCell) — completed 2026-01-27
 - [x] 23-04: TankSystem & actions (ComplicationType, goopGroupId, PopGoopCommand) — completed 2026-01-27
-- [ ] 23-05: Progression system (score, rank, powerUpPoints, timing)
+- [x] 23-05: Progression system (score, rank, powerUpPoints, timing) — completed 2026-01-27
 - [ ] 23-06: Screen/Phase types & Cracks (GamePhase, CrackCell)
 - [ ] 23-07: Remaining Goop terms (storedPiece, FallingBlock, pressure)
 
@@ -175,7 +175,7 @@ Plans:
 | 20. Expanding Cracks Overhaul | v1.2 | 1/1 | Complete | 2026-01-25 |
 | 21. Piece Shapes | v1.3 | 3/3 | Shipped | 2026-01-26 |
 | 22. Audit & Glossary | v1.4 | 1/1 | Complete | 2026-01-27 |
-| 23. Code Rename | v1.4 | 3/7 | In progress | - |
+| 23. Code Rename | v1.4 | 5/7 | In progress | - |
 | 24. UI & Documentation | v1.4 | 0/? | Not started | - |
 
 ## Related
