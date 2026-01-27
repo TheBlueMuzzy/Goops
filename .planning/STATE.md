@@ -19,16 +19,16 @@ updated: 2026-01-27
 
 ## Next Steps
 
-**Current:** v1.4 Naming Standardization — Phase 24 (UI & Documentation)
-**Status:** Phase 23 COMPLETE (7/7 plans), Phase 24 not started
+**Current:** v1.4 Naming Standardization — MILESTONE COMPLETE
+**Status:** Phase 24 COMPLETE (1/1 plans), all phases done
 
 **Completed this session:**
-- 23-07: Remaining Goop terms (storedGoop, nextGoop, LooseGoop, GoopBlock, isSealingGoop, tankPressure)
+- 24-01: UI Text Updates (HowToPlay, Upgrades, constants terminology)
 
 **Next:**
-- Phase 24 planning (UI & Documentation) - update user-facing text to use official terms
+- v1.4 milestone complete - ready for `/gsd:complete-milestone`
 
-**Resume command:** `/gsd:plan-phase 24`
+**Resume command:** `/gsd:complete-milestone`
 
 **Key reference:** `.planning/GLOSSARY.md` has the complete migration table.
 
@@ -55,12 +55,12 @@ See: [[PROJECT]] (updated 2026-01-26)
 
 ## Current Position
 
-Phase: 23 of 24 (Code Rename) — COMPLETE
-Plan: 7 of 7 in current phase — ALL DONE
-Status: Ready for Phase 24
-Last activity: 2026-01-27 — Completed 23-07-PLAN.md (Remaining Goop Terms)
+Phase: 24 of 24 (UI & Documentation) — COMPLETE
+Plan: 1 of 1 in current phase — ALL DONE
+Status: v1.4 MILESTONE COMPLETE
+Last activity: 2026-01-27 — Completed 24-01-PLAN.md (UI Text Updates)
 
-Progress: █████████░ 90% (v1.4 Naming Standardization)
+Progress: ██████████ 100% (v1.4 Naming Standardization)
 
 ## What's Done
 
@@ -187,6 +187,15 @@ Last session: 2026-01-27
 **Milestone:** v1.4 Naming Standardization (Phase 23 COMPLETE, Phase 24 pending)
 
 ### This Session Summary (2026-01-27)
+
+**24-01 UI Text Updates Complete — v1.4 MILESTONE COMPLETE**
+
+Updated all user-facing text to official terminology:
+- HowToPlay.tsx: Hold Piece → Held Goop, Points → XP, Power Points → Scraps
+- Upgrades.tsx: POWER UPS → UPGRADES, Level → Rank
+- constants.ts: points → scraps, grammar fixes
+
+3 files modified, 151 tests pass, TypeScript compiles clean.
 
 **23-07 Remaining Goop Terms Complete — PHASE 23 COMPLETE**
 

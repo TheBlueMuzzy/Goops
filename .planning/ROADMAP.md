@@ -142,10 +142,10 @@ Plans:
 **Goal**: Update user-facing text and documentation to use official terms
 **Depends on**: Phase 23
 **Research**: Unlikely (internal patterns)
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
-- [ ] 24-01: TBD
+- [x] 24-01: UI Text Updates — completed 2026-01-27
 
 ---
 
@@ -176,7 +176,7 @@ Plans:
 | 21. Piece Shapes | v1.3 | 3/3 | Shipped | 2026-01-26 |
 | 22. Audit & Glossary | v1.4 | 1/1 | Complete | 2026-01-27 |
 | 23. Code Rename | v1.4 | 7/7 | Complete | 2026-01-27 |
-| 24. UI & Documentation | v1.4 | 0/? | Not started | - |
+| 24. UI & Documentation | v1.4 | 1/1 | Complete | 2026-01-27 |
 
 ## Related
 
