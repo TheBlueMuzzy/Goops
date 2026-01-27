@@ -137,7 +137,7 @@ export const UPGRADES = {
   DENSE_GOOP: {
     id: 'DENSE_GOOP',
     name: 'Dense Goop',
-    desc: 'Goop falls faster. Can add or remove points via respec.',
+    desc: 'Goop falls faster. Can add or remove scraps via respec.',
     type: 'passive' as const,
     unlockRank: 8,
     costPerLevel: 1,
@@ -235,7 +235,7 @@ export const UPGRADES = {
   GOOP_HOLD_VIEWER: {
     id: 'GOOP_HOLD_VIEWER',
     name: 'Goop Hold Viewer',
-    desc: 'Shows the goop currently in holding.',
+    desc: 'Shows the goop currently held.',
     type: 'feature' as const,
     unlockRank: 22,
     costPerLevel: 1,
@@ -248,7 +248,7 @@ export const UPGRADES = {
   GOOP_COLORIZER: {
     id: 'GOOP_COLORIZER',
     name: 'Goop Colorizer',
-    desc: 'When activated, upcoming goop match your current color.',
+    desc: 'When activated, upcoming goop matches your current color.',
     type: 'active' as const,
     unlockRank: 25,
     costPerLevel: 1,
