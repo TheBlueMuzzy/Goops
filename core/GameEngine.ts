@@ -214,9 +214,15 @@ export class GameEngine {
         const palette = getPaletteForRank(startRank);
         const newTarget = palette.length + startRank;
 
-        // Generate next piece for preview
+        // At game start (elapsed time = 0), getPiecePoolByZone() returns Tetra pool
+        // Generate next piece for preview using zone-based selection
         const nextColor = palette[Math.floor(Math.random() * palette.length)];
         const shouldSplit = startRank >= 20 && Math.random() < 0.25;
+
+        // Use Tetra pool directly for start (elapsed time = 0)
+        const startPool = Math.random() < CORRUPTION_CHANCE ? TETRA_CORRUPTED : TETRA_NORMAL;
+        const startPieceIndex = Math.floor(Math.random() * startPool.length);
+        const startBasePiece = this.maybeApplyMirror({ ...startPool[startPieceIndex] });
 
         let nextPieceDef: PieceDefinition;
         if (shouldSplit) {
@@ -225,16 +231,21 @@ export class GameEngine {
             const secondColor = otherColors[Math.floor(Math.random() * otherColors.length)];
 
             const basePiece = {
-                ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                ...startBasePiece,
                 color: nextColor
             };
             nextPieceDef = splitPiece(basePiece, nextColor, secondColor);
         } else {
             nextPieceDef = {
-                ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                ...startBasePiece,
                 color: nextColor
             };
         }
+
+        // Stored piece also uses Tetra pool at game start
+        const storedPool = Math.random() < CORRUPTION_CHANCE ? TETRA_CORRUPTED : TETRA_NORMAL;
+        const storedPieceIndex = Math.floor(Math.random() * storedPool.length);
+        const storedBasePiece = this.maybeApplyMirror({ ...storedPool[storedPieceIndex] });
 
         this.state = {
             ...this.state,
@@ -245,7 +256,7 @@ export class GameEngine {
             isPaused: false,
             activePiece: null,
             storedPiece: {
-                ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                ...storedBasePiece,
                 color: palette[Math.floor(Math.random() * palette.length)]
             },
             nextPiece: nextPieceDef,
@@ -652,6 +663,11 @@ export class GameEngine {
                     console.log(`CRACK_MATCHER: Biased next piece to ${nextColor} (lowest crack at y=${lowestCrack.y})`);
                 }
             }
+            // Zone-based piece selection with corruption and mirroring
+            const pool = this.getPiecePoolByZone();
+            const pieceIndex = Math.floor(Math.random() * pool.length);
+            const basePieceDef = this.maybeApplyMirror({ ...pool[pieceIndex] });
+
             // Multi-color split: 25% chance at rank 20+
             const shouldSplit = currentRank >= 20 && Math.random() < 0.25;
 
@@ -662,21 +678,24 @@ export class GameEngine {
                 const secondColor = otherColors[Math.floor(Math.random() * otherColors.length)];
 
                 const basePiece = {
-                    ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                    ...basePieceDef,
                     color: nextColor
                 };
                 newNext = splitPiece(basePiece, nextColor, secondColor);
             } else {
                 newNext = {
-                    ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                    ...basePieceDef,
                     color: nextColor
                 };
             }
 
             // Wild piece chance: 15% at rank 40+ (overrides split/color if triggered)
             if (currentRank >= 40 && Math.random() < 0.15) {
+                // Wild pieces use zone-based shape selection too
+                const wildPool = this.getPiecePoolByZone();
+                const wildPieceIndex = Math.floor(Math.random() * wildPool.length);
                 newNext = {
-                    ...PIECES[Math.floor(Math.random() * PIECES.length)],
+                    ...this.maybeApplyMirror({ ...wildPool[wildPieceIndex] }),
                     color: COLORS.WILD,
                     isWild: true
                 };
