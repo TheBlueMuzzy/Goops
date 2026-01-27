@@ -19,26 +19,22 @@ updated: 2026-01-27
 
 ## Next Steps
 
-**Current:** v1.4 Naming Standardization — SHIPPED 2026-01-27
-**Status:** Milestone shipped + hotfix deployed
+**Current:** v1.5 Visual Terminology & Grade System — SHIPPED 2026-01-27
+**Status:** Milestone complete, deploying now
 
 **Completed:**
-- v1.4 milestone archived to `.planning/milestones/v1.4-ROADMAP.md`
-- All planning docs updated (MILESTONES.md, ROADMAP.md, PROJECT.md)
-- Git tag v1.4 created
-- **Hotfix:** Fixed rename regressions (Build #42)
-  - Controls.tsx: score→sessionXP, combo→popStreak, timeLeft→sessionTime
-  - GameBoard.tsx: timeLeft→sessionTime for pressure line
-  - actions.ts: falling→looseGoop destructuring
-  - GameEngine.ts: sessionXPBreakdown→scoreBreakdown
-  - Removed bogus importmap from index.html
-  - Removed debug console.logs
+- Phase 25: Variable renames (sessionXP→shiftScore, operatorXP→careerScore, SESSION_DURATION→SHIFT_DURATION)
+- Phase 26: UI text updates (SHIFT OVER, GRADE, Scraps, TOOLS/SYSTEMS/UTILITY tabs)
+- Phase 27: Grade system (A/B/C/FAILURE based on 5 categories)
+- Phase 28: Dynamic text (floating %, periscope alternation, REPAIR titles)
+- Critical bug fix: Loose goop now properly removes cracks from crackCells
+- UI polish: Button sizing, text alignment, font sizes
 
 **Next:**
-- Plan next milestone (`/gsd:discuss-milestone` or `/gsd:new-milestone`)
-- Options: title unlock system, tutorial system, sound design, or new features
+- XP bar redesign (pending discussion with user)
+- Pressure vented % logic tweaks (pending discussion)
 
-**Resume command:** `/gsd:discuss-milestone`
+**Resume command:** Continue XP bar discussion
 
 ## Future Plans
 
@@ -63,12 +59,12 @@ See: [[PROJECT]] (updated 2026-01-27)
 
 ## Current Position
 
-Phase: 24 of 24 (UI & Documentation) — SHIPPED
+Phase: 28 of 28 (Dynamic Text Updates) — SHIPPED
 Plan: All plans complete
-Status: v1.4 MILESTONE SHIPPED
-Last activity: 2026-01-27 — Archived v1.4 milestone
+Status: v1.5 MILESTONE SHIPPED
+Last activity: 2026-01-27 — Deployed v1.5
 
-Progress: ██████████ 100% (v1.4 Naming Standardization) — SHIPPED
+Progress: ██████████ 100% (v1.5 Visual Terminology & Grade System) — SHIPPED
 
 ## What's Done
 
@@ -204,12 +200,25 @@ All three complications have player-driven triggers AND mitigations.
 
 Last session: 2026-01-27
 **Version:** 1.1.13
-**Branch:** phase-23-01-code-rename (ready to merge)
-**Milestone:** v1.4 Naming Standardization — SHIPPED
+**Branch:** phase-23-01-code-rename (merging to master)
+**Milestone:** v1.5 Visual Terminology & Grade System — SHIPPED
 
 ### This Session Summary (2026-01-27)
 
-**24-01 UI Text Updates Complete — v1.4 MILESTONE COMPLETE**
+**v1.5 Visual Terminology & Grade System — COMPLETE**
+
+Implemented Shift/Career terminology and grade system:
+- **Variable renames:** sessionXP→shiftScore, sessionTime→shiftTime, operatorXP→careerScore
+- **Storage migration:** v2→v3 with backward compatibility
+- **UI text overhaul:** SHIFT OVER, GRADE: A/B/C, SHIFT SCORE, Scraps, STORED
+- **Grade system:** 5 categories (Crack, Tank, System, Pressure, Score) averaged for letter grade
+- **Dynamic text:** Floating pressure %, periscope alternation, REPAIR titles
+- **Bug fix:** Loose goop now removes cracks from both goalMarks AND crackCells
+- **UI polish:** UPGRADES button (centered, resized), SCRAPS: XX format, text alignment
+
+26 files modified, 151 tests pass.
+
+**Previous: 24-01 UI Text Updates Complete — v1.4 MILESTONE COMPLETE**
 
 Updated all user-facing text to official terminology:
 - HowToPlay.tsx: Hold Piece → Held Goop, Points → XP, Power Points → Scraps

@@ -1,11 +1,12 @@
 
 import { SaveData } from '../types';
 
-const STORAGE_KEY = 'gooptris_save_v2';
+const STORAGE_KEY = 'gooptris_save_v3';
+const LEGACY_KEY_V2 = 'gooptris_save_v2';
 
 export const getDefaultSaveData = (): SaveData => ({
-  operatorRank: 1,
-  operatorXP: 0,
+  careerRank: 1,
+  careerScore: 0,
   scraps: 0,
   powerUps: {},
   equippedActives: [],      // No actives equipped by default
@@ -20,10 +21,47 @@ export const getDefaultSaveData = (): SaveData => ({
   }
 });
 
+/**
+ * Migrate v2 save data (operatorXP/operatorRank) to v3 (careerScore/careerRank)
+ */
+const migrateV2toV3 = (v2Data: Record<string, unknown>): Record<string, unknown> => {
+  const migrated: Record<string, unknown> = { ...v2Data };
+
+  // Rename operatorXP → careerScore
+  if ('operatorXP' in migrated) {
+    migrated.careerScore = migrated.operatorXP;
+    delete migrated.operatorXP;
+  }
+
+  // Rename operatorRank → careerRank
+  if ('operatorRank' in migrated) {
+    migrated.careerRank = migrated.operatorRank;
+    delete migrated.operatorRank;
+  }
+
+  return migrated;
+};
+
 export const loadSaveData = (): SaveData => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    // Try loading v3 first
+    let raw = localStorage.getItem(STORAGE_KEY);
     const defaults = getDefaultSaveData();
+
+    // If no v3 data, check for v2 migration
+    if (!raw) {
+      const legacyRaw = localStorage.getItem(LEGACY_KEY_V2);
+      if (legacyRaw) {
+        const legacyParsed = JSON.parse(legacyRaw);
+        const migrated = migrateV2toV3(legacyParsed);
+
+        // Save as v3 and remove v2
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        localStorage.removeItem(LEGACY_KEY_V2);
+
+        raw = JSON.stringify(migrated);
+      }
+    }
 
     if (!raw) return defaults;
 

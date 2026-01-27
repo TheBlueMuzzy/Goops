@@ -23,7 +23,7 @@ import { SpinTankCommand, RotateGoopCommand, SetFastDropCommand, SwapPieceComman
 
 interface GameProps {
   onExit: () => void;
-  onRunComplete: (sessionXP: number) => void;
+  onRunComplete: (shiftScore: number) => void;
   initialTotalScore: number;
   powerUps?: Record<string, number>;
   scraps: number;
@@ -78,7 +78,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   // Sync Score on Game Over
   useEffect(() => {
       if (gameState.gameOver && gameState.phase === ScreenType.ConsoleScreen) {
-          onRunComplete(gameState.sessionXP);
+          onRunComplete(gameState.shiftScore);
       }
   }, [gameState.gameOver]);
 
@@ -342,7 +342,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           <ConsoleView
             engine={engine}
             state={gameState}
-            operatorXP={initialTotalScore}
+            careerScore={initialTotalScore}
             scraps={scraps}
             powerUps={powerUps}
             onOpenSettings={onOpenSettings}

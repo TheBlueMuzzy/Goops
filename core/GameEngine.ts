@@ -1,7 +1,7 @@
 
 import { GameState, TankCell, ActivePiece, GoopTemplate, LooseGoop, ScoreBreakdown, GameStats, FloatingText, GoalMark, Crack, ScreenType, GoopState, GoopShape, Complication, TankSystem, DumpPiece } from '../types';
 import {
-    TANK_WIDTH, TANK_HEIGHT, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, SESSION_DURATION,
+    TANK_WIDTH, TANK_HEIGHT, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, SHIFT_DURATION,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS,
     PIECES,
     TETRA_NORMAL, TETRA_CORRUPTED,
@@ -42,7 +42,7 @@ export class GameEngine {
     private listeners: Set<() => void> = new Set();
     
     // Internal state tracking - Public for Commands to access
-    public maxTime: number = SESSION_DURATION;
+    public maxTime: number = SHIFT_DURATION;
     public lockStartTime: number | null = null;
     public lockResetCount: number = 0;  // Move reset counter (max 10 resets before force lock)
     public lastGoalSpawnTime: number = 0;
@@ -107,7 +107,7 @@ export class GameEngine {
             activeGoop: null,
             storedGoop: null,
             nextGoop: null,
-            sessionXP: 0,
+            shiftScore: 0,
             gameOver: false,
             isPaused: false,
             canSwap: true,
@@ -117,7 +117,7 @@ export class GameEngine {
             looseGoop: [],
             dumpPieces: [],
             dumpQueue: [],
-            sessionTime: SESSION_DURATION,
+            shiftTime: SHIFT_DURATION,
             scoreBreakdown: { base: 0, height: 0, offscreen: 0, adjacency: 0, speed: 0 },
             gameStats: { startTime: 0, totalBonusTime: 0, maxGroupSize: 0 },
             floatingTexts: [],
@@ -171,7 +171,7 @@ export class GameEngine {
 
     private applyUpgrades() {
         // Base time from constants
-        let baseTime = SESSION_DURATION;
+        let baseTime = SHIFT_DURATION;
 
         // PRESSURE_CONTROL: +5 seconds per level (max 8 levels = +40s)
         const pressureLevel = this.powerUps['PRESSURE_CONTROL'] || 0;
@@ -184,7 +184,7 @@ export class GameEngine {
 
         // Reset time if we haven't started playing yet
         if (this.state.gameStats.startTime === 0) {
-            this.state.sessionTime = this.maxTime;
+            this.state.shiftTime = this.maxTime;
         }
     }
 
@@ -251,7 +251,7 @@ export class GameEngine {
             ...this.state,
             grid: createInitialGrid(startRank, this.powerUps),
             tankRotation: 0,
-            sessionXP: 0,
+            shiftScore: 0,
             gameOver: false,
             isPaused: false,
             activeGoop: null,
@@ -266,7 +266,7 @@ export class GameEngine {
             looseGoop: [],
             dumpPieces: [],
             dumpQueue: [],
-            sessionTime: this.maxTime,
+            shiftTime: this.maxTime,
             floatingTexts: [],
             goalMarks: [],
             crackCells: [],
@@ -330,7 +330,7 @@ export class GameEngine {
         this.state.gameOver = false;
         this.isSessionActive = false;
         this.state.phase = ScreenType.ConsoleScreen;
-        this.state.sessionXP = 0; // Reset run score
+        this.state.shiftScore = 0; // Reset run score
         
         // Apply any pending total score update from the previous run
         if (this.pendingTotalScore !== null) {
@@ -345,7 +345,7 @@ export class GameEngine {
         if (!this.isSessionActive || this.state.gameOver) return;
         
         // 1. Zero out score and goals to prevent XP gain and Win Bonus
-        this.state.sessionXP = 0;
+        this.state.shiftScore = 0;
         this.state.goalsCleared = 0; 
         
         // 2. Trigger standard Game Over flow (monitor drops, penalties calc, etc)
@@ -511,7 +511,7 @@ export class GameEngine {
         if (this.state.goalsCleared >= this.state.goalsTarget) {
             const startRank = calculateRankDetails(this.initialTotalScore).rank;
             const winBonus = startRank * 5000;
-            this.state.sessionXP += winBonus;
+            this.state.shiftScore += winBonus;
         }
 
         // 2. Calculate Penalty for leftover blocks
@@ -561,13 +561,13 @@ export class GameEngine {
         this.state.gameStats.penalty = penalty;
 
         // 3. Apply Penalty
-        this.state.sessionXP = Math.max(0, this.state.sessionXP - penalty);
+        this.state.shiftScore = Math.max(0, this.state.shiftScore - penalty);
 
         // 4. Apply XP floor: minimum XP = 100 * starting rank
         // Prevents high-rank players from getting zero-gain runs
         const startingRank = calculateRankDetails(this.initialTotalScore).rank;
         const xpFloor = 100 * startingRank;
-        this.state.sessionXP = Math.max(xpFloor, this.state.sessionXP);
+        this.state.shiftScore = Math.max(xpFloor, this.state.shiftScore);
 
         // 5. Clear any active complications so they don't show on end screen
         this.state.complications = [];
@@ -583,7 +583,7 @@ export class GameEngine {
      * Zone selection: Tetra (0-25s), Penta (25-50s), Hexa (50-75s)
      */
     private getPiecePoolByZone(): GoopTemplate[] {
-        const elapsedMs = this.maxTime - this.state.sessionTime;
+        const elapsedMs = this.maxTime - this.state.shiftTime;
         const elapsedSec = elapsedMs / 1000;
 
         // Determine which size zone we're in
@@ -635,7 +635,7 @@ export class GameEngine {
     public spawnNewPiece(pieceDef?: GoopTemplate, gridOverride?: TankCell[][], offsetOverride?: number) {
         const currentGrid = gridOverride || this.state.grid;
         const currentOffset = offsetOverride !== undefined ? offsetOverride : this.state.tankRotation;
-        const currentTotalScore = this.initialTotalScore + this.state.sessionXP;
+        const currentTotalScore = this.initialTotalScore + this.state.shiftScore;
         const currentRank = calculateRankDetails(currentTotalScore).rank;
         const palette = getPaletteForRank(currentRank);
 
@@ -760,7 +760,7 @@ export class GameEngine {
 
     public updateScoreAndStats(pointsToAdd: number, breakdown?: Partial<ScoreBreakdown>) {
         // Score boost upgrade removed - points are now unmodified
-        this.state.sessionXP += pointsToAdd;
+        this.state.shiftScore += pointsToAdd;
 
         if (breakdown) {
             this.state.scoreBreakdown.base += (breakdown.base || 0);
@@ -794,8 +794,8 @@ export class GameEngine {
             ? (1 - focusLevel * 0.10)  // At level 4: 0.60 (40% slower)
             : 1;
 
-        this.state.sessionTime = Math.max(0, this.state.sessionTime - (dt * timeMultiplier));
-        if (this.state.sessionTime <= 0) {
+        this.state.shiftTime = Math.max(0, this.state.shiftTime - (dt * timeMultiplier));
+        if (this.state.shiftTime <= 0) {
             this.finalizeGame();
             return false;
         }
@@ -811,7 +811,7 @@ export class GameEngine {
             this.state,
             this.state.grid,
             this.initialTotalScore,
-            this.state.sessionTime,
+            this.state.shiftTime,
             this.maxTime,
             this.lastGoalSpawnTime
         );
@@ -1066,14 +1066,37 @@ export class GameEngine {
                 this.state.grid = updateGroups(newGrid);
             }
 
-            // Handle consumed goals (remove from array, emit events)
+            // Handle consumed goals (remove from arrays, emit events)
             if (consumedGoals.length > 0) {
-                this.state.goalMarks = this.state.goalMarks.filter(
-                    g => !consumedGoals.includes(g.id)
-                );
-                consumedGoals.forEach(() => {
-                    gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });
+                const removedIds = new Set(consumedGoals);
+
+                // Update crack parent/child references before removing
+                consumedGoals.forEach(id => {
+                    const cell = this.state.crackCells.find(c => c.id === id);
+                    if (!cell) return;
+
+                    // Remove this cell from its parents' branchCrackIds
+                    cell.originCrackId.forEach(parentId => {
+                        const parent = this.state.crackCells.find(c => c.id === parentId);
+                        if (parent) {
+                            parent.branchCrackIds = parent.branchCrackIds.filter(cid => cid !== id);
+                        }
+                    });
+
+                    // Remove this cell from its children's originCrackId
+                    cell.branchCrackIds.forEach(childId => {
+                        const child = this.state.crackCells.find(c => c.id === childId);
+                        if (child) {
+                            child.originCrackId = child.originCrackId.filter(pid => pid !== id);
+                        }
+                    });
                 });
+
+                // Remove from BOTH crackCells and goalMarks
+                this.state.crackCells = this.state.crackCells.filter(c => !removedIds.has(c.id));
+                this.state.goalMarks = this.state.goalMarks.filter(g => !removedIds.has(g.id));
+
+                gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: consumedGoals.length });
             }
 
             this.state.looseGoop = active;

@@ -349,17 +349,17 @@ export function useLightsMinigame({
   }, [hasActiveLights, lightsComplication]);
 
   /**
-   * Get text state for "RESET LIGHTS" display.
+   * Get text state for "REPAIR LIGHTS" display.
    * Shows different colors based on complication state.
    */
   const getLightsTextState = useCallback((): MinigameTextState => {
     if (hasActiveLights()) {
-      return { text: "RESET LIGHTS", color: WHITE };
+      return { text: "REPAIR LIGHTS", color: WHITE };
     }
     if (recentlyFixed) {
       return { text: "LIGHTS FIXED", color: GREEN };
     }
-    return { text: "RESET LIGHTS", color: TEAL };
+    return { text: "REPAIR LIGHTS", color: TEAL };
   }, [hasActiveLights, recentlyFixed]);
 
   return {

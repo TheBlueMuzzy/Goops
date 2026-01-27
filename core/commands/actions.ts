@@ -254,7 +254,7 @@ export class PopGoopCommand implements Command {
          const cell = engine.state.grid[this.y][this.x];
          if (!cell) return;
          
-         const tankPressure = Math.max(0, 1 - (engine.state.sessionTime / engine.maxTime));
+         const tankPressure = Math.max(0, 1 - (engine.state.shiftTime / engine.maxTime));
          const thresholdY = (TANK_HEIGHT - 1) - (tankPressure * (TANK_VIEWPORT_HEIGHT - 1));
          
          if (cell.groupMinY < thresholdY) {
@@ -359,7 +359,7 @@ export class PopGoopCommand implements Command {
 
             const totalTimeAdded = basePressureReduc + unitPressureReduc + tierPressureReduc + infusedBonus;
 
-            engine.state.sessionTime = Math.min(engine.maxTime, engine.state.sessionTime + totalTimeAdded);
+            engine.state.shiftTime = Math.min(engine.maxTime, engine.state.shiftTime + totalTimeAdded);
             engine.state.gameStats.totalBonusTime += totalTimeAdded;
 
             // Score Calculation
@@ -388,9 +388,10 @@ export class PopGoopCommand implements Command {
             engine.state.popStreak = currentComboCount;
 
             const textId = Math.random().toString(36).substr(2, 9);
+            const pressurePercent = Math.round((totalTimeAdded / engine.maxTime) * 100);
             const floaters = [
                 { id: textId, text: `+${roundedScore}`, x: this.x, y: this.y, life: 1, color: '#fbbf24' },
-                { id: textId + '_time', text: `-${(totalTimeAdded/1000).toFixed(1)}s`, x: this.x, y: this.y - 1, life: 1, color: '#4ade80' }
+                { id: textId + '_time', text: `-${pressurePercent}%`, x: this.x, y: this.y - 1, life: 1, color: '#4ade80' }
             ];
             
             if (infusedCount > 0) {
@@ -417,11 +418,11 @@ export class PopGoopCommand implements Command {
             // Burst Logic
             if (infusedCount > 0) {
                 if (engine.state.goalsCleared >= engine.state.goalsTarget) {
-                     const tankPressure = Math.max(0, 1 - (engine.state.sessionTime / engine.maxTime));
-                     const currentRank = calculateRankDetails(engine.initialTotalScore + engine.state.sessionXP).rank;
+                     const tankPressure = Math.max(0, 1 - (engine.state.shiftTime / engine.maxTime));
+                     const currentRank = calculateRankDetails(engine.initialTotalScore + engine.state.shiftScore).rank;
 
                      if (tankPressure < 0.9) {
-                         const burst = spawnGoalBurst(cleanGrid, engine.state.goalMarks, currentRank, engine.state.sessionTime, engine.maxTime);
+                         const burst = spawnGoalBurst(cleanGrid, engine.state.goalMarks, currentRank, engine.state.shiftTime, engine.maxTime);
                          engine.state.goalMarks.push(...burst);
                          gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });
                      } else {

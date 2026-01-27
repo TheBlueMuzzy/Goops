@@ -82,7 +82,7 @@ export const LaserPanel: React.FC<LaserPanelProps> = ({
       <text
         fill={textState.color}
         fontFamily="'Amazon Ember'"
-        fontSize="20.93"
+        fontSize="19.9"
         transform="translate(245.29 261.57)"
       >
         {textState.text}

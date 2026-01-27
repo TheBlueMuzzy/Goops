@@ -40,9 +40,9 @@ const App: React.FC = () => {
 
   const handleRunComplete = useCallback((runScore: number) => {
     setSaveData(prev => {
-      const newOperatorXP = prev.operatorXP + runScore;
+      const newOperatorXP = prev.careerScore + runScore;
 
-      const oldRankDetails = calculateRankDetails(prev.operatorXP);
+      const oldRankDetails = calculateRankDetails(prev.careerScore);
       const newRankDetails = calculateRankDetails(newOperatorXP);
 
       const rankDiff = newRankDetails.rank - oldRankDetails.rank;
@@ -61,8 +61,8 @@ const App: React.FC = () => {
 
       return {
         ...prev,
-        operatorXP: newOperatorXP,
-        operatorRank: newRankDetails.rank,
+        careerScore: newOperatorXP,
+        careerRank: newRankDetails.rank,
         scraps: prev.scraps + pointsEarned,
         milestonesReached: [...prev.milestonesReached, ...newMilestones],
         firstRunComplete: true
@@ -87,8 +87,8 @@ const App: React.FC = () => {
           const newOperatorXP = getScoreForMidRank(rank);
           setSaveData(prev => ({
               ...prev,
-              operatorXP: newOperatorXP,
-              operatorRank: rank,
+              careerScore: newOperatorXP,
+              careerRank: rank,
               scraps: rank, // Points = rank level
               powerUps: {} // Reset all purchased upgrades
           }));
@@ -183,7 +183,7 @@ const App: React.FC = () => {
           key={gameKey}
           onExit={() => { /* No Exit in Console Mode concept anymore, just idle */ }}
           onRunComplete={handleRunComplete}
-          initialTotalScore={saveData.operatorXP}
+          initialTotalScore={saveData.careerScore}
           powerUps={saveData.powerUps}
           scraps={saveData.scraps}
           settings={saveData.settings}

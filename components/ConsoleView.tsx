@@ -11,7 +11,7 @@ import { ArrowUp } from 'lucide-react';
 interface ConsoleViewProps {
     engine: GameEngine;
     state: GameState;
-    operatorXP: number;
+    careerScore: number;
     scraps: number;
     powerUps?: Record<string, number>;
     onOpenSettings?: () => void;
@@ -25,12 +25,12 @@ interface ConsoleViewProps {
     onToggleEquip?: (upgradeId: string) => void;
 }
 
-export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, operatorXP, scraps, powerUps = {}, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, onDismissGameOver, equippedActives = [], onToggleEquip }) => {
+export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, careerScore, scraps, powerUps = {}, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, onDismissGameOver, equippedActives = [], onToggleEquip }) => {
     // Calculate Rank based on:
     // Engine's start-of-run total (which hasn't been updated with the run score yet if Game Over)
     // + Current run score.
-    // This prevents double counting because operatorXP prop from parent might already include state.sessionXP after Game Over update.
-    const rankInfo = calculateRankDetails(engine.initialTotalScore + state.sessionXP);
+    // This prevents double counting because operatorXP prop from parent might already include state.shiftScore after Game Over update.
+    const rankInfo = calculateRankDetails(engine.initialTotalScore + state.shiftScore);
 
     // System upgrade panel state
     const [showSystemUpgrades, setShowSystemUpgrades] = useState(false);
@@ -54,12 +54,12 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, operato
     // Monitor Toggle State
     const [monitorMsgIndex, setMonitorMsgIndex] = useState(0);
     
-    // Toggle monitor message every 3s
+    // Toggle monitor message every 2s
     useEffect(() => {
         if (!state.gameOver) {
             const interval = setInterval(() => {
                 setMonitorMsgIndex(prev => (prev + 1) % 2);
-            }, 3000);
+            }, 2000);
             return () => clearInterval(interval);
         }
     }, [state.gameOver]);
@@ -196,13 +196,19 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, operato
                         </div>
                     ) : (
                         <div className="text-[#f1a941] text-3xl font-black tracking-widest font-['From_Where_You_Are']">
-                            {Math.floor((1 - (state.sessionTime/engine.maxTime)) * 100)}% PSI
+                            {Math.floor((1 - (state.shiftTime/engine.maxTime)) * 100)}% PSI
                         </div>
                     )
                 ) : (
-                    <div className="text-[#f1a941] text-3xl font-black tracking-widest font-['From_Where_You_Are'] animate-pulse leading-none">
-                        PULL DOWN PERISCOPE
-                    </div>
+                    monitorMsgIndex === 0 ? (
+                        <div className="text-[#f1a941] text-3xl font-black tracking-widest font-['From_Where_You_Are'] animate-pulse leading-none">
+                            TO START SHIFT
+                        </div>
+                    ) : (
+                        <div className="text-[#f1a941] text-3xl font-black tracking-widest font-['From_Where_You_Are'] animate-pulse leading-none">
+                            PULL DOWN PERISCOPE
+                        </div>
+                    )
                 )}
             </div>
         </div>
@@ -261,11 +267,12 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, operato
                         rank={rankInfo.rank}
                         currentXP={rankInfo.progress}
                         nextRankXP={rankInfo.toNextRank}
-                        sessionXP={state.sessionXP}
+                        shiftScore={state.shiftScore}
                         gameStats={state.gameStats}
                         goalsCleared={state.goalsCleared}
                         goalsTarget={state.goalsTarget}
                         unspentPower={scraps}
+                        maxTime={engine.maxTime}
 
                         // Complications
                         complications={state.complications}

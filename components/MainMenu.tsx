@@ -21,7 +21,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
   const [systemsLabel, setSystemsLabel] = useState("SYSTEMS");
   
   // Calculate directly from props every render to avoid stale memoization issues
-  const rankInfo = calculateRankDetails(saveData.operatorXP);
+  const rankInfo = calculateRankDetails(saveData.careerScore);
   const progressPercent = rankInfo.isMaxRank ? 100 : (rankInfo.progress / rankInfo.toNextRank) * 100;
 
   const handlePlayClick = () => {
@@ -86,7 +86,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
                   <div className="text-3xl font-mono text-white font-bold leading-none">{rankInfo.rank}</div>
               </div>
               <div className="text-right">
-                   <div className="text-xs text-yellow-500 uppercase font-bold tracking-wider">Power Pts</div>
+                   <div className="text-xs text-yellow-500 uppercase font-bold tracking-wider">Scraps</div>
                    <div className="text-xl font-mono text-yellow-400 font-bold leading-none">{saveData.scraps}</div>
               </div>
           </div>

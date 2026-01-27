@@ -113,7 +113,7 @@ export class ComplicationManager {
             }
 
             // Set cooldown using centralized config
-            const rank = calculateRankDetails(initialTotalScore + state.sessionXP).rank;
+            const rank = calculateRankDetails(initialTotalScore + state.shiftScore).rank;
             const cooldownMs = calculateCooldownMs(complication.type, rank);
             state.complicationCooldowns[complication.type] = Date.now() + cooldownMs;
         }

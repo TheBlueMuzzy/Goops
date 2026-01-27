@@ -45,11 +45,12 @@ interface ConsoleLayoutProps {
     rank: number;
     currentXP: number;
     nextRankXP: number;
-    sessionXP?: number;
+    shiftScore?: number;
     gameStats?: GameStats;
     goalsCleared?: number;
     goalsTarget?: number;
     unspentPower?: number;
+    maxTime?: number;  // For calculating pressure vented percentage
 
     // Complications from GameState
     complications?: Complication[];
@@ -86,11 +87,12 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     rank,
     currentXP,
     nextRankXP,
-    sessionXP = 0,
+    shiftScore = 0,
     gameStats = { startTime: 0, totalBonusTime: 0, maxGroupSize: 0, penalty: 0 },
     goalsCleared = 0,
     goalsTarget = 0,
     unspentPower = 0,
+    maxTime = 75000,
     complications = [],
     onResolveComplication,
     upgradeLevels = {}
@@ -412,19 +414,19 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                             <rect fill="#ef4444" x="123.18" y="1748.67" width="342.8" height="44.19" rx="12.37" ry="12.37"/>
                             <rect fill="none" stroke="#ef4444" strokeMiterlimit="10" x="123.45" y="1748.67" width="420.29" height="44.19" rx="9.43" ry="9.43"/>
                             <text fill="#ffffff" fontFamily="'Amazon Ember'" fontSize="20.93" fontWeight="bold" textAnchor="middle" x="294.58" y="1778.17">
-                                {abortConfirm ? "ARE YOU SURE?" : "END WORK DAY"}
+                                {abortConfirm ? "ARE YOU SURE?" : "END SHIFT EARLY"}
                             </text>
                             <text fill="#ef4444" fontFamily="'Amazon Ember'" fontWeight="bold" fontSize="34.88" transform="translate(492.79 1783.33)">X</text>
                         </>
                     ) : (
-                        // Standard Yellow Upgrade Button
+                        // Standard Yellow Upgrade Button (centered in 648px viewBox)
                         <>
-                            <rect fill="#ffd92b" x="123.18" y="1748.67" width="342.8" height="44.19" rx="12.37" ry="12.37"/>
-                            <rect fill="none" stroke="#ffd92b" strokeMiterlimit="10" x="123.45" y="1748.67" width="420.29" height="44.19" rx="9.43" ry="9.43"/>
-                            <text fill="#45486c" fontFamily="'Amazon Ember'" fontSize="20.93" transform="translate(143.75 1778.17)">
-                                <tspan letterSpacing="-.02em">S</tspan><tspan x="11.41">YSTEM UPG</tspan><tspan letterSpacing=".02em" x="124.56">R</tspan><tspan x="137.7">ADES </tspan><tspan letterSpacing="-.06em" x="194.7">AV</tspan><tspan x="219.21">AI</tspan><tspan letterSpacing=".02em" x="238.45">L</tspan><tspan x="249.94">ABLE</tspan>
+                            <rect fill="#ffd92b" x="205" y="1748.67" width="160" height="44.19" rx="12.37" ry="12.37"/>
+                            <rect fill="none" stroke="#ffd92b" strokeMiterlimit="10" x="205" y="1748.67" width="238" height="44.19" rx="9.43" ry="9.43"/>
+                            <text fill="#45486c" fontFamily="'Amazon Ember'" fontSize="20.93" fontWeight="bold" textAnchor="middle" x="285" y="1778.17">
+                                UPGRADES
                             </text>
-                            <text fill="#ffd92b" fontFamily="'Amazon Ember'" fontWeight="bold" fontSize="34.88" textAnchor="middle" x="505" y="1783.33">{upgradeCount}</text>
+                            <text fill="#ffd92b" fontFamily="'Amazon Ember'" fontWeight="bold" fontSize="34.88" textAnchor="middle" x="404" y="1783.33">{upgradeCount}</text>
                         </>
                     )}
                 </g>
@@ -481,14 +483,15 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 {isGameOver ? (
                     // When Game Over, replace the entire monitor geometry with EndGameScreen SVG contents (translated to align)
                     <g transform={endGameTranslate}>
-                        <EndGameScreen 
-                            sessionXP={sessionXP}
+                        <EndGameScreen
+                            shiftScore={shiftScore}
                             rank={rank}
                             xpCurrent={currentXP}
                             xpNext={nextRankXP}
                             cracksFilled={goalsCleared}
                             cracksTarget={goalsTarget}
                             pressureVented={gameStats.totalBonusTime || 0}
+                            maxTime={maxTime}
                             massPurged={gameStats.maxGroupSize || 0}
                             leftoverPenalty={gameStats.penalty || 0}
                             unspentPower={unspentPower}

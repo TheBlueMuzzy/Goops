@@ -38,7 +38,7 @@ export class GoalManager {
         }
 
         // Calculate current rank for goal color palette
-        const currentRank = calculateRankDetails(initialTotalScore + state.sessionXP).rank;
+        const currentRank = calculateRankDetails(initialTotalScore + state.shiftScore).rank;
 
         // Check if CRACK_DOWN is active (crackDownRemaining > 0)
         const crackDownActive = state.crackDownRemaining > 0;
@@ -82,7 +82,7 @@ export class GoalManager {
         }
 
         // Calculate current rank for goal color palette
-        const currentRank = calculateRankDetails(initialTotalScore + state.sessionXP).rank;
+        const currentRank = calculateRankDetails(initialTotalScore + state.shiftScore).rank;
 
         // Check if CRACK_DOWN is active (crackDownRemaining > 0)
         const crackDownActive = state.crackDownRemaining > 0;

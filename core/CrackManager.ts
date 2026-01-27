@@ -51,7 +51,7 @@ export class CrackManager {
             cell.crackBranchInterval = 5000 + Math.random() * 5000; // Random 7-12s
 
             // Calculate spread chance
-            const tankPressure = Math.max(0, 1 - (state.sessionTime / maxTime));
+            const tankPressure = Math.max(0, 1 - (state.shiftTime / maxTime));
             const baseChance = Math.min(1.0, 0.10 + tankPressure);
 
             // Apply SLOW_CRACKS offset: -5% per level

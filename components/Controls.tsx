@@ -14,10 +14,10 @@ interface ControlsProps {
 export const Controls: React.FC<ControlsProps> = ({ 
   state, maxTime 
 }) => {
-  const { sessionXP, gameOver, popStreak, sessionTime } = state;
+  const { shiftScore, gameOver, popStreak, shiftTime } = state;
   
   // Timer Formatting (Pressure)
-  const tankPressure = Math.max(0, Math.min(1, 1 - (sessionTime / maxTime)));
+  const tankPressure = Math.max(0, Math.min(1, 1 - (shiftTime / maxTime)));
   const isHighPressure = tankPressure > 0.8;
   const isCriticalPressure = tankPressure > 0.9;
   
@@ -49,10 +49,10 @@ export const Controls: React.FC<ControlsProps> = ({
               )}
           </div>
 
-          {/* RIGHT: Score */}
+          {/* RIGHT: Shift Score */}
           <div className="flex flex-col items-end drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
-              <span className="text-[10px] text-green-500/90 uppercase font-bold tracking-widest mb-0.5">Score</span>
-              <span className="text-4xl font-mono text-green-400 font-black leading-none tracking-tighter shadow-green-500/10">{sessionXP.toLocaleString()}</span>
+              <span className="text-[10px] text-green-500/90 uppercase font-bold tracking-widest mb-0.5">Shift Score</span>
+              <span className="text-4xl font-mono text-green-400 font-black leading-none tracking-tighter shadow-green-500/10">{shiftScore.toLocaleString()}</span>
           </div>
       </div>
       

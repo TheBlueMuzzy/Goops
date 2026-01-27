@@ -40,15 +40,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     equippedActives = [], activeCharges = {}, onActivateAbility,
     powerUps, storedGoop, nextGoop
 }) => {
-  const { grid, tankRotation, activeGoop, looseGoop, floatingTexts, sessionTime, goalMarks, crackCells, dumpPieces } = state;
+  const { grid, tankRotation, activeGoop, looseGoop, floatingTexts, shiftTime, goalMarks, crackCells, dumpPieces } = state;
 
   const palette = useMemo(() => getPaletteForRank(rank), [rank]);
 
   // --- Derived Values ---
   const tankPressure = useMemo(() => {
-    if (sessionTime <= 0) return 1;
-    return Math.max(0, 1 - (sessionTime / maxTime));
-  }, [sessionTime, maxTime]);
+    if (shiftTime <= 0) return 1;
+    return Math.max(0, 1 - (shiftTime / maxTime));
+  }, [shiftTime, maxTime]);
 
   const pressureHue = Math.max(0, 120 * (1 - tankPressure));
   const pressureColor = `hsla(${pressureHue}, 100%, 50%, 0.15)`;
@@ -871,7 +871,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 display: 'flex',
                 gap: '8px'
             }}>
-                <PiecePreview piece={storedGoop ?? null} label="HOLD" visible={showHoldViewer} rank={rank} />
+                <PiecePreview piece={storedGoop ?? null} label="STORED" visible={showHoldViewer} rank={rank} />
                 <PiecePreview piece={nextGoop ?? null} label="NEXT" visible={showNextWindow} rank={rank} />
             </div>
         )}

@@ -61,8 +61,8 @@ export const LightsPanel: React.FC<LightsPanelProps> = ({
       <text
         fill={textState.color}
         fontFamily="'Amazon Ember'"
-        fontSize="20.93"
-        transform="translate(414.68 1486.69)"
+        fontSize="19.9"
+        transform="translate(414.68 1480.38)"
       >
         {textState.text}
       </text>

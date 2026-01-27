@@ -72,7 +72,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
       <text
         fill={textState.color}
         fontFamily="'Amazon Ember'"
-        fontSize="20.93"
+        fontSize="19.9"
         transform="translate(108.17 1480.38)"
       >
         {textState.text}

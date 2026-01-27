@@ -24,7 +24,7 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
               {/* Scrollable Content Area */}
               <div className="w-full h-full flex flex-col items-center overflow-y-auto px-6 pt-6 pb-32 animate-in slide-in-from-right duration-300 scrollbar-hide">
                   <div className="w-full max-w-md flex items-center justify-center mb-6 flex-shrink-0">
-                      <h2 className="text-3xl text-slate-200 tracking-wider uppercase" style={{ fontFamily: '"From Where You Are", cursive' }}>Operations Manual</h2>
+                      <h2 className="text-3xl text-slate-200 tracking-wider uppercase" style={{ fontFamily: '"From Where You Are", cursive' }}>Operator Manual</h2>
                   </div>
 
                   <div className="w-full max-w-md space-y-6">

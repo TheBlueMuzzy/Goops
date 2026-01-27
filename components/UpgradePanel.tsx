@@ -14,10 +14,10 @@ interface TabDef {
 
 // Ordered by final display order (left to right when all unlocked)
 const TAB_DEFS: TabDef[] = [
-  { id: 'actives', label: 'ACTIVES', unlockRank: 5, color: '#fbbf24' },      // Gold
+  { id: 'actives', label: 'TOOLS', unlockRank: 5, color: '#fbbf24' },        // Gold
   { id: 'features', label: 'FEATURES', unlockRank: 20, color: '#a78bfa' },   // Purple
-  { id: 'complications', label: 'CONSOLE', unlockRank: 2, color: '#f97316' },  // Orange
-  { id: 'passives', label: 'PASSIVES', unlockRank: 3, color: '#5bbc70' },    // Green
+  { id: 'complications', label: 'SYSTEMS', unlockRank: 2, color: '#f97316' },  // Orange
+  { id: 'passives', label: 'UTILITY', unlockRank: 3, color: '#5bbc70' },     // Green
 ];
 
 interface UpgradePanelProps {
@@ -324,12 +324,13 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
         {/* Screen Background - Darker Blue */}
         <rect fill="#1f1f38" x="23.26" y="60.46" width="537.16" height="825.87" rx="39.53" ry="39.53"/>
 
-        {/* HEADER: System Upgrades (left) + Points (right) */}
+        {/* HEADER: Upgrades (left) + Scraps (right) */}
         <text fill="#f2a743" fontFamily="'From Where You Are'" fontSize="28" transform="translate(50 105)">
-          SYSTEM UPGRADES
+          UPGRADES
         </text>
-        <text fill="#5bbc70" fontFamily="'Amazon Ember'" fontWeight="800" fontSize="32" transform="translate(530 105)" textAnchor="end">
-          {scraps} PWR
+        <text fill="#5bbc70" fontFamily="'Amazon Ember'" transform="translate(530 105)" textAnchor="end">
+          <tspan fontSize="16" fontWeight="600">SCRAPS: </tspan>
+          <tspan fontSize="32" fontWeight="800">{scraps}</tspan>
         </text>
 
         {/* Upgrades Content Area */}
@@ -364,12 +365,12 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
               </div>
             ) : (
               <div className="pb-20">
-                {/* PWR earning message - subtitle */}
+                {/* Scraps earning message - subtitle */}
                 <div
                   className="text-lg mb-3 text-center"
                   style={{ color: '#fbbf24', fontFamily: "'Amazon Ember', sans-serif" }}
                 >
-                  Earn PWR by Increasing your Operator Rank
+                  Earn Scraps by Increasing your Operator Rank
                 </div>
 
                 {/* Tab Bar */}

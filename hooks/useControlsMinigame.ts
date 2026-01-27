@@ -436,17 +436,17 @@ export function useControlsMinigame({
   }, [hasActiveControls, controlsComplication.solved, controlsComplication.targetCorner]);
 
   /**
-   * Get text state for "RESET CONTROLS" display.
+   * Get text state for "REPAIR CONTROLS" display.
    * Shows different colors based on complication state.
    */
   const getControlsTextState = useCallback((): MinigameTextState => {
     if (hasActiveControls()) {
-      return { text: "RESET CONTROLS", color: WHITE };
+      return { text: "REPAIR CONTROLS", color: WHITE };
     }
     if (recentlyFixed) {
       return { text: "CONTROLS FIXED", color: GREEN };
     }
-    return { text: "RESET CONTROLS", color: TEAL };
+    return { text: "REPAIR CONTROLS", color: TEAL };
   }, [hasActiveControls, recentlyFixed]);
 
   return {

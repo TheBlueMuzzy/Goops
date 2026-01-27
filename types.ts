@@ -206,7 +206,7 @@ export interface GameState {
   activeGoop: ActivePiece | null;
   storedGoop: GoopTemplate | null;
   nextGoop: GoopTemplate | null;  // Preview of upcoming goop
-  sessionXP: number;
+  shiftScore: number;
   gameOver: boolean;
   isPaused: boolean;
   canSwap: boolean;
@@ -216,7 +216,7 @@ export interface GameState {
   looseGoop: LooseGoop[];
   dumpPieces: DumpPiece[];     // Active dump pieces falling from top
   dumpQueue: DumpPiece[];      // Pieces waiting to spawn (staggered)
-  sessionTime: number;
+  shiftTime: number;
   
   // New Stats
   scoreBreakdown: ScoreBreakdown;
@@ -314,8 +314,8 @@ export interface UpgradeConfig {
 // --- Meta Progression Types ---
 
 export interface SaveData {
-  operatorRank: number;    // Current Player Rank (1-100)
-  operatorXP: number;      // Cumulative XP across all runs
+  careerRank: number;    // Current Player Rank (1-100)
+  careerScore: number;      // Cumulative XP across all runs
   scraps: number;          // Currency to buy upgrades (1 per rank)
   powerUps: Record<string, number>; // Upgrade levels by ID (0 = not purchased)
   equippedActives: string[]; // IDs of equipped active abilities (max based on slots)
@@ -334,6 +334,6 @@ export interface RankDetails {
   rank: number;
   progress: number;        // Current XP in this rank
   toNextRank: number;      // Total XP needed for next rank
-  operatorXP: number;
+  careerScore: number;
   isMaxRank: boolean;
 }

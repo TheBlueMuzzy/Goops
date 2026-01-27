@@ -203,17 +203,17 @@ export function useLaserMinigame({
   }, [hasActiveLaser, laserComplication.targets]);
 
   /**
-   * Get text state for "RESET LASER" display.
+   * Get text state for "REPAIR LASER" display.
    * Shows different colors based on complication state.
    */
   const getLaserTextState = useCallback((): MinigameTextState => {
     if (hasActiveLaser()) {
-      return { text: "RESET LASER", color: WHITE };
+      return { text: "REPAIR LASER", color: WHITE };
     }
     if (recentlyFixed) {
       return { text: "LASER FIXED", color: GREEN };
     }
-    return { text: "RESET LASER", color: TEAL };
+    return { text: "REPAIR LASER", color: TEAL };
   }, [hasActiveLaser, recentlyFixed]);
 
   return {
