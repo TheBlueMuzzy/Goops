@@ -242,9 +242,9 @@ describe('getFloatingBlocks (Sticky Gravity)', () => {
     // Block on the floor
     placeCell(grid, 5, TANK_HEIGHT - 1, COLORS.RED, 'group1');
 
-    const { falling } = getFloatingBlocks(grid);
+    const { looseGoop } = getFloatingBlocks(grid);
 
-    expect(falling).toHaveLength(0);
+    expect(looseGoop).toHaveLength(0);
   });
 
   it('detects floating single block', () => {
@@ -252,11 +252,11 @@ describe('getFloatingBlocks (Sticky Gravity)', () => {
     // Block floating in mid-air
     placeCell(grid, 5, 10, COLORS.RED, 'group1');
 
-    const { falling } = getFloatingBlocks(grid);
+    const { looseGoop } = getFloatingBlocks(grid);
 
-    expect(falling).toHaveLength(1);
-    expect(falling[0].x).toBe(5);
-    expect(falling[0].y).toBe(10);
+    expect(looseGoop).toHaveLength(1);
+    expect(looseGoop[0].x).toBe(5);
+    expect(looseGoop[0].y).toBe(10);
   });
 
   it('keeps block supported by another group', () => {
@@ -266,9 +266,9 @@ describe('getFloatingBlocks (Sticky Gravity)', () => {
     // Block sitting on top (different group)
     placeCell(grid, 5, TANK_HEIGHT - 2, COLORS.BLUE, 'group2');
 
-    const { falling } = getFloatingBlocks(grid);
+    const { looseGoop } = getFloatingBlocks(grid);
 
-    expect(falling).toHaveLength(0);
+    expect(looseGoop).toHaveLength(0);
   });
 
   it('entire group falls together (sticky gravity)', () => {
@@ -278,9 +278,9 @@ describe('getFloatingBlocks (Sticky Gravity)', () => {
     placeCell(grid, 6, 10, COLORS.RED, 'group1');
     placeCell(grid, 5, 11, COLORS.RED, 'group1');
 
-    const { falling } = getFloatingBlocks(grid);
+    const { looseGoop } = getFloatingBlocks(grid);
 
-    expect(falling).toHaveLength(3);
+    expect(looseGoop).toHaveLength(3);
   });
 
   it('removes floating blocks from grid', () => {

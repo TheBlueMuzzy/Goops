@@ -3,7 +3,7 @@
  * Pure functions for SVG path generation and group building.
  */
 
-import { TankCell, FallingBlock } from '../types';
+import { TankCell, LooseGoop } from '../types';
 import { TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, TANK_WIDTH, TANK_HEIGHT, BUFFER_HEIGHT } from '../constants';
 import { BLOCK_SIZE, visXToScreenX } from './coordinateTransform';
 import { normalizeX } from './gameLogic';
@@ -109,7 +109,7 @@ export function getContourPath(
 export function buildRenderableGroups(
     grid: (TankCell | null)[][],
     tankRotation: number,
-    fallingBlocks: FallingBlock[]
+    looseGoop: LooseGoop[]
 ): Map<string, RenderableCell[]> {
     const map = new Map<string, RenderableCell[]>();
 
@@ -140,14 +140,14 @@ export function buildRenderableGroups(
         }
     }
 
-    // 2. Falling Blocks
-    const fallingMap = new Map<string, FallingBlock[]>();
-    fallingBlocks.forEach(b => {
-        if (!fallingMap.has(b.data.goopGroupId)) fallingMap.set(b.data.goopGroupId, []);
-        fallingMap.get(b.data.goopGroupId)!.push(b);
+    // 2. Loose Goop (falling after pop)
+    const looseGoopMap = new Map<string, LooseGoop[]>();
+    looseGoop.forEach(b => {
+        if (!looseGoopMap.has(b.data.goopGroupId)) looseGoopMap.set(b.data.goopGroupId, []);
+        looseGoopMap.get(b.data.goopGroupId)!.push(b);
     });
 
-    fallingMap.forEach((blocks, gid) => {
+    looseGoopMap.forEach((blocks, gid) => {
         const coords = new Set<string>();
         blocks.forEach(b => coords.add(`${Math.round(b.x)},${Math.round(b.y)}`));
 

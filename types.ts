@@ -107,7 +107,7 @@ export interface ActivePiece {
   state: GoopState;      // State of the piece lifecycle
 }
 
-export interface BlockData {
+export interface GoopBlock {
   id: string;        // Unique ID for the individual block (persists on move)
   goopGroupId: string;   // ID for the contiguous goop group this block belongs to
   timestamp: number; // Time when the group was formed/reset
@@ -115,14 +115,14 @@ export interface BlockData {
   groupMinY: number; // Top-most Y (smallest value) of the group
   groupMaxY: number; // Bottom-most Y (largest value) of the group
   groupSize: number; // Number of blocks in this group
-  isGlowing?: boolean; // Visual effect for blocks that consumed a goal
+  isSealingGoop?: boolean; // Visual effect for goop that sealed a crack
   isWild?: boolean;    // Wild goop - converts adjacent goop and matches any crack
 }
 
-export type TankCell = BlockData | null;
+export type TankCell = GoopBlock | null;
 
-export interface FallingBlock {
-  data: BlockData;
+export interface LooseGoop {
+  data: GoopBlock;
   x: number;
   y: number;
   velocity: number;
@@ -213,7 +213,7 @@ export interface GameState {
   level: number;
   cellsCleared: number;
   popStreak: number;
-  fallingBlocks: FallingBlock[];
+  looseGoop: LooseGoop[];
   dumpPieces: DumpPiece[];     // Active dump pieces falling from top
   dumpQueue: DumpPiece[];      // Pieces waiting to spawn (staggered)
   sessionTime: number;

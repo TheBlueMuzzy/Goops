@@ -1,5 +1,5 @@
 
-import { GameState, TankCell, ActivePiece, GoopTemplate, FallingBlock, ScoreBreakdown, GameStats, FloatingText, GoalMark, Crack, ScreenType, GoopState, GoopShape, Complication, TankSystem, DumpPiece } from '../types';
+import { GameState, TankCell, ActivePiece, GoopTemplate, LooseGoop, ScoreBreakdown, GameStats, FloatingText, GoalMark, Crack, ScreenType, GoopState, GoopShape, Complication, TankSystem, DumpPiece } from '../types';
 import {
     TANK_WIDTH, TANK_HEIGHT, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, SESSION_DURATION,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS,
@@ -12,7 +12,7 @@ import {
 import { COMPLICATION_CONFIG, isComplicationUnlocked } from '../complicationConfig';
 import {
     spawnPiece, checkCollision, mergePiece, getRotatedCells, findContiguousGroup,
-    updateGroups, getGhostY, updateFallingBlocks, getFloatingBlocks,
+    updateGroups, getGhostY, updateLooseGoop, getFloatingBlocks,
     calculateHeightBonus, calculateOffScreenBonus, calculateMultiplier, calculateAdjacencyBonus, createInitialGrid,
     getPaletteForRank, processWildConversions
 } from '../utils/gameLogic';
@@ -114,7 +114,7 @@ export class GameEngine {
             level: 1,
             cellsCleared: 0,
             popStreak: 0,
-            fallingBlocks: [],
+            looseGoop: [],
             dumpPieces: [],
             dumpQueue: [],
             sessionTime: SESSION_DURATION,
@@ -263,7 +263,7 @@ export class GameEngine {
             canSwap: true,
             popStreak: 0,
             cellsCleared: 0,
-            fallingBlocks: [],
+            looseGoop: [],
             dumpPieces: [],
             dumpQueue: [],
             sessionTime: this.maxTime,
@@ -1026,13 +1026,13 @@ export class GameEngine {
     }
 
     /**
-     * Update falling blocks (gravity after pop).
+     * Update loose goop (gravity after pop).
      */
-    private tickFallingBlocks(dt: number): void {
-        if (this.state.fallingBlocks.length === 0) return;
+    private tickLooseGoop(dt: number): void {
+        if (this.state.looseGoop.length === 0) return;
 
         const gameSpeed = ACTIVE_GOOP_SPEED;
-        const { active, landed } = updateFallingBlocks(this.state.fallingBlocks, this.state.grid, dt, gameSpeed);
+        const { active, landed } = updateLooseGoop(this.state.looseGoop, this.state.grid, dt, gameSpeed);
 
         if (landed.length > 0) {
             gameEventBus.emit(GameEventType.PIECE_DROPPED);
@@ -1059,7 +1059,7 @@ export class GameEngine {
                     newGrid[landY][b.x] = {
                         ...b.data,
                         timestamp: Date.now(),
-                        isGlowing: isMatch
+                        isSealingGoop: isMatch
                     };
                     landUpdates = true;
                 }
@@ -1079,9 +1079,9 @@ export class GameEngine {
                 });
             }
 
-            this.state.fallingBlocks = active;
+            this.state.looseGoop = active;
         } else {
-            this.state.fallingBlocks = active;
+            this.state.looseGoop = active;
         }
     }
 
@@ -1298,8 +1298,8 @@ export class GameEngine {
         // Lights brightness (player-controlled via fast drop)
         this.tickLightsBrightness(dt);
 
-        // Falling blocks
-        this.tickFallingBlocks(dt);
+        // Loose goop (falling after pop)
+        this.tickLooseGoop(dt);
 
         // Dump pieces (GOOP_DUMP ability rain effect)
         this.tickDumpPieces(dt);

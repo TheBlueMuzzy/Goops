@@ -332,7 +332,7 @@ export class PopGoopCommand implements Command {
             // GOAL CLEAR LOGIC
             let infusedCount = 0;
             group.forEach(pt => {
-                if (engine.state.grid[pt.y][pt.x]?.isGlowing) infusedCount++;
+                if (engine.state.grid[pt.y][pt.x]?.isSealingGoop) infusedCount++;
             });
             const infusedBonus = infusedCount * 3000;
 

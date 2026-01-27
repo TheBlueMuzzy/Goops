@@ -1,5 +1,5 @@
 
-import { ActivePiece, Coordinate, TankCell, GoopTemplate, GoopShape, BlockData, FallingBlock, GoalMark, GoopState } from '../types';
+import { ActivePiece, Coordinate, TankCell, GoopTemplate, GoopShape, GoopBlock, LooseGoop, GoalMark, GoopState } from '../types';
 import { TANK_WIDTH, TANK_HEIGHT, PIECES, GAME_COLORS, TANK_VIEWPORT_WIDTH, BUFFER_HEIGHT, COLORS, TANK_VIEWPORT_HEIGHT } from '../constants';
 
 // Re-export normalizeX from coordinates to maintain API compatibility
@@ -326,7 +326,7 @@ export const mergePiece = (
         groupMinY: minY,
         groupMaxY: maxY,
         groupSize,
-        isGlowing: isMatch,
+        isSealingGoop: isMatch,
         isWild: pieceIsWild
       };
     }
@@ -416,13 +416,13 @@ export const processWildConversions = (
     return updateGroups(newGrid);
 };
 
-export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[]): { grid: TankCell[][], falling: FallingBlock[] } => {
-    // Implements "Sticky Gravity": 
+export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[]): { grid: TankCell[][], looseGoop: LooseGoop[] } => {
+    // Implements "Sticky Gravity":
     // An entire connected Group falls only if NO block in that group is supported.
     // A block is supported if it is on the floor (y=MAX) or on top of a supported group.
 
     const newGrid = grid.map(row => [...row]);
-    const falling: FallingBlock[] = [];
+    const looseGoop: LooseGoop[] = [];
     
     // 1. Map all Groups
     const groups = new Map<string, Coordinate[]>();
@@ -479,12 +479,12 @@ export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[])
         }
     }
 
-    // 3. Mark unsupported groups as falling
+    // 3. Mark unsupported groups as loose (falling)
     for (const gid of goopGroupIds) {
         if (!supportedGroupIds.has(gid)) {
             const blocks = groups.get(gid)!;
             for (const b of blocks) {
-                falling.push({
+                looseGoop.push({
                     data: newGrid[b.y][b.x]!,
                     x: b.x,
                     y: b.y,
@@ -494,38 +494,38 @@ export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[])
             }
         }
     }
-    
-    return { grid: newGrid, falling };
+
+    return { grid: newGrid, looseGoop };
 };
 
-export const updateFallingBlocks = (
-    blocks: FallingBlock[], 
-    grid: TankCell[][], 
+export const updateLooseGoop = (
+    looseGoop: LooseGoop[],
+    grid: TankCell[][],
     dt: number,
     gameSpeed: number
-): { active: FallingBlock[], landed: FallingBlock[] } => {
-    
-    const active: FallingBlock[] = [];
-    const landed: FallingBlock[] = [];
-    const FALL_SPEED = 0.02 * dt; 
-    
-    const sortedBlocks = [...blocks].sort((a, b) => b.y - a.y);
-    
-    for (const block of sortedBlocks) {
-        const nextY = block.y + FALL_SPEED;
-        
+): { active: LooseGoop[], landed: LooseGoop[] } => {
+
+    const active: LooseGoop[] = [];
+    const landed: LooseGoop[] = [];
+    const FALL_SPEED = 0.02 * dt;
+
+    const sortedGoop = [...looseGoop].sort((a, b) => b.y - a.y);
+
+    for (const goop of sortedGoop) {
+        const nextY = goop.y + FALL_SPEED;
+
         if (nextY >= TANK_HEIGHT - 1) {
-            landed.push({ ...block, y: TANK_HEIGHT - 1 });
+            landed.push({ ...goop, y: TANK_HEIGHT - 1 });
             continue;
         }
-        
+
         const checkRow = Math.floor(nextY + 1);
-        const col = block.x;
-        
+        const col = goop.x;
+
         if (grid[checkRow] && grid[checkRow][col]) {
-             landed.push({ ...block, y: Math.floor(nextY) });
+             landed.push({ ...goop, y: Math.floor(nextY) });
         } else {
-             active.push({ ...block, y: nextY });
+             active.push({ ...goop, y: nextY });
         }
     }
     

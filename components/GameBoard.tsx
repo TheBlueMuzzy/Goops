@@ -40,7 +40,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     equippedActives = [], activeCharges = {}, onActivateAbility,
     powerUps, storedGoop, nextGoop
 }) => {
-  const { grid, tankRotation, activeGoop, fallingBlocks, floatingTexts, timeLeft, goalMarks, crackCells, dumpPieces } = state;
+  const { grid, tankRotation, activeGoop, looseGoop, floatingTexts, timeLeft, goalMarks, crackCells, dumpPieces } = state;
 
   const palette = useMemo(() => getPaletteForRank(rank), [rank]);
 
@@ -100,8 +100,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   // --- Render Groups Preparation (via utility function) ---
   const groups = useMemo(
-      () => buildRenderableGroups(grid, tankRotation, fallingBlocks),
-      [grid, tankRotation, fallingBlocks]
+      () => buildRenderableGroups(grid, tankRotation, looseGoop),
+      [grid, tankRotation, looseGoop]
   );
 
   // Wild color cycling - wave effect moving left to right
@@ -354,7 +354,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 const color = sample.color;
                 const isHighlighted = gid === highlightedGroupId;
                 const isShaking = gid === shakingGroupId || state.prePoppedGoopGroups.has(gid); // Shake pre-popped groups too
-                const isGlowing = cells.some(c => c.cell.isGlowing);
+                const isSealingGoop = cells.some(c => c.cell.isSealingGoop);
                 const isPrePopped = state.prePoppedGoopGroups.has(gid); // LASER effect: pre-popped, waiting for 2nd tap
                 const hasWildCells = cells.some(c => c.cell.isWild);
 
@@ -433,10 +433,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                     key={`cnt-${c.cell.id}`}
                                     d={getContourPath(c.screenX, c.screenY, c.width, BLOCK_SIZE, c.neighbors)}
                                     fill="none"
-                                    stroke={isPrePopped ? "#ff6b6b" : (isGlowing ? "white" : (c.cell.isWild ? getWildColorAtX(c.screenX) : color))}
-                                    strokeWidth={isPrePopped ? 3 : (isGlowing ? 3 : 2)}
+                                    stroke={isPrePopped ? "#ff6b6b" : (isSealingGoop ? "white" : (c.cell.isWild ? getWildColorAtX(c.screenX) : color))}
+                                    strokeWidth={isPrePopped ? 3 : (isSealingGoop ? 3 : 2)}
                                     strokeDasharray={isPrePopped ? "4 2" : undefined}
-                                    className={c.cell.isWild && !isPrePopped && !isGlowing ? "wild-stroke" : undefined}
+                                    className={c.cell.isWild && !isPrePopped && !isSealingGoop ? "wild-stroke" : undefined}
                                 />
                             ))}
                             {isHighlighted && <rect x={minX} y={minY} width={maxX - minX} height={maxY - minY} fill="white" fillOpacity={0.3} />}
@@ -470,11 +470,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                                 key={`cnt-${c.cell.id}`}
                                 d={getContourPath(c.screenX, c.screenY, c.width, BLOCK_SIZE, c.neighbors)}
                                 fill="none"
-                                stroke={isPrePopped ? "#ff6b6b" : (isGlowing ? "white" : (c.cell.isWild ? getWildColorAtX(c.screenX) : color))}
-                                strokeWidth={isPrePopped ? "3" : (isGlowing ? "3" : "2")}
+                                stroke={isPrePopped ? "#ff6b6b" : (isSealingGoop ? "white" : (c.cell.isWild ? getWildColorAtX(c.screenX) : color))}
+                                strokeWidth={isPrePopped ? "3" : (isSealingGoop ? "3" : "2")}
                                 strokeDasharray={isPrePopped ? "4 2" : undefined}
-                                className={!isMobile && !isPrePopped ? (c.cell.isWild ? "wild-stroke" : (isGlowing ? "super-glowing-stroke" : "glow-stroke")) : undefined}
-                                style={!isMobile && !isPrePopped && !c.cell.isWild ? { color: isGlowing ? 'white' : color } : undefined}
+                                className={!isMobile && !isPrePopped ? (c.cell.isWild ? "wild-stroke" : (isSealingGoop ? "super-glowing-stroke" : "glow-stroke")) : undefined}
+                                style={!isMobile && !isPrePopped && !c.cell.isWild ? { color: isSealingGoop ? 'white' : color } : undefined}
                              />
                         ))}
                     </g>
