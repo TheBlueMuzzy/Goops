@@ -105,8 +105,8 @@ export class GameEngine {
             grid: createInitialGrid(startRank, powerUps),
             tankRotation: 0,
             activeGoop: null,
-            storedPiece: null,
-            nextPiece: null,
+            storedGoop: null,
+            nextGoop: null,
             sessionXP: 0,
             gameOver: false,
             isPaused: false,
@@ -224,7 +224,7 @@ export class GameEngine {
         const startPieceIndex = Math.floor(Math.random() * startPool.length);
         const startBasePiece = this.maybeApplyMirror({ ...startPool[startPieceIndex] });
 
-        let nextPieceDef: GoopTemplate;
+        let nextGoopDef: GoopTemplate;
         if (shouldSplit) {
             // Pick second color different from first
             const otherColors = palette.filter(c => c !== nextColor);
@@ -234,9 +234,9 @@ export class GameEngine {
                 ...startBasePiece,
                 color: nextColor
             };
-            nextPieceDef = splitPiece(basePiece, nextColor, secondColor);
+            nextGoopDef = splitPiece(basePiece, nextColor, secondColor);
         } else {
-            nextPieceDef = {
+            nextGoopDef = {
                 ...startBasePiece,
                 color: nextColor
             };
@@ -255,11 +255,11 @@ export class GameEngine {
             gameOver: false,
             isPaused: false,
             activeGoop: null,
-            storedPiece: {
+            storedGoop: {
                 ...storedBasePiece,
                 color: palette[Math.floor(Math.random() * palette.length)]
             },
-            nextPiece: nextPieceDef,
+            nextGoop: nextGoopDef,
             canSwap: true,
             popStreak: 0,
             cellsCleared: 0,
@@ -640,10 +640,10 @@ export class GameEngine {
         const currentRank = calculateRankDetails(currentTotalScore).rank;
         const palette = getPaletteForRank(currentRank);
 
-        // If no specific piece provided and we have a queued next piece, use it
+        // If no specific piece provided and we have a queued next goop, use it
         let pieceToSpawn = pieceDef;
-        if (!pieceToSpawn && this.state.nextPiece) {
-            pieceToSpawn = this.state.nextPiece;
+        if (!pieceToSpawn && this.state.nextGoop) {
+            pieceToSpawn = this.state.nextGoop;
             // Generate new next piece for the queue
             // Apply CRACK_MATCHER bias: +25% per level to match lowest crack's color
             let nextColor = palette[Math.floor(Math.random() * palette.length)];
@@ -702,7 +702,7 @@ export class GameEngine {
                 console.log('Wild piece queued for next spawn');
             }
 
-            this.state.nextPiece = newNext;
+            this.state.nextGoop = newNext;
         }
 
         const piece = spawnPiece(pieceToSpawn, currentRank);
@@ -717,10 +717,10 @@ export class GameEngine {
             };
             this.state.colorizerRemaining--;
 
-            // Also update nextPiece if it exists (so preview shows correct color)
-            if (this.state.nextPiece && this.state.colorizerRemaining > 0) {
-                this.state.nextPiece = {
-                    ...this.state.nextPiece,
+            // Also update nextGoop if it exists (so preview shows correct color)
+            if (this.state.nextGoop && this.state.colorizerRemaining > 0) {
+                this.state.nextGoop = {
+                    ...this.state.nextGoop,
                     color: this.state.colorizerColor,
                     cellColors: undefined  // Clear multi-color on preview too
                 };

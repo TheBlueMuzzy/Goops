@@ -204,8 +204,8 @@ export interface GameState {
   grid: TankCell[][]; // [y][x]
   tankRotation: number; // 0-TANK_WIDTH
   activeGoop: ActivePiece | null;
-  storedPiece: GoopTemplate | null;
-  nextPiece: GoopTemplate | null;  // Preview of upcoming piece
+  storedGoop: GoopTemplate | null;
+  nextGoop: GoopTemplate | null;  // Preview of upcoming goop
   sessionXP: number;
   gameOver: boolean;
   isPaused: boolean;

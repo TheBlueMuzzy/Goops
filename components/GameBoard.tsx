@@ -29,8 +29,8 @@ interface GameBoardProps {
   activeCharges?: Record<string, number>;  // Active ID -> charge (0-100)
   onActivateAbility?: (upgradeId: string) => void;  // Called when ability activated
   powerUps?: Record<string, number>;  // Upgrade levels for GOOP_SWAP effect
-  storedPiece?: GoopTemplate | null;  // Held piece for preview
-  nextPiece?: GoopTemplate | null;    // Next piece for preview
+  storedGoop?: GoopTemplate | null;  // Held goop for preview
+  nextGoop?: GoopTemplate | null;    // Next goop for preview
 }
 
 // --- Component ---
@@ -38,7 +38,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, lightsBrightness = 100,
     laserCharge = 100, controlsHeat = 0, complicationCooldowns,
     equippedActives = [], activeCharges = {}, onActivateAbility,
-    powerUps, storedPiece, nextPiece
+    powerUps, storedGoop, nextGoop
 }) => {
   const { grid, tankRotation, activeGoop, fallingBlocks, floatingTexts, timeLeft, goalMarks, crackCells, dumpPieces } = state;
 
@@ -871,8 +871,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 display: 'flex',
                 gap: '8px'
             }}>
-                <PiecePreview piece={storedPiece ?? null} label="HOLD" visible={showHoldViewer} rank={rank} />
-                <PiecePreview piece={nextPiece ?? null} label="NEXT" visible={showNextWindow} rank={rank} />
+                <PiecePreview piece={storedGoop ?? null} label="HOLD" visible={showHoldViewer} rank={rank} />
+                <PiecePreview piece={nextGoop ?? null} label="NEXT" visible={showNextWindow} rank={rank} />
             </div>
         )}
     </div>

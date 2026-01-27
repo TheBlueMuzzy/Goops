@@ -206,7 +206,7 @@ export class SwapPieceCommand implements Command {
 
         const currentPiece = engine.state.activeGoop;
         const currentDef = currentPiece.definition;
-        const nextDef = engine.state.storedPiece;
+        const nextDef = engine.state.storedGoop;
 
         if (nextDef) {
             // Check if stored piece can fit at current position BEFORE committing
@@ -230,13 +230,13 @@ export class SwapPieceCommand implements Command {
 
             // Swap succeeds - stored piece fits at current position
             gameEventBus.emit(GameEventType.PIECE_ROTATED);
-            engine.state.storedPiece = currentDef;
+            engine.state.storedGoop = currentDef;
             engine.lockStartTime = null;
             engine.state.activeGoop = testPiece;
         } else {
             // No stored piece - store current and spawn new
             gameEventBus.emit(GameEventType.PIECE_ROTATED);
-            engine.state.storedPiece = currentDef;
+            engine.state.storedGoop = currentDef;
             engine.lockStartTime = null;
             engine.spawnNewPiece();
         }

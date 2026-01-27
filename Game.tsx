@@ -327,8 +327,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             activeCharges={gameState.activeCharges}
             onActivateAbility={handleActivateAbility}
             powerUps={powerUps}
-            storedPiece={engine.state.storedPiece}
-            nextPiece={engine.state.nextPiece}
+            storedGoop={engine.state.storedGoop}
+            nextGoop={engine.state.nextGoop}
          />
          {/* Lights brightness is now controlled by state.lightsBrightness (player-controlled via fast drop) */}
       </div>
