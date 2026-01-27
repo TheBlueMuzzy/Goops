@@ -206,17 +206,17 @@ export interface GameState {
   activeGoop: ActivePiece | null;
   storedPiece: GoopTemplate | null;
   nextPiece: GoopTemplate | null;  // Preview of upcoming piece
-  score: number;
+  sessionXP: number;
   gameOver: boolean;
   isPaused: boolean;
   canSwap: boolean;
   level: number;
   cellsCleared: number;
-  combo: number;
+  popStreak: number;
   fallingBlocks: FallingBlock[];
   dumpPieces: DumpPiece[];     // Active dump pieces falling from top
   dumpQueue: DumpPiece[];      // Pieces waiting to spawn (staggered)
-  timeLeft: number;
+  sessionTime: number;
   
   // New Stats
   scoreBreakdown: ScoreBreakdown;
@@ -334,6 +334,6 @@ export interface RankDetails {
   rank: number;
   progress: number;        // Current XP in this rank
   toNextRank: number;      // Total XP needed for next rank
-  totalScore: number;
+  operatorXP: number;
   isMaxRank: boolean;
 }

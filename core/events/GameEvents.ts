@@ -41,7 +41,7 @@ export enum GameEventType {
 }
 
 export interface PopPayload {
-    combo: number;
+    popStreak: number;
     count: number;
 }
 

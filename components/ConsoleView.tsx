@@ -11,8 +11,8 @@ import { ArrowUp } from 'lucide-react';
 interface ConsoleViewProps {
     engine: GameEngine;
     state: GameState;
-    totalScore: number;
-    powerUpPoints: number;
+    operatorXP: number;
+    scraps: number;
     powerUps?: Record<string, number>;
     onOpenSettings?: () => void;
     onOpenHelp?: () => void;
@@ -25,12 +25,12 @@ interface ConsoleViewProps {
     onToggleEquip?: (upgradeId: string) => void;
 }
 
-export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalScore, powerUpPoints, powerUps = {}, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, onDismissGameOver, equippedActives = [], onToggleEquip }) => {
+export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, operatorXP, scraps, powerUps = {}, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, onDismissGameOver, equippedActives = [], onToggleEquip }) => {
     // Calculate Rank based on:
     // Engine's start-of-run total (which hasn't been updated with the run score yet if Game Over)
     // + Current run score.
-    // This prevents double counting because totalScore prop from parent might already include state.score after Game Over update.
-    const rankInfo = calculateRankDetails(engine.initialTotalScore + state.score);
+    // This prevents double counting because operatorXP prop from parent might already include state.sessionXP after Game Over update.
+    const rankInfo = calculateRankDetails(engine.initialTotalScore + state.sessionXP);
 
     // System upgrade panel state
     const [showSystemUpgrades, setShowSystemUpgrades] = useState(false);
@@ -196,7 +196,7 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalSc
                         </div>
                     ) : (
                         <div className="text-[#f1a941] text-3xl font-black tracking-widest font-['From_Where_You_Are']">
-                            {Math.floor((1 - (state.timeLeft/engine.maxTime)) * 100)}% PSI
+                            {Math.floor((1 - (state.sessionTime/engine.maxTime)) * 100)}% PSI
                         </div>
                     )
                 ) : (
@@ -252,20 +252,20 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalSc
                         onAbortClick={handleAbort}
 
                         // State
-                        upgradeCount={powerUpPoints}
+                        upgradeCount={scraps}
                         screenContent={!state.gameOver ? <MonitorScreen /> : null}
                         isGameOver={state.gameOver}
                         isSessionActive={engine.isSessionActive}
-                        
+
                         // Rank & Score Props
                         rank={rankInfo.rank}
                         currentXP={rankInfo.progress}
                         nextRankXP={rankInfo.toNextRank}
-                        totalScore={state.score}
+                        sessionXP={state.sessionXP}
                         gameStats={state.gameStats}
                         goalsCleared={state.goalsCleared}
                         goalsTarget={state.goalsTarget}
-                        unspentPower={powerUpPoints}
+                        unspentPower={scraps}
 
                         // Complications
                         complications={state.complications}
@@ -280,7 +280,7 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, totalSc
             {/* System Upgrades Panel */}
             {showSystemUpgrades && (
                 <UpgradePanel
-                    powerUpPoints={powerUpPoints}
+                    scraps={scraps}
                     upgrades={powerUps}
                     rank={rankInfo.rank}
                     onPurchase={(id) => onPurchaseUpgrade?.(id)}

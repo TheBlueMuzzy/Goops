@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface EndGameScreenProps {
-  score: number;
+  sessionXP: number;
   rank: number;
   xpCurrent: number;
   xpNext: number;
@@ -16,7 +16,7 @@ interface EndGameScreenProps {
 }
 
 export const EndGameScreen: React.FC<EndGameScreenProps> = ({
-  score, rank, xpCurrent, xpNext,
+  sessionXP, rank, xpCurrent, xpNext,
   cracksFilled, cracksTarget, pressureVented,
   massPurged, leftoverPenalty, unspentPower, isWin
 }) => {
@@ -88,7 +88,7 @@ export const EndGameScreen: React.FC<EndGameScreenProps> = ({
       
       {/* FINAL SCORE VALUE */}
       <text fill="#fff" fontFamily="'Amazon Ember'" fontWeight="800" fontSize="60" transform="translate(165.69 390.05)" textAnchor="middle">
-          {score.toLocaleString()}
+          {sessionXP.toLocaleString()}
       </text>
 
       {/* STATS GRID */}

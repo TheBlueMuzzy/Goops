@@ -45,7 +45,7 @@ interface ConsoleLayoutProps {
     rank: number;
     currentXP: number;
     nextRankXP: number;
-    totalScore?: number;
+    sessionXP?: number;
     gameStats?: GameStats;
     goalsCleared?: number;
     goalsTarget?: number;
@@ -86,7 +86,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
     rank,
     currentXP,
     nextRankXP,
-    totalScore = 0,
+    sessionXP = 0,
     gameStats = { startTime: 0, totalBonusTime: 0, maxGroupSize: 0, penalty: 0 },
     goalsCleared = 0,
     goalsTarget = 0,
@@ -482,7 +482,7 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                     // When Game Over, replace the entire monitor geometry with EndGameScreen SVG contents (translated to align)
                     <g transform={endGameTranslate}>
                         <EndGameScreen 
-                            score={totalScore}
+                            sessionXP={sessionXP}
                             rank={rank}
                             xpCurrent={currentXP}
                             xpNext={nextRankXP}

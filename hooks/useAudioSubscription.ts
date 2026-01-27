@@ -11,7 +11,7 @@ export const useAudioSubscription = () => {
         const unsubDrop = gameEventBus.on(GameEventType.PIECE_DROPPED, () => audio.playDrop());
         
         const unsubPop = gameEventBus.on<PopPayload>(GameEventType.GOOP_POPPED, (payload) => {
-            audio.playPop(payload?.combo || 0);
+            audio.playPop(payload?.popStreak || 0);
         });
         
         const unsubReject = gameEventBus.on(GameEventType.ACTION_REJECTED, () => audio.playReject());

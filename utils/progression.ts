@@ -78,14 +78,14 @@ export const getMilestonesInRange = (fromRank: number, toRank: number): number[]
 
 // --- Rank Calculation ---
 
-export const calculateRankDetails = (totalScore: number): RankDetails => {
+export const calculateRankDetails = (operatorXP: number): RankDetails => {
   // Rank 0 = fresh start or not yet reached rank 1's threshold (3500)
-  if (totalScore < getScoreForRank(1)) {
+  if (operatorXP < getScoreForRank(1)) {
     return {
       rank: 0,
-      progress: Math.max(0, totalScore),
+      progress: Math.max(0, operatorXP),
       toNextRank: 3500, // XP needed for rank 1
-      totalScore: Math.max(0, totalScore),
+      operatorXP: Math.max(0, operatorXP),
       isMaxRank: false
     };
   }
@@ -93,21 +93,21 @@ export const calculateRankDetails = (totalScore: number): RankDetails => {
   let rank = 1;
 
   // Iterative check is fast enough for 100 ranks
-  while (rank < MAX_RANK && totalScore >= getScoreForRank(rank + 1)) {
+  while (rank < MAX_RANK && operatorXP >= getScoreForRank(rank + 1)) {
     rank++;
   }
 
   const currentRankScoreBase = getScoreForRank(rank);
   const nextRankScoreBase = getScoreForRank(rank + 1);
-  
-  const progress = totalScore - currentRankScoreBase;
+
+  const progress = operatorXP - currentRankScoreBase;
   const toNextRank = nextRankScoreBase - currentRankScoreBase;
-  
+
   return {
     rank,
     progress,
     toNextRank,
-    totalScore,
+    operatorXP,
     isMaxRank: rank >= MAX_RANK
   };
 };

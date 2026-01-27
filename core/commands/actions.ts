@@ -191,7 +191,7 @@ export class HardDropCommand implements Command {
         engine.state.grid = newGrid;
         
         engine.spawnNewPiece(undefined, newGrid);
-        engine.state.combo = 0;
+        engine.state.popStreak = 0;
         engine.isFastDropping = false;
         engine.emitChange();
     }
@@ -254,7 +254,7 @@ export class PopGoopCommand implements Command {
          const cell = engine.state.grid[this.y][this.x];
          if (!cell) return;
          
-         const pressureRatio = Math.max(0, 1 - (engine.state.timeLeft / engine.maxTime));
+         const pressureRatio = Math.max(0, 1 - (engine.state.sessionTime / engine.maxTime));
          const thresholdY = (TANK_HEIGHT - 1) - (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
          
          if (cell.groupMinY < thresholdY) {
@@ -300,7 +300,7 @@ export class PopGoopCommand implements Command {
                 engine.state.prePoppedGoopGroups.delete(goopGroupId);
             }
 
-            gameEventBus.emit(GameEventType.GOOP_POPPED, { combo: engine.state.combo, count: group.length });
+            gameEventBus.emit(GameEventType.GOOP_POPPED, { popStreak: engine.state.popStreak, count: group.length });
             engine.state.cellsCleared++;
 
             // Increment popped counter for complication tracking
@@ -359,12 +359,12 @@ export class PopGoopCommand implements Command {
 
             const totalTimeAdded = basePressureReduc + unitPressureReduc + tierPressureReduc + infusedBonus;
 
-            engine.state.timeLeft = Math.min(engine.maxTime, engine.state.timeLeft + totalTimeAdded);
+            engine.state.sessionTime = Math.min(engine.maxTime, engine.state.sessionTime + totalTimeAdded);
             engine.state.gameStats.totalBonusTime += totalTimeAdded;
 
             // Score Calculation
             let totalScoreForTap = 0;
-            let currentComboCount = engine.state.combo + 1;
+            let currentComboCount = engine.state.popStreak + 1;
 
             let tapBreakdown = { base: 0, height: 0, offscreen: 0, adjacency: 0, speed: 0 };
             const adjacencyScore = calculateAdjacencyBonus(engine.state.grid, group);
@@ -385,7 +385,7 @@ export class PopGoopCommand implements Command {
             
             const roundedScore = Math.floor(totalScoreForTap);
             engine.updateScoreAndStats(roundedScore, tapBreakdown);
-            engine.state.combo = currentComboCount;
+            engine.state.popStreak = currentComboCount;
 
             const textId = Math.random().toString(36).substr(2, 9);
             const floaters = [
@@ -417,11 +417,11 @@ export class PopGoopCommand implements Command {
             // Burst Logic
             if (infusedCount > 0) {
                 if (engine.state.goalsCleared >= engine.state.goalsTarget) {
-                     const pressureRatio = Math.max(0, 1 - (engine.state.timeLeft / engine.maxTime));
-                     const currentRank = calculateRankDetails(engine.initialTotalScore + engine.state.score).rank;
+                     const pressureRatio = Math.max(0, 1 - (engine.state.sessionTime / engine.maxTime));
+                     const currentRank = calculateRankDetails(engine.initialTotalScore + engine.state.sessionXP).rank;
 
                      if (pressureRatio < 0.9) {
-                         const burst = spawnGoalBurst(cleanGrid, engine.state.goalMarks, currentRank, engine.state.timeLeft, engine.maxTime);
+                         const burst = spawnGoalBurst(cleanGrid, engine.state.goalMarks, currentRank, engine.state.sessionTime, engine.maxTime);
                          engine.state.goalMarks.push(...burst);
                          gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });
                      } else {

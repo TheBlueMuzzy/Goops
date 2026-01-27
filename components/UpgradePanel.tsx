@@ -21,7 +21,7 @@ const TAB_DEFS: TabDef[] = [
 ];
 
 interface UpgradePanelProps {
-  powerUpPoints: number;
+  scraps: number;
   upgrades: Record<string, number>;
   rank: number;
   onPurchase: (upgradeId: string) => void;
@@ -47,7 +47,7 @@ const getUpgradeAccent = (upgradeId: string, type: string): { accent: string; te
 };
 
 export const UpgradePanel: React.FC<UpgradePanelProps> = ({
-  powerUpPoints,
+  scraps,
   upgrades,
   rank,
   onPurchase,
@@ -142,7 +142,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
   const renderUpgradeCard = (upgrade: typeof UPGRADES[keyof typeof UPGRADES]) => {
     const currentLevel = upgrades[upgrade.id] || 0;
     const isMaxLevel = currentLevel >= upgrade.maxLevel;
-    const canAfford = powerUpPoints >= upgrade.costPerLevel;
+    const canAfford = scraps >= upgrade.costPerLevel;
     const canIncrease = canAfford && !isMaxLevel;
     const canDecrease = currentLevel > 0;
     const accent = getUpgradeAccent(upgrade.id, upgrade.type);
@@ -329,7 +329,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
           SYSTEM UPGRADES
         </text>
         <text fill="#5bbc70" fontFamily="'Amazon Ember'" fontWeight="800" fontSize="32" transform="translate(530 105)" textAnchor="end">
-          {powerUpPoints} PWR
+          {scraps} PWR
         </text>
 
         {/* Upgrades Content Area */}

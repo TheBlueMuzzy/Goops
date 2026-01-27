@@ -107,17 +107,17 @@ export class GameEngine {
             activeGoop: null,
             storedPiece: null,
             nextPiece: null,
-            score: 0,
+            sessionXP: 0,
             gameOver: false,
             isPaused: false,
             canSwap: true,
             level: 1,
             cellsCleared: 0,
-            combo: 0,
+            popStreak: 0,
             fallingBlocks: [],
             dumpPieces: [],
             dumpQueue: [],
-            timeLeft: INITIAL_TIME_MS,
+            sessionTime: INITIAL_TIME_MS,
             scoreBreakdown: { base: 0, height: 0, offscreen: 0, adjacency: 0, speed: 0 },
             gameStats: { startTime: 0, totalBonusTime: 0, maxGroupSize: 0 },
             floatingTexts: [],
@@ -184,7 +184,7 @@ export class GameEngine {
 
         // Reset time if we haven't started playing yet
         if (this.state.gameStats.startTime === 0) {
-            this.state.timeLeft = this.maxTime;
+            this.state.sessionTime = this.maxTime;
         }
     }
 
@@ -251,7 +251,7 @@ export class GameEngine {
             ...this.state,
             grid: createInitialGrid(startRank, this.powerUps),
             tankRotation: 0,
-            score: 0,
+            sessionXP: 0,
             gameOver: false,
             isPaused: false,
             activeGoop: null,
@@ -261,12 +261,12 @@ export class GameEngine {
             },
             nextPiece: nextPieceDef,
             canSwap: true,
-            combo: 0,
+            popStreak: 0,
             cellsCleared: 0,
             fallingBlocks: [],
             dumpPieces: [],
             dumpQueue: [],
-            timeLeft: this.maxTime,
+            sessionTime: this.maxTime,
             floatingTexts: [],
             goalMarks: [],
             crackCells: [],
@@ -330,7 +330,7 @@ export class GameEngine {
         this.state.gameOver = false;
         this.isSessionActive = false;
         this.state.phase = GamePhase.CONSOLE;
-        this.state.score = 0; // Reset run score
+        this.state.sessionXP = 0; // Reset run score
         
         // Apply any pending total score update from the previous run
         if (this.pendingTotalScore !== null) {
@@ -345,7 +345,7 @@ export class GameEngine {
         if (!this.isSessionActive || this.state.gameOver) return;
         
         // 1. Zero out score and goals to prevent XP gain and Win Bonus
-        this.state.score = 0;
+        this.state.sessionXP = 0;
         this.state.goalsCleared = 0; 
         
         // 2. Trigger standard Game Over flow (monitor drops, penalties calc, etc)
@@ -512,7 +512,7 @@ export class GameEngine {
         if (this.state.goalsCleared >= this.state.goalsTarget) {
             const startRank = calculateRankDetails(this.initialTotalScore).rank;
             const winBonus = startRank * 5000;
-            this.state.score += winBonus;
+            this.state.sessionXP += winBonus;
         }
 
         // 2. Calculate Penalty for leftover blocks
@@ -562,13 +562,13 @@ export class GameEngine {
         this.state.gameStats.penalty = penalty;
 
         // 3. Apply Penalty
-        this.state.score = Math.max(0, this.state.score - penalty);
+        this.state.sessionXP = Math.max(0, this.state.sessionXP - penalty);
 
         // 4. Apply XP floor: minimum XP = 100 * starting rank
         // Prevents high-rank players from getting zero-gain runs
         const startingRank = calculateRankDetails(this.initialTotalScore).rank;
         const xpFloor = 100 * startingRank;
-        this.state.score = Math.max(xpFloor, this.state.score);
+        this.state.sessionXP = Math.max(xpFloor, this.state.sessionXP);
 
         // 5. Clear any active complications so they don't show on end screen
         this.state.complications = [];
@@ -584,7 +584,7 @@ export class GameEngine {
      * Zone selection: Tetra (0-25s), Penta (25-50s), Hexa (50-75s)
      */
     private getPiecePoolByZone(): GoopTemplate[] {
-        const elapsedMs = this.maxTime - this.state.timeLeft;
+        const elapsedMs = this.maxTime - this.state.sessionTime;
         const elapsedSec = elapsedMs / 1000;
 
         // Determine which size zone we're in
@@ -636,7 +636,7 @@ export class GameEngine {
     public spawnNewPiece(pieceDef?: GoopTemplate, gridOverride?: TankCell[][], offsetOverride?: number) {
         const currentGrid = gridOverride || this.state.grid;
         const currentOffset = offsetOverride !== undefined ? offsetOverride : this.state.tankRotation;
-        const currentTotalScore = this.initialTotalScore + this.state.score;
+        const currentTotalScore = this.initialTotalScore + this.state.sessionXP;
         const currentRank = calculateRankDetails(currentTotalScore).rank;
         const palette = getPaletteForRank(currentRank);
 
@@ -762,14 +762,14 @@ export class GameEngine {
 
     public updateScoreAndStats(pointsToAdd: number, breakdown?: Partial<ScoreBreakdown>) {
         // Score boost upgrade removed - points are now unmodified
-        this.state.score += pointsToAdd;
+        this.state.sessionXP += pointsToAdd;
 
         if (breakdown) {
-            this.state.scoreBreakdown.base += (breakdown.base || 0);
-            this.state.scoreBreakdown.height += (breakdown.height || 0);
-            this.state.scoreBreakdown.offscreen += (breakdown.offscreen || 0);
-            this.state.scoreBreakdown.adjacency += (breakdown.adjacency || 0);
-            this.state.scoreBreakdown.speed += (breakdown.speed || 0);
+            this.state.sessionXPBreakdown.base += (breakdown.base || 0);
+            this.state.sessionXPBreakdown.height += (breakdown.height || 0);
+            this.state.sessionXPBreakdown.offscreen += (breakdown.offscreen || 0);
+            this.state.sessionXPBreakdown.adjacency += (breakdown.adjacency || 0);
+            this.state.sessionXPBreakdown.speed += (breakdown.speed || 0);
         }
     }
 
@@ -796,8 +796,8 @@ export class GameEngine {
             ? (1 - focusLevel * 0.10)  // At level 4: 0.60 (40% slower)
             : 1;
 
-        this.state.timeLeft = Math.max(0, this.state.timeLeft - (dt * timeMultiplier));
-        if (this.state.timeLeft <= 0) {
+        this.state.sessionTime = Math.max(0, this.state.sessionTime - (dt * timeMultiplier));
+        if (this.state.sessionTime <= 0) {
             this.finalizeGame();
             return false;
         }
@@ -813,7 +813,7 @@ export class GameEngine {
             this.state,
             this.state.grid,
             this.initialTotalScore,
-            this.state.timeLeft,
+            this.state.sessionTime,
             this.maxTime,
             this.lastGoalSpawnTime
         );
@@ -1227,7 +1227,7 @@ export class GameEngine {
         this.state.grid = newGrid;
 
         this.spawnNewPiece(undefined, newGrid);
-        this.state.combo = 0;
+        this.state.popStreak = 0;
         this.isFastDropping = false;
     }
 
@@ -1274,7 +1274,7 @@ export class GameEngine {
         this.tickDebugCounter++;
         const now = Date.now();
         if (now - this.lastTickDebugLog > 2000) {
-            console.log(`[TICK DEBUG] #${this.tickDebugCounter} | active=${this.isSessionActive} | phase=${this.state.phase} | timeLeft=${this.state.timeLeft.toFixed(0)} | maxTime=${this.maxTime} | paused=${this.state.isPaused} | gameOver=${this.state.gameOver}`);
+            console.log(`[TICK DEBUG] #${this.tickDebugCounter} | active=${this.isSessionActive} | phase=${this.state.phase} | timeLeft=${this.state.sessionTime.toFixed(0)} | maxTime=${this.maxTime} | paused=${this.state.isPaused} | gameOver=${this.state.gameOver}`);
             this.lastTickDebugLog = now;
         }
 

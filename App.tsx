@@ -185,7 +185,7 @@ const App: React.FC = () => {
           onRunComplete={handleRunComplete}
           initialTotalScore={saveData.operatorXP}
           powerUps={saveData.powerUps}
-          powerUpPoints={saveData.scraps}
+          scraps={saveData.scraps}
           settings={saveData.settings}
           onOpenSettings={() => setView('SETTINGS')}
           onOpenHelp={() => setView('HOW_TO_PLAY')}

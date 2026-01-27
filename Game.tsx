@@ -23,10 +23,10 @@ import { SpinTankCommand, RotateGoopCommand, SetFastDropCommand, SwapPieceComman
 
 interface GameProps {
   onExit: () => void;
-  onRunComplete: (score: number) => void;
+  onRunComplete: (sessionXP: number) => void;
   initialTotalScore: number;
   powerUps?: Record<string, number>;
-  powerUpPoints: number;
+  scraps: number;
   settings: SaveData['settings'];
   onOpenSettings?: () => void;
   onOpenHelp?: () => void;
@@ -38,7 +38,7 @@ interface GameProps {
   onToggleEquip?: (upgradeId: string) => void;
 }
 
-const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, powerUpPoints, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, equippedActives = [], onToggleEquip }) => {
+const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, scraps, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, equippedActives = [], onToggleEquip }) => {
   const { engine, gameState } = useGameEngine(initialTotalScore, powerUps, onRunComplete, equippedActives);
 
   // Handle active ability activation
@@ -78,7 +78,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   // Sync Score on Game Over
   useEffect(() => {
       if (gameState.gameOver && gameState.phase === GamePhase.CONSOLE) {
-          onRunComplete(gameState.score);
+          onRunComplete(gameState.sessionXP);
       }
   }, [gameState.gameOver]);
 
@@ -342,8 +342,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           <ConsoleView
             engine={engine}
             state={gameState}
-            totalScore={initialTotalScore}
-            powerUpPoints={powerUpPoints}
+            operatorXP={initialTotalScore}
+            scraps={scraps}
             powerUps={powerUps}
             onOpenSettings={onOpenSettings}
             onOpenHelp={onOpenHelp}
