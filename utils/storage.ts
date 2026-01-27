@@ -1,12 +1,12 @@
 
 import { SaveData } from '../types';
 
-const STORAGE_KEY = 'gooptris_save_v1';
+const STORAGE_KEY = 'gooptris_save_v2';
 
 export const getDefaultSaveData = (): SaveData => ({
-  rank: 1,
-  totalScore: 0,
-  powerUpPoints: 0,
+  operatorRank: 1,
+  operatorXP: 0,
+  scraps: 0,
   powerUps: {},
   equippedActives: [],      // No actives equipped by default
   unlockedUpgrades: [],     // No upgrades revealed yet (first at rank 1)

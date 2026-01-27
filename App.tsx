@@ -40,10 +40,10 @@ const App: React.FC = () => {
 
   const handleRunComplete = useCallback((runScore: number) => {
     setSaveData(prev => {
-      const newTotalScore = prev.totalScore + runScore;
+      const newOperatorXP = prev.operatorXP + runScore;
 
-      const oldRankDetails = calculateRankDetails(prev.totalScore);
-      const newRankDetails = calculateRankDetails(newTotalScore);
+      const oldRankDetails = calculateRankDetails(prev.operatorXP);
+      const newRankDetails = calculateRankDetails(newOperatorXP);
 
       const rankDiff = newRankDetails.rank - oldRankDetails.rank;
 
@@ -61,9 +61,9 @@ const App: React.FC = () => {
 
       return {
         ...prev,
-        totalScore: newTotalScore,
-        rank: newRankDetails.rank,
-        powerUpPoints: prev.powerUpPoints + pointsEarned,
+        operatorXP: newOperatorXP,
+        operatorRank: newRankDetails.rank,
+        scraps: prev.scraps + pointsEarned,
         milestonesReached: [...prev.milestonesReached, ...newMilestones],
         firstRunComplete: true
       };
@@ -84,12 +84,12 @@ const App: React.FC = () => {
           audio.init(fresh.settings);
       } else {
           // Set to specific rank - reset powerUps so player can test fresh
-          const newTotalScore = getScoreForMidRank(rank);
+          const newOperatorXP = getScoreForMidRank(rank);
           setSaveData(prev => ({
               ...prev,
-              totalScore: newTotalScore,
-              rank: rank,
-              powerUpPoints: rank, // Points = rank level
+              operatorXP: newOperatorXP,
+              operatorRank: rank,
+              scraps: rank, // Points = rank level
               powerUps: {} // Reset all purchased upgrades
           }));
           setGameKey(prev => prev + 1); // Force remount to apply new score
@@ -103,13 +103,13 @@ const App: React.FC = () => {
       const maxLevel = upgrade?.maxLevel || 4;
       const cost = upgrade?.costPerLevel || 1;
 
-      if (prev.powerUpPoints < cost || currentLevel >= maxLevel) {
+      if (prev.scraps < cost || currentLevel >= maxLevel) {
         return prev; // Can't purchase
       }
 
       return {
         ...prev,
-        powerUpPoints: prev.powerUpPoints - cost,
+        scraps: prev.scraps - cost,
         powerUps: {
           ...prev.powerUps,
           [upgradeId]: currentLevel + 1
@@ -136,7 +136,7 @@ const App: React.FC = () => {
 
       return {
         ...prev,
-        powerUpPoints: prev.powerUpPoints + refund,
+        scraps: prev.scraps + refund,
         powerUps: {
           ...prev.powerUps,
           [upgradeId]: currentLevel - 1
@@ -183,9 +183,9 @@ const App: React.FC = () => {
           key={gameKey}
           onExit={() => { /* No Exit in Console Mode concept anymore, just idle */ }}
           onRunComplete={handleRunComplete}
-          initialTotalScore={saveData.totalScore}
+          initialTotalScore={saveData.operatorXP}
           powerUps={saveData.powerUps}
-          powerUpPoints={saveData.powerUpPoints}
+          powerUpPoints={saveData.scraps}
           settings={saveData.settings}
           onOpenSettings={() => setView('SETTINGS')}
           onOpenHelp={() => setView('HOW_TO_PLAY')}

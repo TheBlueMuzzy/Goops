@@ -314,9 +314,9 @@ export interface UpgradeConfig {
 // --- Meta Progression Types ---
 
 export interface SaveData {
-  rank: number;            // Current Player Rank (1-100)
-  totalScore: number;      // Cumulative score across all runs
-  powerUpPoints: number;   // Currency to buy upgrades (1 per rank)
+  operatorRank: number;    // Current Player Rank (1-100)
+  operatorXP: number;      // Cumulative XP across all runs
+  scraps: number;          // Currency to buy upgrades (1 per rank)
   powerUps: Record<string, number>; // Upgrade levels by ID (0 = not purchased)
   equippedActives: string[]; // IDs of equipped active abilities (max based on slots)
   unlockedUpgrades: string[]; // IDs of upgrades that have been revealed to player
