@@ -1133,7 +1133,7 @@ export class GameEngine {
                 // Place in grid as a single-block goop
                 newGrid[gridY][gridX] = {
                     id: piece.id,
-                    groupId: Math.random().toString(36).substr(2, 9),
+                    goopGroupId: Math.random().toString(36).substr(2, 9),
                     timestamp: Date.now(),
                     color: piece.color,
                     groupMinY: gridY,

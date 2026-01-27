@@ -83,11 +83,11 @@ export const createInitialGrid = (rank: number, powerUps?: Record<string, number
               color = useAnchor ? anchorColor : palette[Math.floor(Math.random() * palette.length)];
           }
 
-          const groupId = Math.random().toString(36).substr(2, 9);
+          const goopGroupId = Math.random().toString(36).substr(2, 9);
 
           grid[y][x] = {
               id: Math.random().toString(36).substr(2, 9),
-              groupId: groupId, // Unique group ID for each junk block = Single Unit Globs
+              goopGroupId: goopGroupId, // Unique group ID for each junk block = Single Unit Globs
               timestamp: Date.now(),
               color: color,
               groupMinY: y,
@@ -147,7 +147,7 @@ export const findContiguousGroup = (grid: TankCell[][], startX: number, startY: 
   const visited = new Set<string>();
   const queue: Coordinate[] = [{ x: startX, y: startY }];
   
-  const targetGroupId = startCell.groupId;
+  const targetGroupId = startCell.goopGroupId;
 
   while (queue.length > 0) {
     const { x, y } = queue.shift()!;
@@ -167,7 +167,7 @@ export const findContiguousGroup = (grid: TankCell[][], startX: number, startY: 
     for (const n of neighbors) {
       if (n.y >= 0 && n.y < TANK_HEIGHT) {
         const neighborCell = grid[n.y][n.x];
-        if (neighborCell && neighborCell.groupId === targetGroupId) {
+        if (neighborCell && neighborCell.goopGroupId === targetGroupId) {
            if (!visited.has(`${n.x},${n.y}`)) {
              queue.push(n);
            }
@@ -236,9 +236,9 @@ export const updateGroups = (grid: TankCell[][]): TankCell[][] => {
                 const newGroupSize = group.length;
 
                 // Determine if this is a "changed" group (merge happened) or "unchanged"
-                // It is unchanged if all current members have the same groupId and groupSize as the detected group
+                // It is unchanged if all current members have the same goopGroupId and groupSize as the detected group
                 let isUnchanged = true;
-                const referenceId = cell.groupId;
+                const referenceId = cell.goopGroupId;
                 const referenceSize = cell.groupSize;
                 
                 if (referenceSize !== newGroupSize) {
@@ -246,14 +246,14 @@ export const updateGroups = (grid: TankCell[][]): TankCell[][] => {
                 } else {
                     for (const pt of group) {
                         const member = newGrid[pt.y][pt.x];
-                        if (!member || member.groupId !== referenceId || member.groupSize !== referenceSize) {
+                        if (!member || member.goopGroupId !== referenceId || member.groupSize !== referenceSize) {
                             isUnchanged = false;
                             break;
                         }
                     }
                 }
 
-                const groupIdToUse = isUnchanged ? referenceId : Math.random().toString(36).substr(2, 9);
+                const goopGroupIdToUse = isUnchanged ? referenceId : Math.random().toString(36).substr(2, 9);
                 // If changed (merged), reset timestamp to now to trigger fresh animation
                 const timestampToUse = isUnchanged ? cell.timestamp : Date.now();
                 
@@ -262,7 +262,7 @@ export const updateGroups = (grid: TankCell[][]): TankCell[][] => {
                     const c = newGrid[pt.y][pt.x]!;
                     newGrid[pt.y][pt.x] = {
                         ...c,
-                        groupId: groupIdToUse,
+                        goopGroupId: goopGroupIdToUse,
                         timestamp: timestampToUse,
                         groupMinY: minY,
                         groupMaxY: maxY,
@@ -283,7 +283,7 @@ export const mergePiece = (
 ): { grid: TankCell[][], consumedGoals: string[], destroyedGoals: string[] } => {
   
   const newGrid = grid.map(row => [...row]);
-  const groupId = Math.random().toString(36).substr(2, 9);
+  const goopGroupId = Math.random().toString(36).substr(2, 9);
   const now = Date.now();
   
   let minY = TANK_HEIGHT;
@@ -320,7 +320,7 @@ export const mergePiece = (
 
       newGrid[y][x] = {
         id: Math.random().toString(36).substr(2, 9),
-        groupId,
+        goopGroupId,
         timestamp: now,
         color: cellColor,
         groupMinY: minY,
@@ -359,8 +359,8 @@ export const processWildConversions = (
         }
     });
 
-    // Collect groupIds of adjacent groups to convert
-    const groupIdsToConvert = new Set<string>();
+    // Collect goopGroupIds of adjacent groups to convert
+    const goopGroupIdsToConvert = new Set<string>();
 
     // For each piece cell, check neighbors
     pieceCells.forEach(({ x, y }) => {
@@ -381,14 +381,14 @@ export const processWildConversions = (
                 if (isPartOfPiece) return;
 
                 if (pieceIsWild) {
-                    // Wild piece landed: collect groupIds to mark as wild
+                    // Wild piece landed: collect goopGroupIds to mark as wild
                     if (!neighborCell.isWild) {
-                        groupIdsToConvert.add(neighborCell.groupId);
+                        goopGroupIdsToConvert.add(neighborCell.goopGroupId);
                     }
                 } else {
-                    // Non-wild piece landed: collect wild groupIds to convert
+                    // Non-wild piece landed: collect wild goopGroupIds to convert
                     if (neighborCell.isWild) {
-                        groupIdsToConvert.add(neighborCell.groupId);
+                        goopGroupIdsToConvert.add(neighborCell.goopGroupId);
                     }
                 }
             }
@@ -396,11 +396,11 @@ export const processWildConversions = (
     });
 
     // Apply conversion to entire groups
-    if (groupIdsToConvert.size > 0) {
+    if (goopGroupIdsToConvert.size > 0) {
         for (let y = 0; y < TANK_HEIGHT; y++) {
             for (let x = 0; x < TANK_WIDTH; x++) {
                 const cell = newGrid[y][x];
-                if (cell && groupIdsToConvert.has(cell.groupId)) {
+                if (cell && goopGroupIdsToConvert.has(cell.goopGroupId)) {
                     if (pieceIsWild) {
                         // Mark entire group as wild
                         newGrid[y][x] = { ...cell, isWild: true };
@@ -426,17 +426,17 @@ export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[])
     
     // 1. Map all Groups
     const groups = new Map<string, Coordinate[]>();
-    const groupIds = new Set<string>();
+    const goopGroupIds = new Set<string>();
     
     for (let y = 0; y < TANK_HEIGHT; y++) {
         for (let x = 0; x < TANK_WIDTH; x++) {
             const cell = newGrid[y][x];
             if (cell) {
-                if (!groups.has(cell.groupId)) {
-                    groups.set(cell.groupId, []);
-                    groupIds.add(cell.groupId);
+                if (!groups.has(cell.goopGroupId)) {
+                    groups.set(cell.goopGroupId, []);
+                    goopGroupIds.add(cell.goopGroupId);
                 }
-                groups.get(cell.groupId)!.push({ x, y });
+                groups.get(cell.goopGroupId)!.push({ x, y });
             }
         }
     }
@@ -448,7 +448,7 @@ export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[])
     while (changed) {
         changed = false;
         
-        for (const gid of groupIds) {
+        for (const gid of goopGroupIds) {
             if (supportedGroupIds.has(gid)) continue;
             
             const blocks = groups.get(gid)!;
@@ -465,7 +465,7 @@ export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[])
                 const belowY = b.y + 1;
                 if (belowY < TANK_HEIGHT) {
                     const belowCell = newGrid[belowY][b.x];
-                    if (belowCell && belowCell.groupId !== gid && supportedGroupIds.has(belowCell.groupId)) {
+                    if (belowCell && belowCell.goopGroupId !== gid && supportedGroupIds.has(belowCell.goopGroupId)) {
                         isSupported = true;
                         break;
                     }
@@ -480,7 +480,7 @@ export const getFloatingBlocks = (grid: TankCell[][], columnsToCheck?: number[])
     }
 
     // 3. Mark unsupported groups as falling
-    for (const gid of groupIds) {
+    for (const gid of goopGroupIds) {
         if (!supportedGroupIds.has(gid)) {
             const blocks = groups.get(gid)!;
             for (const b of blocks) {

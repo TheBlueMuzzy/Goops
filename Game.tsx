@@ -9,7 +9,7 @@ import { Play, Home } from 'lucide-react';
 import { gameEventBus } from './core/events/EventBus';
 import { GameEventType, RotatePayload, DragPayload, FastDropPayload, BlockTapPayload, SwapHoldPayload } from './core/events/GameEvents';
 import { calculateRankDetails } from './utils/progression';
-import { MoveBoardCommand, RotatePieceCommand, SetFastDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, BlockTapCommand, ActivateAbilityCommand } from './core/commands/actions';
+import { SpinTankCommand, RotateGoopCommand, SetFastDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, PopGoopCommand, ActivateAbilityCommand } from './core/commands/actions';
 
 // STATE ARCHITECTURE:
 // - Game state flows down: useGameEngine → state prop → child components
@@ -148,11 +148,11 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
                   if (controlsComplication) {
                       controlsInputCountRef.current++;
                       if (controlsInputCountRef.current >= 2) {
-                          engine.execute(new MoveBoardCommand(dir));
+                          engine.execute(new SpinTankCommand(dir));
                           controlsInputCountRef.current = 0;
                       }
                   } else {
-                      engine.execute(new MoveBoardCommand(dir));
+                      engine.execute(new SpinTankCommand(dir));
                   }
                   lastMoveTimeRef.current = now + repeatRate;
               }
@@ -195,17 +195,17 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           if (gameState.phase === GamePhase.PERISCOPE && !engine.state.isPaused && engine.isSessionActive) {
               switch(e.code) {
                   case 'ArrowLeft': case 'KeyA': 
-                      engine.execute(new MoveBoardCommand(1 * directionMultiplier)); 
+                      engine.execute(new SpinTankCommand(1 * directionMultiplier)); 
                       lastMoveTimeRef.current = Date.now() + 250; 
                       startMovementLoop();
                       break;
                   case 'ArrowRight': case 'KeyD': 
-                      engine.execute(new MoveBoardCommand(-1 * directionMultiplier)); 
+                      engine.execute(new SpinTankCommand(-1 * directionMultiplier)); 
                       lastMoveTimeRef.current = Date.now() + 250; 
                       startMovementLoop();
                       break;
-                  case 'KeyQ': engine.execute(new RotatePieceCommand(false)); break;
-                  case 'KeyE': engine.execute(new RotatePieceCommand(true)); break;
+                  case 'KeyQ': engine.execute(new RotateGoopCommand(false)); break;
+                  case 'KeyE': engine.execute(new RotateGoopCommand(true)); break;
                   case 'KeyS': engine.execute(new SetFastDropCommand(true)); break;
                   case 'Space': engine.execute(new SetPhaseCommand(GamePhase.CONSOLE)); break;
                   case 'KeyW': engine.execute(new SetPhaseCommand(GamePhase.CONSOLE)); break;
@@ -240,8 +240,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
 
       const handleWheel = (e: WheelEvent) => {
           if (gameState.phase === GamePhase.PERISCOPE && !engine.state.isPaused && !gameState.gameOver && engine.isSessionActive) {
-              if (e.deltaY > 0) engine.execute(new RotatePieceCommand(true));
-              else engine.execute(new RotatePieceCommand(false));
+              if (e.deltaY > 0) engine.execute(new RotateGoopCommand(true));
+              else engine.execute(new RotateGoopCommand(false));
           }
       };
 
@@ -260,7 +260,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   // Subscribe to input events from EventBus (replaces callback prop drilling)
   useEffect(() => {
       const unsubRotate = gameEventBus.on<RotatePayload>(GameEventType.INPUT_ROTATE, (p) => {
-          engine.execute(new RotatePieceCommand(p?.clockwise ?? true));
+          engine.execute(new RotateGoopCommand(p?.clockwise ?? true));
       });
       const unsubDrag = gameEventBus.on<DragPayload>(GameEventType.INPUT_DRAG, (p) => {
           dragDirectionRef.current = p?.direction ?? 0;
@@ -287,7 +287,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           engine.execute(new SwapPieceCommand());
       });
       const unsubBlockTap = gameEventBus.on<BlockTapPayload>(GameEventType.INPUT_BLOCK_TAP, (p) => {
-          if (p) engine.execute(new BlockTapCommand(p.x, p.y));
+          if (p) engine.execute(new PopGoopCommand(p.x, p.y));
       });
 
       return () => {

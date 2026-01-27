@@ -109,7 +109,7 @@ export interface ActivePiece {
 
 export interface BlockData {
   id: string;        // Unique ID for the individual block (persists on move)
-  groupId: string;   // ID for the contiguous group this block belongs to
+  goopGroupId: string;   // ID for the contiguous goop group this block belongs to
   timestamp: number; // Time when the group was formed/reset
   color: string;
   groupMinY: number; // Top-most Y (smallest value) of the group

@@ -196,15 +196,15 @@ export function useInputHandlers({
             const thresholdY = (TANK_HEIGHT - 1) - (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
 
             if (hit.cell.groupMinY < thresholdY) {
-                setShakingGroupId(hit.cell.groupId);
+                setShakingGroupId(hit.cell.goopGroupId);
                 gameEventBus.emit(GameEventType.ACTION_REJECTED);
-                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.groupId ? null : prev), 300);
+                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.goopGroupId ? null : prev), 300);
             } else if (elapsed < totalDuration) {
-                setShakingGroupId(hit.cell.groupId);
+                setShakingGroupId(hit.cell.goopGroupId);
                 gameEventBus.emit(GameEventType.ACTION_REJECTED);
-                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.groupId ? null : prev), 300);
+                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.goopGroupId ? null : prev), 300);
             } else {
-                setHighlightedGroupId(hit.cell.groupId);
+                setHighlightedGroupId(hit.cell.goopGroupId);
             }
         }
     }, [getViewportCoords, getHitData, pressureRatio, clearHold, holdDuration]);
@@ -407,15 +407,15 @@ export function useInputHandlers({
             const thresholdY = (TANK_HEIGHT - 1) - (pressureRatio * (TANK_VIEWPORT_HEIGHT - 1));
 
             if (hit.cell.groupMinY < thresholdY) {
-                setShakingGroupId(hit.cell.groupId);
+                setShakingGroupId(hit.cell.goopGroupId);
                 gameEventBus.emit(GameEventType.ACTION_REJECTED);
-                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.groupId ? null : prev), 300);
+                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.goopGroupId ? null : prev), 300);
             } else if (elapsed < totalDuration) {
-                setShakingGroupId(hit.cell.groupId);
+                setShakingGroupId(hit.cell.goopGroupId);
                 gameEventBus.emit(GameEventType.ACTION_REJECTED);
-                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.groupId ? null : prev), 300);
+                setTimeout(() => setShakingGroupId(prev => prev === hit.cell!.goopGroupId ? null : prev), 300);
             } else {
-                setHighlightedGroupId(hit.cell.groupId);
+                setHighlightedGroupId(hit.cell.goopGroupId);
             }
         }
 

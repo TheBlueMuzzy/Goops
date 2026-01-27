@@ -104,7 +104,7 @@ export function getContourPath(
 
 /**
  * Build renderable groups from grid and falling blocks.
- * Returns a map of groupId → RenderableCell[] for rendering.
+ * Returns a map of goopGroupId → RenderableCell[] for rendering.
  */
 export function buildRenderableGroups(
     grid: (TankCell | null)[][],
@@ -127,14 +127,14 @@ export function buildRenderableGroups(
             const yPos = (y - BUFFER_HEIGHT) * BLOCK_SIZE;
 
             const neighbors: Neighbors = {
-                t: y > 0 && grid[y - 1][gridX]?.groupId === cell.groupId,
-                b: y < TANK_HEIGHT - 1 && grid[y + 1][gridX]?.groupId === cell.groupId,
-                l: grid[y][normalizeX(gridX - 1)]?.groupId === cell.groupId,
-                r: grid[y][normalizeX(gridX + 1)]?.groupId === cell.groupId,
+                t: y > 0 && grid[y - 1][gridX]?.goopGroupId === cell.goopGroupId,
+                b: y < TANK_HEIGHT - 1 && grid[y + 1][gridX]?.goopGroupId === cell.goopGroupId,
+                l: grid[y][normalizeX(gridX - 1)]?.goopGroupId === cell.goopGroupId,
+                r: grid[y][normalizeX(gridX + 1)]?.goopGroupId === cell.goopGroupId,
             };
 
-            if (!map.has(cell.groupId)) map.set(cell.groupId, []);
-            map.get(cell.groupId)!.push({
+            if (!map.has(cell.goopGroupId)) map.set(cell.goopGroupId, []);
+            map.get(cell.goopGroupId)!.push({
                 visX, y, screenX: startX, screenY: yPos, width, cell, color: cell.color, neighbors
             });
         }
@@ -143,8 +143,8 @@ export function buildRenderableGroups(
     // 2. Falling Blocks
     const fallingMap = new Map<string, FallingBlock[]>();
     fallingBlocks.forEach(b => {
-        if (!fallingMap.has(b.data.groupId)) fallingMap.set(b.data.groupId, []);
-        fallingMap.get(b.data.groupId)!.push(b);
+        if (!fallingMap.has(b.data.goopGroupId)) fallingMap.set(b.data.goopGroupId, []);
+        fallingMap.get(b.data.goopGroupId)!.push(b);
     });
 
     fallingMap.forEach((blocks, gid) => {

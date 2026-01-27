@@ -37,11 +37,11 @@ const placeCell = (
   x: number,
   y: number,
   color: string,
-  groupId: string
+  goopGroupId: string
 ): void => {
   grid[y][x] = {
     id: `cell-${x}-${y}`,
-    groupId,
+    goopGroupId,
     timestamp: Date.now(),
     color,
     groupMinY: y,
@@ -225,7 +225,7 @@ describe('findContiguousGroup', () => {
     expect(group).toHaveLength(2);
   });
 
-  it('does not include different groupIds', () => {
+  it('does not include different goopGroupIds', () => {
     const grid = createEmptyGrid();
     placeCell(grid, 5, 5, COLORS.RED, 'group1');
     placeCell(grid, 6, 5, COLORS.RED, 'group2'); // Same color, different group

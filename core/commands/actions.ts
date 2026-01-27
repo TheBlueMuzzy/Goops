@@ -12,8 +12,8 @@ import { calculateRankDetails } from '../../utils/progression';
 import { audio } from '../../utils/audio';
 import { complicationManager } from '../ComplicationManager';
 
-export class MoveBoardCommand implements Command {
-    type = 'MOVE_BOARD';
+export class SpinTankCommand implements Command {
+    type = 'SPIN_TANK';
     constructor(public dir: number) {}
 
     execute(engine: GameEngine): void {
@@ -81,8 +81,8 @@ export class MoveBoardCommand implements Command {
     }
 }
 
-export class RotatePieceCommand implements Command {
-    type = 'ROTATE_PIECE';
+export class RotateGoopCommand implements Command {
+    type = 'ROTATE_GOOP';
     constructor(public clockwise: boolean) {}
 
     execute(engine: GameEngine): void {
@@ -244,8 +244,8 @@ export class SwapPieceCommand implements Command {
     }
 }
 
-export class BlockTapCommand implements Command {
-    type = 'BLOCK_TAP';
+export class PopGoopCommand implements Command {
+    type = 'POP_GOOP';
     constructor(public x: number, public y: number) {}
 
     execute(engine: GameEngine): void {
@@ -277,10 +277,10 @@ export class BlockTapCommand implements Command {
             // LASER complication: first tap resets fill animation, then can pop when full
             const laserComplication = engine.state.complications.find(c => c.type === TankSystem.LASER);
             if (laserComplication) {
-                const groupId = cell.groupId;
-                if (!engine.state.prePoppedGoopGroups.has(groupId)) {
+                const goopGroupId = cell.goopGroupId;
+                if (!engine.state.prePoppedGoopGroups.has(goopGroupId)) {
                     // First tap: prime the group and restart fill animation
-                    engine.state.prePoppedGoopGroups.add(groupId);
+                    engine.state.prePoppedGoopGroups.add(goopGroupId);
 
                     // Reset timestamp on all cells in this group to restart fill animation
                     const resetTime = Date.now();
@@ -297,7 +297,7 @@ export class BlockTapCommand implements Command {
                 }
                 // Group is primed - remove from primed set and proceed with pop
                 // (fill check already happened above, so it's ready to pop)
-                engine.state.prePoppedGoopGroups.delete(groupId);
+                engine.state.prePoppedGoopGroups.delete(goopGroupId);
             }
 
             gameEventBus.emit(GameEventType.GOOP_POPPED, { combo: engine.state.combo, count: group.length });
