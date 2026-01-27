@@ -173,11 +173,11 @@ export interface Crack {
   x: number;
   y: number;
   color: string;
-  parentIds: string[];      // Empty = root, can have multiple (merge)
-  childIds: string[];       // Empty = leaf
-  lastGrowthCheck: number;  // Per-cell timer
-  growthInterval: number;   // Random 3000-5000ms, regenerates each check
-  spawnTime: number;        // For compatibility/animation
+  originCrackId: string[];      // Empty = root, can have multiple (merge)
+  branchCrackIds: string[];     // Empty = leaf
+  lastGrowthCheck: number;      // Per-cell timer
+  crackBranchInterval: number;  // Random 3000-5000ms, regenerates each check
+  spawnTime: number;            // For compatibility/animation
 }
 
 export enum ScreenType {

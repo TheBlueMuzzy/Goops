@@ -107,10 +107,10 @@ export class GoalManager {
                 x: newGoal.x,
                 y: newGoal.y,
                 color: newGoal.color,
-                parentIds: [],  // Root crack - no parents
-                childIds: [],   // No children yet
+                originCrackId: [],  // Root crack - no parents
+                branchCrackIds: [],   // No children yet
                 lastGrowthCheck: now,
-                growthInterval: 7000 + Math.random() * 5000,  // Random 7-12 seconds
+                crackBranchInterval: 7000 + Math.random() * 5000,  // Random 7-12 seconds
                 spawnTime: newGoal.spawnTime
             };
 
@@ -146,16 +146,16 @@ export class GoalManager {
             const cell = state.crackCells.find(c => c.id === id);
             if (cell) {
                 // Update parent/child references before removing
-                cell.parentIds.forEach(parentId => {
+                cell.originCrackId.forEach(parentId => {
                     const parent = state.crackCells.find(c => c.id === parentId);
                     if (parent) {
-                        parent.childIds = parent.childIds.filter(cid => cid !== id);
+                        parent.branchCrackIds = parent.branchCrackIds.filter(cid => cid !== id);
                     }
                 });
-                cell.childIds.forEach(childId => {
+                cell.branchCrackIds.forEach(childId => {
                     const child = state.crackCells.find(c => c.id === childId);
                     if (child) {
-                        child.parentIds = child.parentIds.filter(pid => pid !== id);
+                        child.originCrackId = child.originCrackId.filter(pid => pid !== id);
                     }
                 });
             }
@@ -207,19 +207,19 @@ export class GoalManager {
             const cell = state.crackCells.find(c => c.id === id);
             if (!cell) return;
 
-            // Remove this cell from its parents' childIds
-            cell.parentIds.forEach(parentId => {
+            // Remove this cell from its parents' branchCrackIds
+            cell.originCrackId.forEach(parentId => {
                 const parent = state.crackCells.find(c => c.id === parentId);
                 if (parent) {
-                    parent.childIds = parent.childIds.filter(cid => cid !== id);
+                    parent.branchCrackIds = parent.branchCrackIds.filter(cid => cid !== id);
                 }
             });
 
-            // Remove this cell from its children's parentIds
-            cell.childIds.forEach(childId => {
+            // Remove this cell from its children's originCrackId
+            cell.branchCrackIds.forEach(childId => {
                 const child = state.crackCells.find(c => c.id === childId);
                 if (child) {
-                    child.parentIds = child.parentIds.filter(pid => pid !== id);
+                    child.originCrackId = child.originCrackId.filter(pid => pid !== id);
                 }
             });
         });
@@ -278,10 +278,10 @@ export class GoalManager {
                 if (!current) continue;
 
                 // Add all connected cells (parents and children)
-                current.parentIds.forEach(pid => {
+                current.originCrackId.forEach(pid => {
                     if (!visited.has(pid)) queue.push(pid);
                 });
-                current.childIds.forEach(cid => {
+                current.branchCrackIds.forEach(cid => {
                     if (!visited.has(cid)) queue.push(cid);
                 });
             }
@@ -312,10 +312,10 @@ export class GoalManager {
             component.push(cell);
 
             // Add all connected cells
-            cell.parentIds.forEach(pid => {
+            cell.originCrackId.forEach(pid => {
                 if (!visited.has(pid)) queue.push(pid);
             });
-            cell.childIds.forEach(cid => {
+            cell.branchCrackIds.forEach(cid => {
                 if (!visited.has(cid)) queue.push(cid);
             });
         }
@@ -329,7 +329,7 @@ export class GoalManager {
      */
     isLeafCell(cellId: string, crackCells: Crack[]): boolean {
         const cell = crackCells.find(c => c.id === cellId);
-        return cell ? cell.childIds.length === 0 : true;
+        return cell ? cell.branchCrackIds.length === 0 : true;
     }
 }
 

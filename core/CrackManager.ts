@@ -48,11 +48,11 @@ export class CrackManager {
             if (state.grid[cell.y]?.[cell.x]) continue;
 
             // Check if timer elapsed (per-cell timer)
-            if (now - cell.lastGrowthCheck < cell.growthInterval) continue;
+            if (now - cell.lastGrowthCheck < cell.crackBranchInterval) continue;
 
             // Reset timer with new random interval
             cell.lastGrowthCheck = now;
-            cell.growthInterval = 5000 + Math.random() * 5000; // Random 7-12s
+            cell.crackBranchInterval = 5000 + Math.random() * 5000; // Random 7-12s
 
             // Calculate spread chance
             const pressureRatio = Math.max(0, 1 - (state.sessionTime / maxTime));
@@ -64,7 +64,7 @@ export class CrackManager {
             let effectiveChance = Math.max(0, baseChance - slowCracksOffset);
 
             // Leaf penalty: 50% chance if no children
-            const isLeaf = cell.childIds.length === 0;
+            const isLeaf = cell.branchCrackIds.length === 0;
             if (isLeaf) {
                 effectiveChance *= 0.5;
             }
@@ -103,8 +103,8 @@ export class CrackManager {
 
                 if (existingCrack) {
                     // Can merge if not already connected
-                    if (!cell.childIds.includes(existingCrack.id) &&
-                        !cell.parentIds.includes(existingCrack.id)) {
+                    if (!cell.branchCrackIds.includes(existingCrack.id) &&
+                        !cell.originCrackId.includes(existingCrack.id)) {
                         validTargets.push({ ...spot, existingCrack });
                     }
                     continue;
@@ -129,8 +129,8 @@ export class CrackManager {
 
             if (target.existingCrack) {
                 // MERGE: Connect to existing same-color crack
-                target.existingCrack.parentIds.push(cell.id);
-                cell.childIds.push(target.existingCrack.id);
+                target.existingCrack.originCrackId.push(cell.id);
+                cell.branchCrackIds.push(target.existingCrack.id);
                 console.log(`Crack merged: ${cell.id} -> ${target.existingCrack.id} at (${target.x}, ${target.y})`);
             } else {
                 // NEW CRACK: Check if we can add more crack groups
@@ -143,15 +143,15 @@ export class CrackManager {
                     x: target.x,
                     y: target.y,
                     color: cell.color,  // Same color as parent
-                    parentIds: [cell.id],
-                    childIds: [],
+                    originCrackId: [cell.id],
+                    branchCrackIds: [],
                     lastGrowthCheck: now,
-                    growthInterval: 5000 + Math.random() * 5000,  // Random 7-12s
+                    crackBranchInterval: 5000 + Math.random() * 5000,  // Random 7-12s
                     spawnTime: now
                 };
 
                 // Add child reference to parent
-                cell.childIds.push(newCrack.id);
+                cell.branchCrackIds.push(newCrack.id);
 
                 // Add to crackCells array
                 state.crackCells.push(newCrack);
@@ -172,11 +172,11 @@ export class CrackManager {
 
     /**
      * Calculate distance from root for a crack cell.
-     * Follows parentIds until reaching a cell with no parents (root).
+     * Follows originCrackId until reaching a cell with no parents (root).
      * Returns 0 for root cells.
      */
     private getDistanceFromRoot(cell: Crack, crackCells: Crack[]): number {
-        if (cell.parentIds.length === 0) return 0;
+        if (cell.originCrackId.length === 0) return 0;
 
         let distance = 0;
         let currentId = cell.id;
@@ -187,11 +187,11 @@ export class CrackManager {
             visited.add(currentId);
 
             const current = crackCells.find(c => c.id === currentId);
-            if (!current || current.parentIds.length === 0) break;
+            if (!current || current.originCrackId.length === 0) break;
 
             distance++;
             // Follow first parent (for merged cells, just pick one path)
-            currentId = current.parentIds[0];
+            currentId = current.originCrackId[0];
 
             // Safety limit
             if (distance > 20) break;

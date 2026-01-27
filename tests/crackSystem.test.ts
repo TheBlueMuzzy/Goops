@@ -11,17 +11,17 @@ const createCrack = (
   x: number,
   y: number,
   color: string = COLORS.RED,
-  parentIds: string[] = [],
-  childIds: string[] = []
+  originCrackId: string[] = [],
+  branchCrackIds: string[] = []
 ): Crack => ({
   id,
   x,
   y,
   color,
-  parentIds,
-  childIds,
+  originCrackId,
+  branchCrackIds,
   lastGrowthCheck: Date.now(),
-  growthInterval: 3000,
+  crackBranchInterval: 3000,
   spawnTime: Date.now()
 });
 

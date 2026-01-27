@@ -239,7 +239,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             {/* Crack Connection Lines - render lines between parent/child crack cells */}
             {crackCells && crackCells.filter(c => now - c.spawnTime >= 500).map(cell => {
                 // Draw lines to all children (avoids duplicate lines)
-                return cell.childIds.map(childId => {
+                return cell.branchCrackIds.map(childId => {
                     const child = crackCells.find(c => c.id === childId);
                     if (!child || now - child.spawnTime < 500) return null;
 
