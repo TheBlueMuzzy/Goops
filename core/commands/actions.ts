@@ -148,12 +148,12 @@ export class RotatePieceCommand implements Command {
     }
 }
 
-export class SetSoftDropCommand implements Command {
-    type = 'SET_SOFT_DROP';
+export class SetFastDropCommand implements Command {
+    type = 'SET_FAST_DROP';
     constructor(public active: boolean) {}
 
     execute(engine: GameEngine): void {
-        engine.isSoftDropping = this.active;
+        engine.isFastDropping = this.active;
     }
 }
 
@@ -192,7 +192,7 @@ export class HardDropCommand implements Command {
         
         engine.spawnNewPiece(undefined, newGrid);
         engine.state.combo = 0;
-        engine.isSoftDropping = false;
+        engine.isFastDropping = false;
         engine.emitChange();
     }
 }

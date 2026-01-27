@@ -30,7 +30,7 @@ import { CrackManager } from './CrackManager';
 
 const INITIAL_SPEED = 780; // ms per block
 const MIN_SPEED = 100;
-const SOFT_DROP_FACTOR = 8; // Snappier fast drop for new piece system
+const FAST_DROP_FACTOR = 8; // Snappier fast drop for new piece system
 const LOCK_DELAY_MS = 500;
 
 // Dump piece constants (GOOP_DUMP ability)
@@ -47,8 +47,8 @@ export class GameEngine {
     public lockResetCount: number = 0;  // Move reset counter (max 10 resets before force lock)
     public lastGoalSpawnTime: number = 0;
     public lastComplicationCheckTime: number = 0;
-    public isSoftDropping: boolean = false;
-    private wasSoftDropping: boolean = false; // For edge detection
+    public isFastDropping: boolean = false;
+    private wasFastDropping: boolean = false; // For edge detection
     private lightsOverflarePhase: 'none' | 'rising' | 'falling' = 'none';
     private lightsOverflareTime: number = 0; // Time spent in current overflare phase
     private lightsFlickerTime: number = 0; // Time spent in flicker animation
@@ -309,7 +309,7 @@ export class GameEngine {
         this.lockStartTime = null;
         this.lastGoalSpawnTime = Date.now();
         this.lastComplicationCheckTime = Date.now();
-        this.isSoftDropping = false;
+        this.isFastDropping = false;
         this.isSessionActive = true;
 
         // Initialize active ability charges for equipped actives
@@ -894,7 +894,7 @@ export class GameEngine {
         const now = Date.now();
 
         // Edge detection: started soft dropping
-        if (this.isSoftDropping && !this.wasSoftDropping) {
+        if (this.isFastDropping && !this.wasFastDropping) {
             // Start recovery - clear grace timer, begin lerping to 100
             this.state.lightsGraceStart = null;
             this.state.lightsFlickered = false;
@@ -903,7 +903,7 @@ export class GameEngine {
         }
 
         // Edge detection: stopped soft dropping
-        if (!this.isSoftDropping && this.wasSoftDropping) {
+        if (!this.isFastDropping && this.wasFastDropping) {
             // Start grace period
             this.state.lightsGraceStart = now;
             this.state.lightsFlickered = false;
@@ -912,13 +912,13 @@ export class GameEngine {
         }
 
         // Update tracking
-        this.wasSoftDropping = this.isSoftDropping;
+        this.wasFastDropping = this.isFastDropping;
 
         // Calculate grace period with upgrade bonus
         const stabilizerLevel = this.powerUps['CIRCUIT_STABILIZER'] || 0;
         const graceDuration = (lightsConfig.graceBaseSec + lightsConfig.gracePerLevel * stabilizerLevel) * 1000;
 
-        if (this.isSoftDropping) {
+        if (this.isFastDropping) {
             // RECOVERING: Lerp brightness toward 100, then overflare
             if (this.state.lightsBrightness < 100) {
                 // Lerp up at constant rate
@@ -1165,7 +1165,7 @@ export class GameEngine {
         const speedMultiplier = 1 + (denseLevel * 0.125); // 1.0, 1.125, 1.25, 1.375, 1.5
         const adjustedSpeed = INITIAL_SPEED / speedMultiplier;
 
-        const gravitySpeed = this.isSoftDropping
+        const gravitySpeed = this.isFastDropping
             ? adjustedSpeed / SOFT_DROP_FACTOR
             : adjustedSpeed;
 
@@ -1182,7 +1182,7 @@ export class GameEngine {
             }
 
             const lockedTime = Date.now() - this.lockStartTime;
-            const effectiveLockDelay = this.isSoftDropping ? 50 : LOCK_DELAY_MS;
+            const effectiveLockDelay = this.isFastDropping ? 50 : LOCK_DELAY_MS;
 
             // Lock if: timer expired OR hit 10-reset limit (prevents infinite spin)
             if (lockedTime > effectiveLockDelay || this.lockResetCount >= 10) {
@@ -1228,7 +1228,7 @@ export class GameEngine {
 
         this.spawnNewPiece(undefined, newGrid);
         this.state.combo = 0;
-        this.isSoftDropping = false;
+        this.isFastDropping = false;
     }
 
 

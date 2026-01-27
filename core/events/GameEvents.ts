@@ -34,7 +34,7 @@ export enum GameEventType {
     INPUT_ROTATE = 'INPUT_ROTATE',
     INPUT_DRAG = 'INPUT_DRAG',
     INPUT_SWIPE_UP = 'INPUT_SWIPE_UP',
-    INPUT_SOFT_DROP = 'INPUT_SOFT_DROP',
+    INPUT_FAST_DROP = 'INPUT_FAST_DROP',
     INPUT_SWAP = 'INPUT_SWAP',
     INPUT_BLOCK_TAP = 'INPUT_BLOCK_TAP',
     INPUT_SWAP_HOLD = 'INPUT_SWAP_HOLD'  // Keyboard hold-to-swap progress
@@ -62,7 +62,7 @@ export interface DragPayload {
     direction: number;  // 0 = stop, 1 = left, -1 = right
 }
 
-export interface SoftDropPayload {
+export interface FastDropPayload {
     active: boolean;
 }
 
