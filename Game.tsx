@@ -7,9 +7,9 @@ import { ConsoleView } from './components/ConsoleView';
 import { useGameEngine } from './hooks/useGameEngine';
 import { Play, Home } from 'lucide-react';
 import { gameEventBus } from './core/events/EventBus';
-import { GameEventType, RotatePayload, DragPayload, SoftDropPayload, BlockTapPayload, SwapHoldPayload } from './core/events/GameEvents';
+import { GameEventType, RotatePayload, DragPayload, FastDropPayload, BlockTapPayload, SwapHoldPayload } from './core/events/GameEvents';
 import { calculateRankDetails } from './utils/progression';
-import { MoveBoardCommand, RotatePieceCommand, SetSoftDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, BlockTapCommand, ActivateAbilityCommand } from './core/commands/actions';
+import { MoveBoardCommand, RotatePieceCommand, SetFastDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, BlockTapCommand, ActivateAbilityCommand } from './core/commands/actions';
 
 // STATE ARCHITECTURE:
 // - Game state flows down: useGameEngine → state prop → child components
@@ -206,7 +206,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
                       break;
                   case 'KeyQ': engine.execute(new RotatePieceCommand(false)); break;
                   case 'KeyE': engine.execute(new RotatePieceCommand(true)); break;
-                  case 'KeyS': engine.execute(new SetSoftDropCommand(true)); break;
+                  case 'KeyS': engine.execute(new SetFastDropCommand(true)); break;
                   case 'Space': engine.execute(new SetPhaseCommand(GamePhase.CONSOLE)); break;
                   case 'KeyW': engine.execute(new SetPhaseCommand(GamePhase.CONSOLE)); break;
                   case 'KeyR': startSwapHold(); break;
@@ -219,7 +219,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           if (gameState.phase === GamePhase.PERISCOPE) {
               switch(e.code) {
                   case 'KeyS':
-                      engine.execute(new SetSoftDropCommand(false));
+                      engine.execute(new SetFastDropCommand(false));
                       break;
                   case 'KeyR':
                       clearSwapHold();
@@ -280,8 +280,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
       const unsubSwipeUp = gameEventBus.on(GameEventType.INPUT_SWIPE_UP, () => {
           engine.execute(new SetPhaseCommand(GamePhase.CONSOLE));
       });
-      const unsubSoftDrop = gameEventBus.on<SoftDropPayload>(GameEventType.INPUT_SOFT_DROP, (p) => {
-          engine.execute(new SetSoftDropCommand(p?.active ?? false));
+      const unsubSoftDrop = gameEventBus.on<FastDropPayload>(GameEventType.INPUT_FAST_DROP, (p) => {
+          engine.execute(new SetFastDropCommand(p?.active ?? false));
       });
       const unsubSwap = gameEventBus.on(GameEventType.INPUT_SWAP, () => {
           engine.execute(new SwapPieceCommand());
