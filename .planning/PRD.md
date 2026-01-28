@@ -550,11 +550,10 @@ Five performance categories averaged for letter grade:
 | D / Right Arrow | Rotate tank right |
 | Q | Rotate piece counter-clockwise |
 | E | Rotate piece clockwise |
-| W | Swap piece with held goop |
-| Space | Hard drop |
+| R | Swap piece with held goop |
 | S / Down | Fast drop (hold) |
+| W / Space | Exit periscope to console |
 | Mouse Click | Pop goop |
-| Swipe Up | Exit periscope to console |
 
 ### Touch Controls (Mobile)
 
