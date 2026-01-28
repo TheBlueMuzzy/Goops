@@ -578,15 +578,24 @@ function getOptimalRenderer(): 'svg' | 'canvas' | 'webgl' {
 
 After building v10 prototype with working soft body physics, these are the challenging integration problems:
 
-### 1. Rotating Them
-**Challenge:** Tank rotates, all goops must rotate with it while maintaining soft body physics.
+### 1. SpinTank (Tank Cylinder Rotation)
+**Challenge:** Tank spins left/right, all locked goops must rotate with it while maintaining soft body physics.
 **Considerations:**
 - Do we rotate the entire coordinate system and let physics settle?
-- Or do we manually rotate all vertices and springs?
-- Hub point becomes pivot? Or centroid?
+- Or do we manually rotate all vertices around tank center?
 - Spring rest lengths stay same, but relative positions change
+- Need to coordinate with existing tank rotation animation timing
 
-### 2. Merging Them
+### 2. RotateGoop (Active Piece Rotation)
+**Challenge:** Player taps to rotate the active goop 90° clockwise - soft body needs to visually rotate.
+**Considerations:**
+- Current game rotates cell positions in the grid
+- Soft body needs to rotate all vertices 90° around piece centroid
+- Springs and hub stay connected, just rotated
+- Should feel snappy (not slow physics-based rotation)
+- May need to "snap" to new orientation then let physics settle with wobble
+
+### 3. Merging Them
 **Challenge:** When two goop pieces connect, they become one unified soft body.
 **Considerations:**
 - Current prototype has 2 separate bodies with independent springs
@@ -595,7 +604,7 @@ After building v10 prototype with working soft body physics, these are the chall
 - Hub point(s) - keep both? Create new centroid?
 - Merge animation: smooth transition from 2 bodies → 1
 
-### 3. Popping Them
+### 4. Popping Them
 **Challenge:** When a goop group is popped, need satisfying dissolution animation.
 **Considerations:**
 - Pressure goes to zero instantly? Or rapid deflation?
@@ -603,7 +612,7 @@ After building v10 prototype with working soft body physics, these are the chall
 - Individual cells could become mini soft bodies briefly
 - Color particles / splash effect overlay
 
-### 4. LooseGoops Application
+### 5. LooseGoops Application
 **Challenge:** When cells become loose (especially corrupted pieces splitting), each loose cell needs physics.
 **Considerations:**
 - Corrupted pieces are corner-connected, split on lock
@@ -612,7 +621,7 @@ After building v10 prototype with working soft body physics, these are the chall
 - Could simplify to rigid circles with bounce instead of full soft body
 - Need to handle: spawn, fall, land, merge into existing goop below
 
-### 5. Actual Interaction Between Pieces
+### 6. Body-to-Body Collision
 **Challenge:** Body-to-body collision (blue squishes against red, not just ground).
 **Considerations:**
 - Current prototype only has ground collision
