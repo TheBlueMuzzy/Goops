@@ -25,6 +25,10 @@ const GLOBAL_DAMP = 0.995;
 const BOUNCE = 0.3;
 const FRICTION = 0.85;
 
+// Body-to-body collision tuning
+const COLLISION_STIFFNESS = 800;   // How hard bodies push apart
+const COLLISION_DAMPING = 15;      // Damping on collision response
+
 // Wave effect - dual waves for gloopy undulation
 const WAVE_AMPLITUDE = 2.25;   // Pixels of displacement
 const WAVE1_SPEED = 1.275;     // Primary wave - cycles per second (reduced 25%)
@@ -168,6 +172,204 @@ function createBody(offsetX: number, offsetY: number, color: string): Body {
   const restVolume = calcVolume(points, perimeterCount);
 
   return { points, perimeterCount, springs, color, restVolume };
+}
+
+// --- Collision Detection ---
+
+// Point-in-polygon test using ray casting (crossing number algorithm)
+function isPointInPolygon(px: number, py: number, polygon: Point[], count: number): boolean {
+  let crossings = 0;
+
+  for (let i = 0; i < count; i++) {
+    const j = (i + 1) % count;
+    const yi = polygon[i].y;
+    const yj = polygon[j].y;
+    const xi = polygon[i].x;
+    const xj = polygon[j].x;
+
+    // Check if ray from point going right crosses this edge
+    if ((yi <= py && yj > py) || (yj <= py && yi > py)) {
+      // Compute x coordinate of intersection
+      const t = (py - yi) / (yj - yi);
+      const xIntersect = xi + t * (xj - xi);
+      if (px < xIntersect) {
+        crossings++;
+      }
+    }
+  }
+
+  return (crossings % 2) === 1;
+}
+
+// Find closest edge to a point and return penetration info
+function findClosestEdge(
+  px: number, py: number, pvx: number, pvy: number,
+  polygon: Point[], count: number
+): { edgeIdx: number; depth: number; nx: number; ny: number; t: number } | null {
+  let minDist = Infinity;
+  let result: { edgeIdx: number; depth: number; nx: number; ny: number; t: number } | null = null;
+
+  for (let i = 0; i < count; i++) {
+    const j = (i + 1) % count;
+    const ax = polygon[i].x;
+    const ay = polygon[i].y;
+    const bx = polygon[j].x;
+    const by = polygon[j].y;
+
+    // Edge vector
+    const ex = bx - ax;
+    const ey = by - ay;
+    const edgeLen = Math.sqrt(ex * ex + ey * ey);
+    if (edgeLen < 0.001) continue;
+
+    // Normalized edge direction
+    const dx = ex / edgeLen;
+    const dy = ey / edgeLen;
+
+    // Project point onto edge line
+    const t = ((px - ax) * dx + (py - ay) * dy) / edgeLen;
+
+    // Clamp t to edge bounds
+    const tClamped = Math.max(0, Math.min(1, t));
+
+    // Closest point on edge
+    const closestX = ax + tClamped * ex;
+    const closestY = ay + tClamped * ey;
+
+    // Distance to edge
+    const distX = px - closestX;
+    const distY = py - closestY;
+    const dist = Math.sqrt(distX * distX + distY * distY);
+
+    if (dist < minDist) {
+      minDist = dist;
+
+      // Outward normal (perpendicular to edge, pointing right when going from a to b)
+      // For clockwise winding, this points outward
+      let nx = dy;
+      let ny = -dx;
+
+      // Ensure normal points from polygon center toward the point
+      // (the point is inside, so we need to push it out along this normal)
+      const centerX = (ax + bx) / 2;
+      const centerY = (ay + by) / 2;
+      const toCenterX = polygon.reduce((s, p, idx) => idx < count ? s + p.x : s, 0) / count - centerX;
+      const toCenterY = polygon.reduce((s, p, idx) => idx < count ? s + p.y : s, 0) / count - centerY;
+
+      // If normal points toward center, flip it
+      if (nx * toCenterX + ny * toCenterY > 0) {
+        nx = -nx;
+        ny = -ny;
+      }
+
+      result = {
+        edgeIdx: i,
+        depth: dist,
+        nx,
+        ny,
+        t: tClamped
+      };
+    }
+  }
+
+  return result;
+}
+
+// Check and resolve collisions between two bodies
+function checkBodyCollision(bodyA: Body, bodyB: Body): void {
+  // Check if any perimeter vertex of B is inside A
+  for (let i = 0; i < bodyB.perimeterCount; i++) {
+    const pB = bodyB.points[i];
+
+    if (isPointInPolygon(pB.x, pB.y, bodyA.points, bodyA.perimeterCount)) {
+      // Point is inside - find closest edge and push out
+      const edge = findClosestEdge(pB.x, pB.y, pB.vx, pB.vy, bodyA.points, bodyA.perimeterCount);
+
+      if (edge && edge.depth > 0.1) {
+        const { edgeIdx, depth, nx, ny, t } = edge;
+        const j = (edgeIdx + 1) % bodyA.perimeterCount;
+        const pA1 = bodyA.points[edgeIdx];
+        const pA2 = bodyA.points[j];
+
+        // Compute relative velocity at contact
+        // Edge velocity is interpolated between the two endpoints
+        const edgeVx = pA1.vx * (1 - t) + pA2.vx * t;
+        const edgeVy = pA1.vy * (1 - t) + pA2.vy * t;
+        const relVx = pB.vx - edgeVx;
+        const relVy = pB.vy - edgeVy;
+        const relVn = relVx * nx + relVy * ny; // Normal component of relative velocity
+
+        // Collision response force (spring + damping)
+        const springForce = COLLISION_STIFFNESS * depth;
+        const dampForce = COLLISION_DAMPING * Math.min(0, relVn); // Only damp approaching velocity
+        const totalForce = springForce + dampForce;
+
+        // Apply impulse to penetrating vertex (push out)
+        pB.vx += totalForce * nx * 0.016; // Approximate dt
+        pB.vy += totalForce * ny * 0.016;
+
+        // Apply equal-opposite force to edge endpoints (proportional to t)
+        const forceToEdge = totalForce * 0.016;
+        pA1.vx -= forceToEdge * nx * (1 - t);
+        pA1.vy -= forceToEdge * ny * (1 - t);
+        pA2.vx -= forceToEdge * nx * t;
+        pA2.vy -= forceToEdge * ny * t;
+
+        // Position correction (move vertex out by half penetration)
+        const correction = depth * 0.3;
+        pB.x += nx * correction;
+        pB.y += ny * correction;
+        // Push edge points the other way
+        pA1.x -= nx * correction * (1 - t) * 0.5;
+        pA1.y -= ny * correction * (1 - t) * 0.5;
+        pA2.x -= nx * correction * t * 0.5;
+        pA2.y -= ny * correction * t * 0.5;
+      }
+    }
+  }
+
+  // Check if any perimeter vertex of A is inside B (symmetric check)
+  for (let i = 0; i < bodyA.perimeterCount; i++) {
+    const pA = bodyA.points[i];
+
+    if (isPointInPolygon(pA.x, pA.y, bodyB.points, bodyB.perimeterCount)) {
+      const edge = findClosestEdge(pA.x, pA.y, pA.vx, pA.vy, bodyB.points, bodyB.perimeterCount);
+
+      if (edge && edge.depth > 0.1) {
+        const { edgeIdx, depth, nx, ny, t } = edge;
+        const j = (edgeIdx + 1) % bodyB.perimeterCount;
+        const pB1 = bodyB.points[edgeIdx];
+        const pB2 = bodyB.points[j];
+
+        const edgeVx = pB1.vx * (1 - t) + pB2.vx * t;
+        const edgeVy = pB1.vy * (1 - t) + pB2.vy * t;
+        const relVx = pA.vx - edgeVx;
+        const relVy = pA.vy - edgeVy;
+        const relVn = relVx * nx + relVy * ny;
+
+        const springForce = COLLISION_STIFFNESS * depth;
+        const dampForce = COLLISION_DAMPING * Math.min(0, relVn);
+        const totalForce = springForce + dampForce;
+
+        pA.vx += totalForce * nx * 0.016;
+        pA.vy += totalForce * ny * 0.016;
+
+        const forceToEdge = totalForce * 0.016;
+        pB1.vx -= forceToEdge * nx * (1 - t);
+        pB1.vy -= forceToEdge * ny * (1 - t);
+        pB2.vx -= forceToEdge * nx * t;
+        pB2.vy -= forceToEdge * ny * t;
+
+        const correction = depth * 0.3;
+        pA.x += nx * correction;
+        pA.y += ny * correction;
+        pB1.x -= nx * correction * (1 - t) * 0.5;
+        pB1.y -= ny * correction * (1 - t) * 0.5;
+        pB2.x -= nx * correction * t * 0.5;
+        pB2.y -= ny * correction * t * 0.5;
+      }
+    }
+  }
 }
 
 // --- Physics ---
@@ -372,10 +574,12 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         const subDt = dt / subSteps;
 
         for (let s = 0; s < subSteps; s++) {
-          // Ground for blue = red's top bar bottom edge (row 8)
-          // This makes blue's stem land ON red's top bar with slight overlap
-          updateBody(bodiesRef.current.falling, subDt, 8 * CELL_SIZE);
+          // Both bodies use real ground at bottom of panel
+          updateBody(bodiesRef.current.falling, subDt, PANEL_H);
           updateBody(bodiesRef.current.bottom, subDt, PANEL_H);
+
+          // Body-to-body collision
+          checkBodyCollision(bodiesRef.current.bottom, bodiesRef.current.falling);
         }
 
         timeRef.current += dt;
