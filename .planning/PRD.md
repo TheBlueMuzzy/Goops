@@ -371,7 +371,8 @@ totalXP = N * (3375 + 125 * N)
 |------|-----------------|
 | 0-9 | Red, Blue, Green, Yellow (4) |
 | 10-29 | + Purple (5) |
-| 30-49 | + White (6) |
+| 30-39 | + White (6) |
+| 40-49 | + Wild (15% chance, seals any color) |
 | 50 | + Black (7) |
 
 ### Starting Junk (Rank 3+)
