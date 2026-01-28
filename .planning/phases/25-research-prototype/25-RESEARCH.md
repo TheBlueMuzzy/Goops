@@ -573,6 +573,81 @@ function getOptimalRenderer(): 'svg' | 'canvas' | 'webgl' {
 - Matter.js soft bodies - May be useful for Phase 27 physics if visual-only isn't enough
 </sources>
 
+<hard_problems>
+## Hard Problems (Identified During Prototyping)
+
+After building v10 prototype with working soft body physics, these are the challenging integration problems:
+
+### 1. Rotating Them
+**Challenge:** Tank rotates, all goops must rotate with it while maintaining soft body physics.
+**Considerations:**
+- Do we rotate the entire coordinate system and let physics settle?
+- Or do we manually rotate all vertices and springs?
+- Hub point becomes pivot? Or centroid?
+- Spring rest lengths stay same, but relative positions change
+
+### 2. Merging Them
+**Challenge:** When two goop pieces connect, they become one unified soft body.
+**Considerations:**
+- Current prototype has 2 separate bodies with independent springs
+- Merge = combine perimeter points, remove internal points at join
+- Need to create new springs across the merge boundary
+- Hub point(s) - keep both? Create new centroid?
+- Merge animation: smooth transition from 2 bodies → 1
+
+### 3. Popping Them
+**Challenge:** When a goop group is popped, need satisfying dissolution animation.
+**Considerations:**
+- Pressure goes to zero instantly? Or rapid deflation?
+- Vertices scatter outward? Or inward collapse then burst?
+- Individual cells could become mini soft bodies briefly
+- Color particles / splash effect overlay
+
+### 4. LooseGoops Application
+**Challenge:** When cells become loose (especially corrupted pieces splitting), each loose cell needs physics.
+**Considerations:**
+- Corrupted pieces are corner-connected, split on lock
+- Each loose cell becomes its own mini soft body
+- Many small soft bodies = performance concern
+- Could simplify to rigid circles with bounce instead of full soft body
+- Need to handle: spawn, fall, land, merge into existing goop below
+
+### 5. Actual Interaction Between Pieces
+**Challenge:** Body-to-body collision (blue squishes against red, not just ground).
+**Considerations:**
+- Current prototype only has ground collision
+- Need to detect perimeter-to-perimeter penetration
+- Push penetrating vertices out along collision normal
+- Both bodies should deform (not just one)
+- Performance: O(n*m) vertex checks per frame
+
+### Prototype Learnings (v10)
+
+**What worked:**
+- Hub & spoke spring structure maintains T-shape well
+- Pressure-based volume preservation keeps shape from collapsing
+- Dual opposing sinusoidal waves create organic movement
+- Skip-2 and skip-4 cross springs prevent sag
+
+**Physics constants that feel good:**
+```typescript
+GRAVITY = 600
+SPRING_K = 500        // Stiffness
+SPRING_DAMP = 18      // Damping
+PRESSURE_K = 15000    // Volume preservation
+GLOBAL_DAMP = 0.995
+BOUNCE = 0.3
+FRICTION = 0.85
+```
+
+**Wave constants that feel gloopy:**
+```typescript
+WAVE_AMPLITUDE = 2.25
+WAVE1_SPEED = 1.275   // Slower wave, clockwise
+WAVE2_SPEED = 1.05    // Even slower, counter-clockwise
+```
+</hard_problems>
+
 <metadata>
 ## Metadata
 
