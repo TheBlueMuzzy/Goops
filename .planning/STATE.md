@@ -16,7 +16,7 @@ milestone: v1.6
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- None — v1.2 complete, ready for bug fix work
+- `feature/soft-body-goop` — v1.6 Soft Body Goop (Phase 25 complete)
 
 ## Next Steps
 
@@ -54,11 +54,11 @@ See: [[PROJECT]] (updated 2026-01-27)
 ## Current Position
 
 Phase: 25 of 30 (Research & Prototype)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-01-28 — Milestone v1.6 Soft Body Goop created
+Plan: Complete
+Status: Phase 25 prototype done, ready for Phase 26
+Last activity: 2026-01-28 — Soft body prototype v10 complete
 
-Progress: ░░░░░░░░░░ 0% (v1.6 Soft Body Goop)
+Progress: █░░░░░░░░░ 17% (v1.6 Soft Body Goop - 1/6 phases)
 
 ## What's Done
 
@@ -198,6 +198,19 @@ Last session: 2026-01-28
 **Milestone:** v1.6 Soft Body Goop — IN PROGRESS
 
 ### This Session Summary (2026-01-28)
+
+**Phase 25: Soft Body Prototype v10 — COMPLETE**
+
+Built working soft body physics demo accessible via `?demo=softbody`:
+- **Pressure-based physics:** Volume preservation using shoelace formula + ideal gas pressure
+- **Hub & spoke springs:** Central hub with spokes to all perimeter points, plus skip-2 and skip-4 cross springs for rigidity
+- **Dual-wave undulation:** Two opposing sinusoidal waves (1.275Hz + 1.05Hz) traveling in opposite directions for organic gloopy movement
+- **Tuned feel:** Bounce, friction, spring stiffness all balanced for satisfying jello physics
+- **Demo features:** Toggle verts, toggle springs visualization, pause, reset
+
+**Next:** Phase 26 (Body-to-Body Collision) and Phase 27 (Merge Animation) — the hard parts.
+
+### Previous Session Summary (2026-01-28)
 
 **Win Bonus Rework — COMPLETE**
 
