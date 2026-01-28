@@ -1,10 +1,13 @@
 /**
- * Soft Body Demo v10 - Wavy Edges
+ * Soft Body Demo v11 - Body-to-Body Collision
  *
  * Improvements:
  * - Hub & spoke structure
  * - Extra cross springs for rigidity
  * - Subtle sinusoidal edge waves (async per vertex)
+ * - Real body-to-body collision (edge-based detection)
+ * - Soft collision response with friction
+ * - Baumgarte position correction for stability
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -26,8 +29,11 @@ const BOUNCE = 0.3;
 const FRICTION = 0.85;
 
 // Body-to-body collision tuning
-const COLLISION_STIFFNESS = 800;   // How hard bodies push apart
-const COLLISION_DAMPING = 15;      // Damping on collision response
+const COLLISION_STIFFNESS = 600;   // How hard bodies push apart (softer = more squishy)
+const COLLISION_DAMPING = 20;      // Damping on collision response
+const COLLISION_SOFTNESS = 0.15;   // Allow this much overlap before full response (0-1)
+const COLLISION_FRICTION = 0.85;   // Friction between bodies (same as ground)
+const POSITION_CORRECTION = 0.35;  // Baumgarte stabilization factor (0.2-0.5)
 
 // Wave effect - dual waves for gloopy undulation
 const WAVE_AMPLITUDE = 2.25;   // Pixels of displacement
@@ -275,6 +281,82 @@ function findClosestEdge(
   return result;
 }
 
+// Apply collision response between a penetrating vertex and an edge
+function applyCollisionResponse(
+  vertex: Point,            // The penetrating vertex
+  edge1: Point,             // First edge endpoint
+  edge2: Point,             // Second edge endpoint
+  depth: number,            // Penetration depth
+  nx: number, ny: number,   // Outward normal
+  t: number                 // Position along edge (0-1)
+): void {
+  // Compute "soft" penetration - allow some overlap before full response
+  const softDepth = Math.max(0, depth - COLLISION_SOFTNESS * 10);
+  if (softDepth < 0.1) return;
+
+  // Compute relative velocity at contact
+  const edgeVx = edge1.vx * (1 - t) + edge2.vx * t;
+  const edgeVy = edge1.vy * (1 - t) + edge2.vy * t;
+  const relVx = vertex.vx - edgeVx;
+  const relVy = vertex.vy - edgeVy;
+
+  // Decompose into normal and tangent components
+  const relVn = relVx * nx + relVy * ny;  // Normal component (+ = separating)
+  const tx = -ny, ty = nx;                 // Tangent direction
+  const relVt = relVx * tx + relVy * ty;  // Tangent component (sliding velocity)
+
+  // Spring force based on soft penetration (allows squishiness)
+  const springForce = COLLISION_STIFFNESS * softDepth;
+
+  // Damping force - only for approaching velocity (relVn < 0)
+  const dampForce = COLLISION_DAMPING * Math.min(0, relVn);
+
+  // Total normal force
+  const normalForce = springForce + dampForce;
+
+  // Friction force - opposes tangential sliding
+  // Limit friction to Coulomb model: friction <= mu * normal force
+  const maxFriction = Math.abs(normalForce) * (1 - COLLISION_FRICTION);
+  const frictionForce = Math.sign(relVt) * Math.min(Math.abs(relVt) * 50, maxFriction);
+
+  // Time step approximation
+  const dtApprox = 0.008; // Half of typical substep dt
+
+  // Apply impulses to vertex (push out along normal, slow down along tangent)
+  vertex.vx += normalForce * nx * dtApprox;
+  vertex.vy += normalForce * ny * dtApprox;
+  vertex.vx -= frictionForce * tx * dtApprox;
+  vertex.vy -= frictionForce * ty * dtApprox;
+
+  // Apply equal-opposite forces to edge endpoints (proportional to t)
+  const edgeForceN = normalForce * dtApprox;
+  const edgeForceT = frictionForce * dtApprox;
+
+  edge1.vx -= edgeForceN * nx * (1 - t);
+  edge1.vy -= edgeForceN * ny * (1 - t);
+  edge1.vx += edgeForceT * tx * (1 - t);
+  edge1.vy += edgeForceT * ty * (1 - t);
+
+  edge2.vx -= edgeForceN * nx * t;
+  edge2.vy -= edgeForceN * ny * t;
+  edge2.vx += edgeForceT * tx * t;
+  edge2.vy += edgeForceT * ty * t;
+
+  // Baumgarte position correction - directly fix position to prevent drift
+  // Only correct the "hard" part of penetration (beyond softness threshold)
+  const hardPenetration = Math.max(0, depth - COLLISION_SOFTNESS * 5);
+  if (hardPenetration > 0.5) {
+    const correction = hardPenetration * POSITION_CORRECTION;
+    // 60% to vertex, 40% to edge (vertex is the intruder)
+    vertex.x += nx * correction * 0.6;
+    vertex.y += ny * correction * 0.6;
+    edge1.x -= nx * correction * 0.4 * (1 - t);
+    edge1.y -= ny * correction * 0.4 * (1 - t);
+    edge2.x -= nx * correction * 0.4 * t;
+    edge2.y -= ny * correction * 0.4 * t;
+  }
+}
+
 // Check and resolve collisions between two bodies
 function checkBodyCollision(bodyA: Body, bodyB: Body): void {
   // Check if any perimeter vertex of B is inside A
@@ -282,48 +364,17 @@ function checkBodyCollision(bodyA: Body, bodyB: Body): void {
     const pB = bodyB.points[i];
 
     if (isPointInPolygon(pB.x, pB.y, bodyA.points, bodyA.perimeterCount)) {
-      // Point is inside - find closest edge and push out
       const edge = findClosestEdge(pB.x, pB.y, pB.vx, pB.vy, bodyA.points, bodyA.perimeterCount);
 
       if (edge && edge.depth > 0.1) {
         const { edgeIdx, depth, nx, ny, t } = edge;
         const j = (edgeIdx + 1) % bodyA.perimeterCount;
-        const pA1 = bodyA.points[edgeIdx];
-        const pA2 = bodyA.points[j];
-
-        // Compute relative velocity at contact
-        // Edge velocity is interpolated between the two endpoints
-        const edgeVx = pA1.vx * (1 - t) + pA2.vx * t;
-        const edgeVy = pA1.vy * (1 - t) + pA2.vy * t;
-        const relVx = pB.vx - edgeVx;
-        const relVy = pB.vy - edgeVy;
-        const relVn = relVx * nx + relVy * ny; // Normal component of relative velocity
-
-        // Collision response force (spring + damping)
-        const springForce = COLLISION_STIFFNESS * depth;
-        const dampForce = COLLISION_DAMPING * Math.min(0, relVn); // Only damp approaching velocity
-        const totalForce = springForce + dampForce;
-
-        // Apply impulse to penetrating vertex (push out)
-        pB.vx += totalForce * nx * 0.016; // Approximate dt
-        pB.vy += totalForce * ny * 0.016;
-
-        // Apply equal-opposite force to edge endpoints (proportional to t)
-        const forceToEdge = totalForce * 0.016;
-        pA1.vx -= forceToEdge * nx * (1 - t);
-        pA1.vy -= forceToEdge * ny * (1 - t);
-        pA2.vx -= forceToEdge * nx * t;
-        pA2.vy -= forceToEdge * ny * t;
-
-        // Position correction (move vertex out by half penetration)
-        const correction = depth * 0.3;
-        pB.x += nx * correction;
-        pB.y += ny * correction;
-        // Push edge points the other way
-        pA1.x -= nx * correction * (1 - t) * 0.5;
-        pA1.y -= ny * correction * (1 - t) * 0.5;
-        pA2.x -= nx * correction * t * 0.5;
-        pA2.y -= ny * correction * t * 0.5;
+        applyCollisionResponse(
+          pB,
+          bodyA.points[edgeIdx],
+          bodyA.points[j],
+          depth, nx, ny, t
+        );
       }
     }
   }
@@ -338,35 +389,12 @@ function checkBodyCollision(bodyA: Body, bodyB: Body): void {
       if (edge && edge.depth > 0.1) {
         const { edgeIdx, depth, nx, ny, t } = edge;
         const j = (edgeIdx + 1) % bodyB.perimeterCount;
-        const pB1 = bodyB.points[edgeIdx];
-        const pB2 = bodyB.points[j];
-
-        const edgeVx = pB1.vx * (1 - t) + pB2.vx * t;
-        const edgeVy = pB1.vy * (1 - t) + pB2.vy * t;
-        const relVx = pA.vx - edgeVx;
-        const relVy = pA.vy - edgeVy;
-        const relVn = relVx * nx + relVy * ny;
-
-        const springForce = COLLISION_STIFFNESS * depth;
-        const dampForce = COLLISION_DAMPING * Math.min(0, relVn);
-        const totalForce = springForce + dampForce;
-
-        pA.vx += totalForce * nx * 0.016;
-        pA.vy += totalForce * ny * 0.016;
-
-        const forceToEdge = totalForce * 0.016;
-        pB1.vx -= forceToEdge * nx * (1 - t);
-        pB1.vy -= forceToEdge * ny * (1 - t);
-        pB2.vx -= forceToEdge * nx * t;
-        pB2.vy -= forceToEdge * ny * t;
-
-        const correction = depth * 0.3;
-        pA.x += nx * correction;
-        pA.y += ny * correction;
-        pB1.x -= nx * correction * (1 - t) * 0.5;
-        pB1.y -= ny * correction * (1 - t) * 0.5;
-        pB2.x -= nx * correction * t * 0.5;
-        pB2.y -= ny * correction * t * 0.5;
+        applyCollisionResponse(
+          pA,
+          bodyB.points[edgeIdx],
+          bodyB.points[j],
+          depth, nx, ny, t
+        );
       }
     }
   }
@@ -600,7 +628,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     <div className="w-full h-screen bg-slate-950 text-slate-200 flex flex-col items-center p-4">
       <div className="flex items-center gap-2 mb-4 flex-wrap justify-center">
         <button onClick={onBack} className="px-3 py-1.5 bg-slate-800 rounded text-sm">← Back</button>
-        <h1 className="text-lg font-bold">Soft Body v10</h1>
+        <h1 className="text-lg font-bold">Soft Body v11</h1>
         <button onClick={() => setShowVerts(v => !v)} className="px-2 py-1 bg-slate-700 rounded text-xs">
           verts {showVerts ? 'ON' : 'OFF'}
         </button>
@@ -665,8 +693,8 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </div>
 
       <div className="mt-2 text-xs text-slate-400 text-center max-w-md">
-        <p><strong>v10:</strong> Gloopy dual-wave undulation.</p>
-        <p>Two overlapping waves at different speeds = organic, gross movement.</p>
+        <p><strong>v11:</strong> Body-to-body collision with soft response.</p>
+        <p>Blue body falls and lands on red. Both deform at contact point.</p>
       </div>
     </div>
   );
