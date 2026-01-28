@@ -147,18 +147,19 @@ See [[v1.4-ROADMAP]] for full details.
 **Plans**: TBD
 
 Plans:
-- [ ] 25-01: TBD (run /gsd:plan-phase 25 to break down)
+- [x] 25-01: Research & Prototype (complete - v10 demo working)
 
 #### Phase 26: Core SBG System
 
 **Goal**: Soft body mesh generation from goop groups, basic rendering pipeline
-**Depends on**: Phase 25
-**Research**: Likely (implementing unfamiliar soft body mesh patterns)
-**Research topics**: Mesh generation from grid cells, vertex buffer management, render pipeline integration
-**Plans**: TBD
+**Depends on**: Phase 25 (complete)
+**Research**: No (building on Phase 25 prototype learnings)
+**Plans**: 3
 
 Plans:
-- [ ] 26-01: TBD
+- [ ] 26-01: Body-to-Body Collision (2 tasks + checkpoint)
+- [ ] 26-02: Grid-to-Mesh Generation (2 tasks + checkpoint)
+- [ ] 26-03: Renderer Integration (2 tasks + checkpoint)
 
 #### Phase 27: Physics Response
 
@@ -230,8 +231,8 @@ Plans:
 | 22. Audit & Glossary | v1.4 | 1/1 | Shipped | 2026-01-27 |
 | 23. Code Rename | v1.4 | 7/7 | Shipped | 2026-01-27 |
 | 24. UI & Documentation | v1.4 | 1/1 | Shipped | 2026-01-27 |
-| 25. Research & Prototype | v1.6 | 0/? | Not started | - |
-| 26. Core SBG System | v1.6 | 0/? | Not started | - |
+| 25. Research & Prototype | v1.6 | 1/1 | Complete | 2026-01-28 |
+| 26. Core SBG System | v1.6 | 0/3 | Planned | - |
 | 27. Physics Response | v1.6 | 0/? | Not started | - |
 | 28. Merge Transitions | v1.6 | 0/? | Not started | - |
 | 29. Fill Animation | v1.6 | 0/? | Not started | - |
