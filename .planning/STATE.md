@@ -3,6 +3,7 @@ title: Project State
 type: session
 tags: [active, continuity, status]
 updated: 2026-01-28
+milestone: v1.6
 ---
 
 # Project State
@@ -19,33 +20,27 @@ updated: 2026-01-28
 
 ## Next Steps
 
-**Current:** Win bonus rework complete 2026-01-28
-**Status:** Deployed
+**Current:** Milestone v1.6 Soft Body Goop created 2026-01-28
+**Status:** Ready to plan Phase 25
 
-**Completed (this session):**
-- Removed old win bonus (`rank × 5000`) which caused multi-rank skipping
-- Implemented capped progression system:
-  - Win = guaranteed +1 rank (at 100 XP if score didn't rank you)
-  - If score already ranked you + win = +1 more rank at 100 XP
-  - Maximum +2 ranks per shift (prevents skipping unlocks)
-  - Score overflow preserved when not capped
-- Added `calculateCappedProgression()` function with 10 new tests
-- Fixed End Screen to show correct capped rank
-- Fixed Console to use saved career score when idle
+**Milestone v1.6 Features:**
+- Soft Body Goop (SBG) rendering — jelly physics visuals
+- Fluid inertia effects — edges lag during spin/fall
+- Landing squish animation
+- Merge transitions — visible snap when groups connect
+- Ambient jiggle during tank rotation
+- Fill animation overhaul — blob expansion instead of cell-by-cell
+
+**Branch:** `feature/soft-body-goop` (create before starting)
 
 **Next:**
-- Pressure venting visual (visual polish)
-- Tutorial system (onboarding)
+- Run `/gsd:research-phase 25` or `/gsd:plan-phase 25` to begin
 
-**Resume command:** Plan next feature or fix any reported bugs
+**Resume command:** `/gsd:progress`
 
 ## Future Plans
 
-See **`.planning/PRD.md` → Future Ideas** for the full list of planned features.
-
-Current priorities:
-- Pressure venting visual (visual polish)
-- Tutorial system (onboarding)
+See **`.planning/PRD.md` → Future Ideas** for the full list (bold items = current priorities).
 
 ---
 
@@ -58,12 +53,12 @@ See: [[PROJECT]] (updated 2026-01-27)
 
 ## Current Position
 
-Phase: 28 of 28 (Dynamic Text Updates) — SHIPPED
-Plan: All plans complete
-Status: v1.5 MILESTONE SHIPPED
-Last activity: 2026-01-27 — Deployed v1.5
+Phase: 25 of 30 (Research & Prototype)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-01-28 — Milestone v1.6 Soft Body Goop created
 
-Progress: ██████████ 100% (v1.5 Visual Terminology & Grade System) — SHIPPED
+Progress: ░░░░░░░░░░ 0% (v1.6 Soft Body Goop)
 
 ## What's Done
 
@@ -199,8 +194,8 @@ All three complications have player-driven triggers AND mitigations.
 
 Last session: 2026-01-28
 **Version:** 1.1.13
-**Branch:** master
-**Milestone:** v1.5 Visual Terminology & Grade System — SHIPPED
+**Branch:** master (switch to `feature/soft-body-goop` before coding)
+**Milestone:** v1.6 Soft Body Goop — IN PROGRESS
 
 ### This Session Summary (2026-01-28)
 

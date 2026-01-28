@@ -2,7 +2,7 @@
 title: Roadmap
 type: roadmap
 tags: [milestones, phases, progress]
-updated: 2026-01-27
+updated: 2026-01-28
 ---
 
 # Roadmap: Goops Complications & Progression
@@ -22,6 +22,7 @@ None
 - [[v1.2-ROADMAP|v1.2 Progression System]] — Phases 14-20 (shipped 2026-01-25)
 - [[v1.3-ROADMAP|v1.3 Shape Changes]] — Phase 21 (shipped 2026-01-26)
 - [[v1.4-ROADMAP|v1.4 Naming Standardization]] — Phases 22-24 (shipped 2026-01-27)
+- 🚧 **v1.6 Soft Body Goop** — Phases 25-30 (in progress)
 
 ## Completed Milestones
 
@@ -126,6 +127,81 @@ See [[v1.4-ROADMAP]] for full details.
 
 ---
 
+### 🚧 v1.6 Soft Body Goop (In Progress)
+
+**Milestone Goal:** Complete visual overhaul of goop rendering — from grid cells to jelly physics soft bodies that merge and fill organically.
+
+**Branch:** `feature/soft-body-goop`
+
+**Constraints:**
+- Mobile performance critical (40fps target)
+- Grid logic remains authoritative — soft bodies are visual layer
+- Technology flexible (SVG, Canvas, WebGL acceptable)
+
+#### Phase 25: Research & Prototype
+
+**Goal**: Explore rendering approaches (SVG, Canvas, WebGL), build minimal proof-of-concept for soft body mesh
+**Depends on**: Previous milestone complete
+**Research**: Likely (new rendering tech, external libraries, WebGL/Canvas exploration)
+**Research topics**: Metaball rendering, marching squares, spring-mass simulation, SDF shaders, soft body mesh generation
+**Plans**: TBD
+
+Plans:
+- [ ] 25-01: TBD (run /gsd:plan-phase 25 to break down)
+
+#### Phase 26: Core SBG System
+
+**Goal**: Soft body mesh generation from goop groups, basic rendering pipeline
+**Depends on**: Phase 25
+**Research**: Likely (implementing unfamiliar soft body mesh patterns)
+**Research topics**: Mesh generation from grid cells, vertex buffer management, render pipeline integration
+**Plans**: TBD
+
+Plans:
+- [ ] 26-01: TBD
+
+#### Phase 27: Physics Response
+
+**Goal**: Wobble effects, inertia lag during movement, landing squish animation
+**Depends on**: Phase 26
+**Research**: Unlikely (internal implementation building on Phase 26)
+**Plans**: TBD
+
+Plans:
+- [ ] 27-01: TBD
+
+#### Phase 28: Merge Transitions
+
+**Goal**: Visual blending when groups connect, snap transition effect
+**Depends on**: Phase 27
+**Research**: Unlikely (internal implementation)
+**Plans**: TBD
+
+Plans:
+- [ ] 28-01: TBD
+
+#### Phase 29: Fill Animation
+
+**Goal**: Blob expansion system replacing cell-by-cell fill
+**Depends on**: Phase 28
+**Research**: Unlikely (internal implementation)
+**Plans**: TBD
+
+Plans:
+- [ ] 29-01: TBD
+
+#### Phase 30: Integration & Polish
+
+**Goal**: Replace current renderer, mobile performance optimization, edge cases
+**Depends on**: Phase 29
+**Research**: Unlikely (optimization of existing work)
+**Plans**: TBD
+
+Plans:
+- [ ] 30-01: TBD
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -154,6 +230,12 @@ See [[v1.4-ROADMAP]] for full details.
 | 22. Audit & Glossary | v1.4 | 1/1 | Shipped | 2026-01-27 |
 | 23. Code Rename | v1.4 | 7/7 | Shipped | 2026-01-27 |
 | 24. UI & Documentation | v1.4 | 1/1 | Shipped | 2026-01-27 |
+| 25. Research & Prototype | v1.6 | 0/? | Not started | - |
+| 26. Core SBG System | v1.6 | 0/? | Not started | - |
+| 27. Physics Response | v1.6 | 0/? | Not started | - |
+| 28. Merge Transitions | v1.6 | 0/? | Not started | - |
+| 29. Fill Animation | v1.6 | 0/? | Not started | - |
+| 30. Integration & Polish | v1.6 | 0/? | Not started | - |
 
 ## Related
 
