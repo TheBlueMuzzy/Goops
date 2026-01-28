@@ -4,6 +4,7 @@ import Game from './Game';
 import { Upgrades } from './components/Upgrades';
 import { Settings } from './components/Settings';
 import { HowToPlay } from './components/HowToPlay';
+import { SoftBodyDemo } from './components/SoftBodyDemo';
 import { SaveData } from './types';
 import { loadSaveData, saveGameData, wipeSaveData } from './utils/storage';
 import { calculateRankDetails, getScoreForMidRank, getMilestonesInRange, calculateCappedProgression } from './utils/progression';
@@ -13,11 +14,18 @@ import { audio } from './utils/audio';
 import { useAudioSubscription } from './hooks/useAudioSubscription';
 import { UPGRADES } from './constants';
 
-type ViewState = 'GAME' | 'UPGRADES' | 'SETTINGS' | 'HOW_TO_PLAY';
+type ViewState = 'GAME' | 'UPGRADES' | 'SETTINGS' | 'HOW_TO_PLAY' | 'SOFT_BODY_DEMO';
 
 const App: React.FC = () => {
+  // Check URL params for demo mode
+  const getInitialView = (): ViewState => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('demo') === 'softbody') return 'SOFT_BODY_DEMO';
+    return 'GAME';
+  };
+
   // Start directly in GAME view (which now acts as the Console/Menu)
-  const [view, setView] = useState<ViewState>('GAME');
+  const [view, setView] = useState<ViewState>(getInitialView);
   
   // Lazy initialization ensures loadSaveData only runs once on mount
   const [saveData, setSaveData] = useState<SaveData>(() => loadSaveData());
@@ -216,6 +224,10 @@ const App: React.FC = () => {
 
       {view === 'HOW_TO_PLAY' && (
         <HowToPlay onBack={() => setView('GAME')} />
+      )}
+
+      {view === 'SOFT_BODY_DEMO' && (
+        <SoftBodyDemo onBack={() => setView('GAME')} />
       )}
     </div>
   );
