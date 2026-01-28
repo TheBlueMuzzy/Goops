@@ -19,22 +19,23 @@ updated: 2026-01-28
 
 ## Next Steps
 
-**Current:** Corrupted piece mechanics deployed 2026-01-28
-**Status:** Feature complete
+**Current:** PRD.md comprehensive update 2026-01-28
+**Status:** Documentation complete
 
 **Completed (this session):**
-- Added `isCorrupted` flag to GoopTemplate type
-- Corrupted pieces now blocked from becoming Mixed (multi-color split)
-- Corrupted pieces now blocked from becoming Wild
-- Wild pieces always selected from normal pools (never corrupted shapes)
-- Added getFloatingBlocks() check after every piece locks
-- Corner-connected cells from corrupted pieces now fall as LooseGoop after locking
+- Deep codebase analysis using 8 parallel exploration agents
+- PRD.md v6.0 rewrite with accurate values from code
+- Added tech notes for buffer rows, zone boundaries, iOS touch handling
+- Corrected formulas: crack growth interval (7-12s random), win burst condition
+- Fixed scoring details: adjacency NOT multiplied by combo
+- Added cumulative XP table, upgrade interaction details
+- Documented Goop Dump constants (18 pieces/wave, 80ms spawn, 600ms delay)
 
 **Next:**
-- Test corrupted piece LooseGoop behavior in game
-- Future: pressure venting visual, title unlocks
+- Pressure venting visual (visual polish)
+- Tutorial system (onboarding)
 
-**Resume command:** Test corrupted pieces or plan next feature
+**Resume command:** Plan next feature or fix any reported bugs
 
 ## Future Plans
 
@@ -200,6 +201,20 @@ Last session: 2026-01-28
 **Milestone:** v1.5 Visual Terminology & Grade System — SHIPPED
 
 ### This Session Summary (2026-01-28)
+
+**PRD.md Comprehensive Update — COMPLETE**
+
+Deep codebase analysis to update PRD.md v6.0 with accurate implementation details:
+- **8 parallel agents:** Analyzed constants, goop system, cracks, complications, progression, scoring, controls, actives
+- **Formula corrections:** Crack growth 7-12s random (not fixed 5s), win burst requires <90% pressure
+- **Tech notes added:** Buffer rows, zone boundaries with upgrades, iOS touch handling, lock delay reduction
+- **Scoring clarification:** Adjacency bonus NOT multiplied by combo (important detail)
+- **New tables:** Cumulative XP, fill duration examples, Goop Dump constants
+- **Upgrade interactions:** Documented all upgrade effects on base constants
+
+1 file modified (PRD.md), 151 tests pass.
+
+### Previous Session Summary (2026-01-28)
 
 **Corrupted Piece Mechanics — COMPLETE**
 

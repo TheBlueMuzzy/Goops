@@ -5,7 +5,7 @@
 **Goops** is a puzzle-action game where you operate as a tank maintenance technician, clearing colorful goop from a cylindrical pressure tank while managing equipment malfunctions. The game combines spatial puzzle-solving with time pressure and multi-tasking.
 
 **Platform:** Mobile-first web game (React/TypeScript/Vite)
-**Session Length:** 75 seconds per shift
+**Session Length:** 75 seconds per shift (base, upgradeable to 115s max)
 
 ### Core Fantasy
 
@@ -14,7 +14,7 @@ You're a low-level operator at an industrial facility. Your job: peer through a 
 ### Win/Lose Conditions
 
 **Win:** Seal the required number of cracks before pressure reaches 100%
-- Required cracks = number of colors + current rank
+- Required cracks = number of colors in palette + current rank
 - Example: Rank 5 with 4 colors = 9 cracks to seal
 - After winning, gameplay continues until pressure hits 100% (bonus opportunity)
 
@@ -24,7 +24,7 @@ You're a low-level operator at an industrial facility. Your job: peer through a 
 
 ## Game Modes
 
-### Console Mode
+### Console Screen
 
 The main menu and meta-game layer. A retro industrial control console (think Homer Simpson at the nuclear plant).
 
@@ -33,7 +33,7 @@ The main menu and meta-game layer. A retro industrial control console (think Hom
 - Three complication repair panels (Laser, Lights, Controls)
 - Status lights and gauges
 - Periscope handle (pull down to enter gameplay)
-- End Day screen (CRT monitor that drops down on game over)
+- End Shift screen (CRT monitor that drops down on game over)
 
 **Console Light States:**
 - **Idle:** All orange lights blink slowly at varied speeds
@@ -43,9 +43,9 @@ The main menu and meta-game layer. A retro industrial control console (think Hom
 **Mid-Run Display:**
 - Alternates between "Cleaning in Progress..." and "Current Pressure: XX%"
 
-### Periscope Mode
+### Tank Screen (Periscope Mode)
 
-The core gameplay. You look into a cylindrical tank through a viewport showing ~33% of the tank surface.
+The core gameplay. You look into a cylindrical tank through a viewport showing ~40% of the tank surface.
 
 **Core Loop:**
 1. Pressure builds continuously (75-second timer)
@@ -63,7 +63,7 @@ Displays when the shift ends (pressure reaches 100%).
 **Header:** "SHIFT OVER" or "SYSTEM FAILURE"
 
 **Stats Shown:**
-- Shift Score (points earned)
+- Shift Score (XP earned)
 - Operator Rank with XP bar
 - Grade (A/B/C/FAILURE)
 - Cracks Filled (X/Y)
@@ -81,12 +81,14 @@ Displays when the shift ends (pressure reaches 100%).
 | Property | Value | Notes |
 |----------|-------|-------|
 | Total Width | 30 columns | Full cylinder circumference |
-| Visible Width | 12 columns | ~33% visible through periscope |
-| Total Height | 19 rows | |
-| Visible Height | 16 rows | |
-| Buffer Height | 3 rows | Spawn area above visible |
+| Visible Width | 12 columns | ~40% visible through periscope |
+| Total Height | 19 rows | Including buffer |
+| Visible Height | 16 rows | Rows 3-18 (0-indexed) |
+| Buffer Height | 3 rows | Spawn area above visible (rows 0-2) |
 
 The tank is cylindrical — coordinates wrap horizontally. Rotating the tank changes which section is visible. Goop groups can wrap around the cylinder.
+
+> **Tech Note:** Buffer rows 0-2 are not visible to the player. Pieces spawn at row 0 and fall into the visible area starting at row 3.
 
 ### Pressure System
 
@@ -99,9 +101,12 @@ Pressure represents time remaining. It builds continuously and determines:
 
 **Formulas:**
 ```
-tankPressure = 1 - (shiftTime / 75000)
-pressureRow = 1 + (tankPressure * 15)
+tankPressure = 1 - (shiftTime / maxTime)
+waterHeightBlocks = 1 + (tankPressure * 15)
+pressureLineY = floor(TANK_HEIGHT - waterHeightBlocks)
 ```
+
+> **Tech Note:** `pressureLineY` ranges from row 18 (bottom, at game start) to row 3 (top, constrained by BUFFER_HEIGHT at game end).
 
 **Pressure Recovery (from popping goop):**
 ```
@@ -121,13 +126,15 @@ Infused goop = goop covering a matching-color crack.
 
 Pieces come in three size categories, spawning based on elapsed time:
 
-| Zone | Time | Shapes | Cells per Piece |
-|------|------|--------|-----------------|
-| Tetra | 0-25s | 5 normal + 5 corrupted | 4 |
-| Penta | 25-50s | 11 normal + 11 corrupted | 5 |
-| Hexa | 50-75s | 11 normal + 11 corrupted | 6 |
+| Zone | Time Range | Shapes | Cells per Piece |
+|------|------------|--------|-----------------|
+| Tetra | 0 to maxTime/3 | 5 normal + 5 corrupted | 4 |
+| Penta | maxTime/3 to 2×maxTime/3 | 11 normal + 11 corrupted | 5 |
+| Hexa | 2×maxTime/3 to maxTime | 11 normal + 11 corrupted | 6 |
 
 **Total:** 54 unique shapes (27 normal + 27 corrupted)
+
+> **Tech Note:** Zone boundaries adjust with PRESSURE_CONTROL upgrade. At base 75s: zones are 0-25s, 25-50s, 50-75s. With max upgrade (115s): zones are 0-38.3s, 38.3-76.7s, 76.7-115s.
 
 Bigger pieces spawn later because cracks appear higher as pressure rises — taller pieces help reach them.
 
@@ -141,30 +148,39 @@ Goop always falls from the center of the visible screen. The player controls WHE
 - **Multi-color:** 25% chance at rank 20+ (cells split between 2 colors)
 - **Wild:** 15% chance at rank 40+ (seals any crack color)
 
+**Spawn Priority Order:**
+1. Check corruption (15%)
+2. If corrupted: cannot be wild or multi-color
+3. If normal: check wild (15% at rank 40+)
+4. If not wild: check multi-color split (25% at rank 20+)
+5. Apply mirroring (50% for asymmetric shapes)
+
 **Wild Piece Rules:**
 - Only spawn from normal pools (never corrupted)
 - Cannot be multi-color
 - Seal any crack color on contact
-- Convert adjacent goop groups to wild
+- Convert adjacent goop groups to wild on lock
 - When non-wild lands next to wild, entire wild group converts to that color
 
 ### Corrupted Pieces
 
 Corrupted pieces have corner-touching cells instead of edge-touching. After locking:
-- Corner-connected cells become separate groups
-- Floating cells fall as individual loose goop
+- `updateGroups()` recomputes connectivity — corner-touching cells become separate groups
+- Unsupported groups fall as individual loose goop
 - Cannot become multi-color (mixed)
 - Cannot become wild
 
+> **Tech Note:** The `isCorrupted` flag is set at spawn time in `GoopTemplate`. After merge, `updateGroups()` uses 4-way (orthogonal) connectivity, so corner-connected cells naturally separate.
+
 ### Goop Physics
 
-**Groups:** Connected same-color cells form a "goop group"
+**Groups:** Connected same-color cells form a "goop group" (4-way orthogonal connectivity only)
 
 **Support:** A group is supported if ANY cell touches:
-- The floor (bottom row)
-- Another supported group
+- The floor (bottom row, y = TANK_HEIGHT - 1 = row 18)
+- Another supported group (directly below, same column)
 
-**Falling:** Unsupported groups fall as a unit (sticky gravity)
+**Falling:** Unsupported groups become "loose goop" and fall at 0.03 grid units/ms
 
 **Merging:** When same-color groups touch, they merge into one group with a new timestamp
 
@@ -174,6 +190,13 @@ After placement or merge, goop "fills" before it can be popped.
 
 **Formula:** `fillDuration = groupSize * 375ms`
 
+| Group Size | Fill Duration |
+|------------|---------------|
+| 1 cell | 375ms |
+| 4 cells | 1.5s |
+| 10 cells | 3.75s |
+| 25 cells | 9.375s |
+
 Fill animation progresses row-by-row from bottom to top of the group.
 
 ### Popping (Laser)
@@ -182,15 +205,16 @@ Tapping filled goop destroys it.
 
 **Requirements:**
 1. Goop must be fully filled (animation complete)
-2. Top of goop must be below pressure line (submerged)
+2. Top of group (`groupMinY`) must be below pressure line
 3. Tap anywhere on the goop
 
 **Results:**
 - All connected same-color cells destroyed
 - Unsupported goop above falls
 - Score awarded
-- Pressure reduced
+- Pressure reduced (time recovered)
 - Matching cracks sealed
+- Active abilities gain +25% charge per sealed crack-goop unit
 
 ---
 
@@ -198,47 +222,54 @@ Tapping filled goop destroys it.
 
 ### Spawning
 
-- One crack per color can be active at a time
+- **Max active:** 8 crack groups (connected components) at a time
 - Spawn at the current pressure line Y position
-- Spawn interval: 5000ms
+- Spawn interval: 5000ms between spawn attempts
 - Random X position (must be empty cell)
+- One crack per color can be "active" (spawning stops when goal target met)
 
 ### Sealing
 
-1. Cover crack with matching-color goop
-2. Covered goop becomes "infused" (glowing)
+1. Cover crack with matching-color goop (or wild goop)
+2. Covered goop becomes "infused" (`isSealingGoop: true`)
 3. Pop the covering goop
 4. Crack disappears, counts as sealed
-5. Active abilities gain +25% charge per seal
+5. Active abilities gain +25% charge per sealed unit
 
-**Note:** Wrong-color goop covering a crack does nothing. If goop is removed by collapse (not direct pop), crack remains.
+**Note:** Wrong-color goop covering a crack does nothing — crack remains visible through the goop. If covering goop is removed by collapse (not direct pop), crack remains.
 
 ### Expanding Cracks (Rank 30+)
 
 At rank 30+, unsealed cracks grow over time.
 
-**Growth Check:** Every 5000ms per crack
+**Growth Check:** 7-12 seconds per crack cell (random: `5000 + random * 5000` ms)
 
 **Spread Chance:**
 ```
-baseChance = 10% + tankPressure
-leafPenalty = 50% reduction if crack has no children
-distancePenalty = 25% per hop from root crack
-upgradeOffset = SLOW_CRACKS level * 5%
-finalChance = baseChance - leafPenalty - distancePenalty - upgradeOffset
+baseChance = 10% + tankPressure (ranges 10% to ~100%)
+slowCracksOffset = SLOW_CRACKS level * 5%
+effectiveChance = baseChance - slowCracksOffset
+
+// Penalties:
+leafPenalty = 50% reduction if crack has no children (×0.5)
+distancePenalty = 25% per hop from root crack (min 10% multiplier)
+
+finalChance = effectiveChance * leafMultiplier * distanceMultiplier
 ```
 
-**Spread Direction:** 8-directional (orthogonal + diagonal)
+**Spread Direction:** 8-directional (4 orthogonal + 4 diagonal)
 
-**Merging:** Adjacent same-color cracks merge into one crack structure
+**Merging:** Adjacent same-color cracks merge into one crack structure (parent-child references updated)
 
 ### Win Burst
 
-When both conditions are met:
-- Required cracks sealed
-- Pressure < 90%
+When BOTH conditions are met:
+- Required cracks sealed (`goalsCleared >= goalsTarget`)
+- Tank not overfilled (`tankPressure < 90%`)
 
-All remaining colors spawn cracks simultaneously — a bonus opportunity to seal more before the shift ends.
+All remaining colors spawn cracks simultaneously above the pressure line — a bonus opportunity to seal more before the shift ends.
+
+> **Tech Note:** If `tankPressure >= 90%` when win condition is met, all goals are cleared instead (`goalMarks = []`), effectively ending the run.
 
 ---
 
@@ -252,7 +283,7 @@ Equipment malfunctions occur based on player actions. Players start at Rank 0 wi
 
 | Complication | Trigger | Unlock | Effect When Active |
 |--------------|---------|--------|-------------------|
-| Laser | Capacitor empties | Rank 4 | Two-tap to pop (prime, then pop) |
+| Laser | Capacitor empties (0%) | Rank 4 | Two-tap to pop (prime, then pop) |
 | Lights | Brightness falls below 10% | Rank 2 | Dims to 5% + grayscale |
 | Controls | Heat reaches 100% | Rank 6 | 2 inputs per move, 50% held speed |
 
@@ -260,26 +291,44 @@ Equipment malfunctions occur based on player actions. Players start at Rank 0 wi
 
 **Capacitor Meter (left side of screen):**
 - Starts at 100%
-- Drains 4% per unit popped
-- Refills +10% on piece lock
+- Drains 4% per goop unit popped (reduced by CAPACITOR_EFFICIENCY)
+- Refills +10% on piece lock (only when no active malfunction)
 - Color: Blue → Yellow → Red as it empties
+
+**Drain with upgrade:**
+```
+drainMultiplier = 1 - (CAPACITOR_EFFICIENCY level * 0.0625)
+drainAmount = groupSize * 4 * drainMultiplier
+```
 
 **When active:** First tap primes the group (restarts fill animation), second tap pops it.
 
-**Upgrade:** CAPACITOR_EFFICIENCY reduces drain by 6.25% per level
+**Repair Mini-Game (4 Sliders):**
+- 4 horizontal sliders with 3 positions each (Left, Center, Right)
+- Each slider has 2 indicator lights (left and right)
+- Match slider position to lit indicators:
+  - Left light only → slide left
+  - Right light only → slide right
+  - Both lights → slide center
+- At max CAPACITOR_EFFICIENCY: only 2 positions (no center)
 
 ### Lights Complication
 
 **Brightness System:**
 - Starts at 100%
-- Grace period: 5 seconds of fast dropping before dimming begins
+- Grace period: 5 seconds base (+0.75s per CIRCUIT_STABILIZER level) before dimming begins
 - Dims over 5 seconds from 100% to 10% when not fast dropping
 - Recovers at 400%/sec while fast dropping (0.25s to full)
-- Flickers at 70% as warning
+- Flickers at end of grace period as warning (dips to 70% for 80ms)
 
 **When active:** Screen dims to 5% brightness with grayscale filter.
 
-**Upgrade:** CIRCUIT_STABILIZER adds +0.75s grace per level
+**Repair Mini-Game (Sequence Memory):**
+1. Move slider to indicated position (up or down)
+2. Watch 3-4 button sequence flash (200ms on, 100ms gap)
+3. Repeat the sequence by pressing buttons
+4. Move slider to opposite position
+- At max CIRCUIT_STABILIZER: 3 buttons instead of 4
 
 ### Controls Complication
 
@@ -287,11 +336,16 @@ Equipment malfunctions occur based on player actions. Players start at Rank 0 wi
 - Starts at 0%
 - Gains 5% per tank rotation
 - Drains 50%/sec when idle (after 200ms threshold)
+- Drain boosted by GEAR_LUBRICATION: `50 * (1 + 0.125 * level)` per second
 - Color: Green → Yellow → Red as it fills
 
-**When active:** Requires 2 inputs per action, held keys move at 50% speed.
+**When active:** Requires 2 inputs per action, repeat rate doubled to 200ms.
 
-**Upgrade:** GEAR_LUBRICATION adds +12.5% heat dissipation per level
+**Repair Mini-Game (Dial Alignment):**
+- Circular dial with arrow pointer
+- 4 target positions at corners (45°, 135°, 225°, 315°)
+- Align arrow within 15° of lit corner, tap to confirm
+- Repeat 4 times (3 times at max GEAR_LUBRICATION)
 
 ### Cooldown
 
@@ -302,42 +356,6 @@ cooldownSeconds = max(8, 20 - (currentRank - unlockRank))
 ```
 
 Example: At rank 10, Laser (unlocks rank 4) has cooldown of max(8, 20 - 6) = 14 seconds.
-
-### Console Repair Mini-Games
-
-#### Repair Laser (4 Sliders)
-
-- 4 horizontal sliders with 3 positions each (Left, Center, Right)
-- Each slider has 2 indicator lights (left and right)
-- Match slider position to lit indicators:
-  - Left light → slide left
-  - Right light → slide right
-  - Both lights → slide center
-
-**Completion:** All 4 sliders correct → complication cleared
-
-#### Repair Lights (Sequence Memory)
-
-1. Move slider to indicated position (up or down)
-2. Watch 4-button sequence flash (blue, green, purple buttons)
-3. Repeat the sequence by pressing buttons
-4. Move slider to opposite position
-
-**Sequence Rules:**
-- 4 buttons in sequence
-- Each button appears max 2 times
-- 400ms flash, 200ms gaps
-
-**Completion:** Correct slider → correct sequence → correct slider
-
-#### Repair Controls (Dial Alignment)
-
-- Circular dial with arrow pointer
-- 4 target positions at corners (45°, 135°, 225°, 315°)
-- Align arrow to lit corner, tap to confirm
-- Repeat 4 times
-
-**Completion:** 4 successful alignments → complication cleared
 
 ---
 
@@ -350,19 +368,24 @@ Example: At rank 10, Laser (unlocks rank 4) has cooldown of max(8, 20 - 6) = 14 
 **XP Formula:**
 ```
 xpForNextRank = 3500 + (currentRank * 250)
+cumulativeXpToRankN = N * (3375 + 125 * N)
 ```
 
-**Cumulative XP to reach rank N:**
-```
-totalXP = N * (3375 + 125 * N)
-```
+| Rank | XP to Next | Cumulative |
+|------|------------|------------|
+| 0 | 3,500 | 0 |
+| 10 | 6,000 | 46,250 |
+| 20 | 8,500 | 117,500 |
+| 30 | 11,000 | 213,750 |
+| 40 | 13,500 | 335,000 |
+| 50 | — | 481,250 |
 
 **Minimum Progress:** Every session grants at least `100 * currentRank` XP (minimum 100).
 
 ### Scraps (Currency)
 
 - Earn 1 scrap per rank achieved
-- Spend scraps to purchase and level upgrades
+- Spend 1 scrap per upgrade level
 - Displayed as "SCRAPS: XX" on upgrade screen
 
 ### Color Schedule
@@ -372,7 +395,7 @@ totalXP = N * (3375 + 125 * N)
 | 0-9 | Red, Blue, Green, Yellow (4) |
 | 10-29 | + Purple (5) |
 | 30-39 | + White (6) |
-| 40-49 | + Wild (15% chance, seals any color) |
+| 40-49 | + Wild (15% spawn chance, seals any color) |
 | 50 | + Black (7) |
 
 ### Starting Junk (Rank 3+)
@@ -381,11 +404,12 @@ Sessions start with junk goop already in the tank:
 
 | Rank | Junk Blocks | Coverage |
 |------|-------------|----------|
+| 0-2 | 0 | — |
 | 3-5 | ~5 blocks | ~15% of bottom row |
 | 6-8 | ~8 blocks | ~25% of bottom row |
 | 9+ | ~11 blocks | ~35% of bottom row |
 
-Each junk block is an independent group (size 1).
+Each junk block is an independent group (size 1). Colors are random unless modified by JUNK_UNIFORMER upgrade.
 
 ---
 
@@ -451,18 +475,16 @@ Active abilities are upgrades that can be equipped and manually activated.
 
 ### Charging
 
-- Passive: ~3% per second (varies by ability)
-- Crack seal: +25% per sealed crack
-- Visual: Grey circle fills with color, glows when ready
-
-### Charge Times
-
 | Active | Charge Time | Passive Rate |
 |--------|-------------|--------------|
 | Cooldown Booster | 20s | 5%/sec |
 | Goop Dump | 15s | 6.67%/sec |
 | Goop Colorizer | 25s | 4%/sec |
 | Crack Down | 30s | 3.33%/sec |
+
+**Bonus:** +25% charge per sealed crack-goop unit (instant on pop)
+
+**Visual:** Grey circle fills with color, glows when ready (100%)
 
 ### Ability Effects
 
@@ -475,6 +497,8 @@ Active abilities are upgrades that can be equipped and manually activated.
 - Level 1: 1 wave (18 pieces)
 - Level 2: 2 waves (36 pieces)
 - Level 3: 3 waves (54 pieces)
+- Wave delay: 600ms between waves
+- Spawn interval: 80ms between pieces
 
 **Goop Colorizer:** Locks next N pieces to current falling piece's color
 - Level 1: 6 pieces
@@ -493,31 +517,42 @@ Active abilities are upgrades that can be equipped and manually activated.
 ### Pop Scoring
 
 ```
-perUnit = 10 + heightBonus + offscreenBonus
-heightBonus = (19 - y) * 10
-offscreenBonus = 50 (if unit outside visible area)
-popStreakMultiplier = 1 + (popStreak * 0.1)
-adjacencyBonus = neighborCount * 5
+perUnit = baseScore + heightBonus + offscreenBonus
+baseScore = 10
+heightBonus = (19 - y) * 10    // 0-190 points
+offscreenBonus = 50            // if distance from viewport center > 6
 
-totalScore = (sum of perUnit * popStreakMultiplier) + adjacencyBonus
+popStreakMultiplier = 1 + (popStreak * 0.1)
+
+// Per-unit scores are multiplied, then summed
+unitTotal = sum of (perUnit * popStreakMultiplier)
+
+// Adjacency is added flat (NOT multiplied)
+adjacencyBonus = neighborGroupCount * 5
+
+totalScore = unitTotal + adjacencyBonus
 ```
 
 ### Drop Scoring
 
 ```
-hardDropScore = distanceDropped * 2
+fastDropScore = distanceDropped * 2
 ```
 
 ### End Game
 
 ```
-goopPenalty = remainingUnits * -50 (min 0 total)
-winBonus = operatorRank * 5000 (if won)
+goopPenalty = remainingUnits * 50
+winBonus = startingRank * 5000 (if won)
+xpFloor = 100 * startingRank (minimum XP)
+
+finalScore = max(xpFloor, score + winBonus - goopPenalty)
 ```
 
 **Auto-Popper Effect:** Probabilistically auto-pops remaining goop before penalty
-- Base survival: 20%
-- Per level: +4% survival (so 24%, 28%, 32%, 36% at levels 1-4)
+- Base decay: 20% (80% auto-pop chance)
+- Per level: -4% decay (+4% auto-pop)
+- Level 4: 4% decay (96% auto-pop chance)
 
 ### Grade System
 
@@ -525,18 +560,18 @@ Five performance categories averaged for letter grade:
 
 | Category | Formula |
 |----------|---------|
-| Crack Performance | (cracksFilled / cracksTarget) * 100 |
-| Tank Efficiency | 100 - (residualGoop * 2) |
-| System Control | 100 - (residualGoop * 3) |
-| Pressure Management | (pressureVented / maxTime) * 100 |
+| Crack Performance | min(100, (cracksFilled / cracksTarget) * 100) |
+| Tank Efficiency | max(0, 100 - (residualGoop * 2)) |
+| System Control | max(0, 100 - (residualGoop * 3)) |
+| Pressure Management | min(100, (totalVented / maxTime) * 100) |
 | Score Bonus | min(100, shiftScore / 100) |
 
 **Grade Thresholds:**
 | Grade | Average | Color |
 |-------|---------|-------|
-| A | ≥ 80 | Green |
-| B | ≥ 60 | Cyan |
-| C | ≥ 40 | Yellow |
+| A | >= 80 | Green |
+| B | >= 60 | Cyan |
+| C | >= 40 | Yellow |
 | FAILURE | < 40 or didn't win | Red |
 
 ---
@@ -549,38 +584,44 @@ Five performance categories averaged for letter grade:
 |-------|--------|
 | A / Left Arrow | Rotate tank left |
 | D / Right Arrow | Rotate tank right |
-| Q | Rotate piece counter-clockwise |
-| E | Rotate piece clockwise |
-| R | Swap piece with held goop |
-| S / Down | Fast drop (hold) |
+| Q / Mouse Wheel Up | Rotate piece counter-clockwise |
+| E / Mouse Wheel Down | Rotate piece clockwise |
+| R (hold 1.5s) | Swap piece with held goop |
+| S (hold) | Fast drop |
 | W / Space | Exit periscope to console |
+| Backspace | Exit to console (anytime) |
 | Mouse Click | Pop goop |
+
+> **Tech Note:** Tank rotation has 100ms repeat rate (200ms with Controls complication). Initial delay of 250ms before repeat starts. Max 10 lock resets per piece (prevents infinite spin).
 
 ### Touch Controls (Mobile)
 
 | Gesture | Action |
 |---------|--------|
-| Drag left/right | Rotate tank |
+| Drag left/right | Rotate tank (20px threshold) |
 | Tap left screen half | Rotate piece counter-clockwise |
 | Tap right screen half | Rotate piece clockwise |
-| Drag down | Fast drop |
-| Swipe up | Exit to console / swap piece |
+| Drag down | Fast drop (continuous) |
+| Hold on screen (1.5s) | Swap piece with held goop |
+| Swipe up (quick) | Exit to console |
 | Tap on goop | Pop goop |
+
+> **Tech Note:** Touch handling uses synchronous window event listeners (not React's onPointer) for iOS compatibility. Drag locks to axis after 10px movement. Swap time reduced by GOOP_SWAP upgrade (min 0.5s at level 4).
 
 ---
 
 ## Screen Transitions
 
-### Console → Periscope
+### Console → Tank Screen
 
 1. Drag periscope handle downward
 2. Goggles viewport shows miniaturized gameplay
 3. As periscope reaches bottom, view zooms in
 4. Full periscope gameplay visible
 
-### Periscope → Console
+### Tank Screen → Console
 
-1. Swipe up
+1. Swipe up (or press W/Space/Backspace)
 2. View zooms out, periscope moves up
 3. Console fully visible
 4. **Game continues running!**
@@ -599,15 +640,16 @@ Five performance categories averaged for letter grade:
 
 ### Timing
 
-| Constant | Value |
-|----------|-------|
-| Shift Duration | 75,000ms |
-| Piece Fall Speed | 780ms/row |
-| Fast Drop Multiplier | 8x |
-| Lock Delay | 500ms |
-| Fill Duration | groupSize * 375ms |
-| Crack Spawn Interval | 5,000ms |
-| Crack Growth Interval | 5,000ms |
+| Constant | Value | Upgradeable |
+|----------|-------|-------------|
+| Shift Duration | 75,000ms | +5s per PRESSURE_CONTROL level (max +40s) |
+| Piece Fall Speed | 780ms/row | +12.5% per DENSE_GOOP level |
+| Fast Drop Multiplier | 8x | — |
+| Lock Delay | 500ms (50ms when fast dropping) | — |
+| Fill Duration | groupSize * 375ms | — |
+| Crack Spawn Interval | 5,000ms | — |
+| Crack Growth Interval | 7,000-12,000ms per cell | — |
+| Swap Hold Duration | 1,500ms | -250ms per GOOP_SWAP level (min 500ms) |
 
 ### Grid
 
@@ -630,17 +672,26 @@ Five performance categories averaged for letter grade:
 
 ### Complications
 
+| Constant | Value | Upgradeable |
+|----------|-------|-------------|
+| Laser Drain | 4% per unit | -6.25% per CAPACITOR_EFFICIENCY level |
+| Laser Refill | 10% per lock | — |
+| Lights Grace | 5s base | +0.75s per CIRCUIT_STABILIZER level |
+| Lights Dim Duration | 5s | — |
+| Lights Recovery | 400%/sec | — |
+| Heat Gain | 5% per rotation | — |
+| Heat Drain | 50%/sec | +12.5% per GEAR_LUBRICATION level |
+| Cooldown Min | 8s | — |
+| Cooldown Max | 20s | — |
+
+### Goop Dump (Active)
+
 | Constant | Value |
 |----------|-------|
-| Laser Drain | 4% per unit |
-| Laser Refill | 10% per lock |
-| Lights Grace | 5s base |
-| Lights Dim Duration | 5s |
-| Lights Recovery | 400%/sec |
-| Heat Gain | 5% per rotation |
-| Heat Drain | 50%/sec |
-| Cooldown Min | 8s |
-| Cooldown Max | 20s |
+| Pieces per Wave | 18 |
+| Spawn Interval | 80ms between pieces |
+| Wave Delay | 600ms between waves |
+| Fall Speed | 0.03 grid units/ms |
 
 ---
 
@@ -652,6 +703,7 @@ Five performance categories averaged for letter grade:
 
 **Progression:**
 - Additional bands (ranks 40+)
+- More active abilities
 
 **Onboarding:**
 - **Tutorial system** — guided onboarding for new players
@@ -661,6 +713,6 @@ Five performance categories averaged for letter grade:
 
 ---
 
-*Document Version: 5.0*
+*Document Version: 6.0*
 *Game Version: 1.5*
 *Last Updated: January 2026*
