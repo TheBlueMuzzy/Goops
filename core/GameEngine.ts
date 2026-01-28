@@ -217,12 +217,15 @@ export class GameEngine {
         // At game start (elapsed time = 0), getPiecePoolByZone() returns Tetra pool
         // Generate next piece for preview using zone-based selection
         const nextColor = palette[Math.floor(Math.random() * palette.length)];
-        const shouldSplit = startRank >= 20 && Math.random() < 0.25;
 
         // Use Tetra pool directly for start (elapsed time = 0)
-        const startPool = Math.random() < CORRUPTION_CHANCE ? TETRA_CORRUPTED : TETRA_NORMAL;
+        const nextIsCorrupted = Math.random() < CORRUPTION_CHANCE;
+        const startPool = nextIsCorrupted ? TETRA_CORRUPTED : TETRA_NORMAL;
         const startPieceIndex = Math.floor(Math.random() * startPool.length);
         const startBasePiece = this.maybeApplyMirror({ ...startPool[startPieceIndex] });
+
+        // Multi-color split: 25% chance at rank 20+ (corrupted pieces can't be mixed)
+        const shouldSplit = !nextIsCorrupted && startRank >= 20 && Math.random() < 0.25;
 
         let nextGoopDef: GoopTemplate;
         if (shouldSplit) {
@@ -238,12 +241,14 @@ export class GameEngine {
         } else {
             nextGoopDef = {
                 ...startBasePiece,
-                color: nextColor
+                color: nextColor,
+                isCorrupted: nextIsCorrupted || undefined  // Only set if true
             };
         }
 
         // Stored piece also uses Tetra pool at game start
-        const storedPool = Math.random() < CORRUPTION_CHANCE ? TETRA_CORRUPTED : TETRA_NORMAL;
+        const storedIsCorrupted = Math.random() < CORRUPTION_CHANCE;
+        const storedPool = storedIsCorrupted ? TETRA_CORRUPTED : TETRA_NORMAL;
         const storedPieceIndex = Math.floor(Math.random() * storedPool.length);
         const storedBasePiece = this.maybeApplyMirror({ ...storedPool[storedPieceIndex] });
 
@@ -257,7 +262,8 @@ export class GameEngine {
             activeGoop: null,
             storedGoop: {
                 ...storedBasePiece,
-                color: palette[Math.floor(Math.random() * palette.length)]
+                color: palette[Math.floor(Math.random() * palette.length)],
+                isCorrupted: storedIsCorrupted || undefined  // Only set if true
             },
             nextGoop: nextGoopDef,
             canSwap: true,
@@ -581,8 +587,9 @@ export class GameEngine {
     /**
      * Get the appropriate piece pool based on elapsed game time.
      * Zone selection: Tetra (0-25s), Penta (25-50s), Hexa (50-75s)
+     * Returns both the pool and whether it's corrupted.
      */
-    private getPiecePoolByZone(): GoopTemplate[] {
+    private getPiecePoolByZone(forceNormal?: boolean): { pool: GoopTemplate[], isCorrupted: boolean } {
         const elapsedMs = this.maxTime - this.state.shiftTime;
         const elapsedSec = elapsedMs / 1000;
 
@@ -590,18 +597,18 @@ export class GameEngine {
         // 75 sec game = 25 sec per zone (adjusts for PRESSURE_CONTROL bonus time)
         const zoneLength = this.maxTime / 3 / 1000; // seconds per zone
 
-        // Use corruption chance to select normal vs corrupted
-        const useCorrupted = Math.random() < CORRUPTION_CHANCE;
+        // Use corruption chance to select normal vs corrupted (unless forced normal)
+        const isCorrupted = !forceNormal && Math.random() < CORRUPTION_CHANCE;
 
         if (elapsedSec < zoneLength) {
             // Tetra zone (0-25s for base time)
-            return useCorrupted ? TETRA_CORRUPTED : TETRA_NORMAL;
+            return { pool: isCorrupted ? TETRA_CORRUPTED : TETRA_NORMAL, isCorrupted };
         } else if (elapsedSec < zoneLength * 2) {
             // Penta zone (25-50s for base time)
-            return useCorrupted ? PENTA_CORRUPTED : PENTA_NORMAL;
+            return { pool: isCorrupted ? PENTA_CORRUPTED : PENTA_NORMAL, isCorrupted };
         } else {
             // Hexa zone (50-75s for base time)
-            return useCorrupted ? HEXA_CORRUPTED : HEXA_NORMAL;
+            return { pool: isCorrupted ? HEXA_CORRUPTED : HEXA_NORMAL, isCorrupted };
         }
     }
 
@@ -662,12 +669,12 @@ export class GameEngine {
                 }
             }
             // Zone-based piece selection with corruption and mirroring
-            const pool = this.getPiecePoolByZone();
+            const { pool, isCorrupted } = this.getPiecePoolByZone();
             const pieceIndex = Math.floor(Math.random() * pool.length);
             const basePieceDef = this.maybeApplyMirror({ ...pool[pieceIndex] });
 
-            // Multi-color split: 25% chance at rank 20+
-            const shouldSplit = currentRank >= 20 && Math.random() < 0.25;
+            // Multi-color split: 25% chance at rank 20+ (corrupted pieces can't be mixed)
+            const shouldSplit = !isCorrupted && currentRank >= 20 && Math.random() < 0.25;
 
             let newNext: GoopTemplate;
             if (shouldSplit) {
@@ -683,14 +690,15 @@ export class GameEngine {
             } else {
                 newNext = {
                     ...basePieceDef,
-                    color: nextColor
+                    color: nextColor,
+                    isCorrupted: isCorrupted || undefined  // Only set if true
                 };
             }
 
-            // Wild piece chance: 15% at rank 40+ (overrides split/color if triggered)
-            if (currentRank >= 40 && Math.random() < 0.15) {
-                // Wild pieces use zone-based shape selection too
-                const wildPool = this.getPiecePoolByZone();
+            // Wild piece chance: 15% at rank 40+ (corrupted pieces can't be wild)
+            if (!isCorrupted && currentRank >= 40 && Math.random() < 0.15) {
+                // Wild pieces use zone-based shape selection (force normal pool)
+                const { pool: wildPool } = this.getPiecePoolByZone(true);
                 const wildPieceIndex = Math.floor(Math.random() * wildPool.length);
                 newNext = {
                     ...this.maybeApplyMirror({ ...wildPool[wildPieceIndex] }),
@@ -1244,9 +1252,16 @@ export class GameEngine {
         }
 
         gameEventBus.emit(GameEventType.PIECE_DROPPED);
-        this.state.grid = newGrid;
 
-        this.spawnNewPiece(undefined, newGrid);
+        // Check for floating blocks after piece locks (handles corrupted pieces with corner-connected cells)
+        // mergePiece already called updateGroups, so corner-connected cells are now separate groups
+        const { grid: gridAfterGravity, looseGoop: newLoose } = getFloatingBlocks(newGrid);
+        if (newLoose.length > 0) {
+            this.state.looseGoop.push(...newLoose);
+        }
+        this.state.grid = gridAfterGravity;
+
+        this.spawnNewPiece(undefined, gridAfterGravity);
         this.state.popStreak = 0;
         this.isFastDropping = false;
     }

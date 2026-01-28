@@ -87,6 +87,7 @@ export interface GoopTemplate {
   color: string;
   cellColors?: string[]; // Per-cell colors, parallel to cells array
   isWild?: boolean;      // Wild piece - seals any crack, converts adjacent goop
+  isCorrupted?: boolean; // Corrupted piece - corner-connected, can't be Mixed or Wild
 }
 
 export enum GoopState {

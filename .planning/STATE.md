@@ -2,7 +2,7 @@
 title: Project State
 type: session
 tags: [active, continuity, status]
-updated: 2026-01-27
+updated: 2026-01-28
 ---
 
 # Project State
@@ -19,20 +19,22 @@ updated: 2026-01-27
 
 ## Next Steps
 
-**Current:** Bug fixes deployed 2026-01-27
-**Status:** Hotfixes complete
+**Current:** Corrupted piece mechanics deployed 2026-01-28
+**Status:** Feature complete
 
 **Completed (this session):**
-- Fixed P_S pentomino shape (was disconnected 3+2, now contiguous boot/L per Minos.svg)
-- Fixed getFloatingBlocks algorithm:
-  - Now limits search to affected columns/rows above popped cells
-  - Support rule: within same group any direction, between groups only directly below (y+1)
-  - Prevents unrelated goop from falling when popping elsewhere
+- Added `isCorrupted` flag to GoopTemplate type
+- Corrupted pieces now blocked from becoming Mixed (multi-color split)
+- Corrupted pieces now blocked from becoming Wild
+- Wild pieces always selected from normal pools (never corrupted shapes)
+- Added getFloatingBlocks() check after every piece locks
+- Corner-connected cells from corrupted pieces now fall as LooseGoop after locking
 
 **Next:**
-- XP bar redesign (pending discussion with user)
+- Test corrupted piece LooseGoop behavior in game
+- Future: pressure venting visual, title unlocks
 
-**Resume command:** Continue XP bar discussion or test LooseGoop fixes
+**Resume command:** Test corrupted pieces or plan next feature
 
 ## Future Plans
 
@@ -197,12 +199,25 @@ All three complications have player-driven triggers AND mitigations.
 
 ## Session Continuity
 
-Last session: 2026-01-27
+Last session: 2026-01-28
 **Version:** 1.1.13
-**Branch:** phase-23-01-code-rename (merging to master)
+**Branch:** master
 **Milestone:** v1.5 Visual Terminology & Grade System — SHIPPED
 
-### This Session Summary (2026-01-27)
+### This Session Summary (2026-01-28)
+
+**Corrupted Piece Mechanics — COMPLETE**
+
+Implemented proper behavior for corrupted (corner-connected) pieces:
+- **isCorrupted flag:** Added to GoopTemplate to track corrupted pieces at spawn
+- **No Mixed:** Corrupted pieces can't become multi-color split pieces
+- **No Wild:** Corrupted pieces can't become wild pieces; wild always uses normal pool
+- **LooseGoop on lock:** Added getFloatingBlocks() check after every piece locks
+- **Corner-connected cells split:** updateGroups() already splits them, now they fall properly
+
+2 files modified (types.ts, GameEngine.ts), 151 tests pass.
+
+### Previous Session Summary (2026-01-27)
 
 **v1.5 Visual Terminology & Grade System — COMPLETE**
 
