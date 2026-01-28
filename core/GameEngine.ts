@@ -512,15 +512,11 @@ export class GameEngine {
         // Switch to console to show the End Day screen
         this.state.phase = ScreenType.ConsoleScreen;
 
-        // 1. Calculate and Apply Win Bonus (Operator Rank * 5000)
-        // This ensures the bonus is part of the final score sent to save system
-        if (this.state.goalsCleared >= this.state.goalsTarget) {
-            const startRank = calculateRankDetails(this.initialTotalScore).rank;
-            const winBonus = startRank * 5000;
-            this.state.shiftScore += winBonus;
-        }
+        // Win status is now tracked via goalsCleared >= goalsTarget
+        // The win bonus logic has moved to App.tsx handleRunComplete
+        // (guarantees +1 rank on win, caps total at +2 ranks per shift)
 
-        // 2. Calculate Penalty for leftover blocks
+        // 1. Calculate Penalty for leftover blocks
         let remainingBlocks = 0;
         for (let y = 0; y < TANK_HEIGHT; y++) {
             for (let x = 0; x < TANK_WIDTH; x++) {
@@ -566,16 +562,16 @@ export class GameEngine {
         const penalty = remainingBlocks * 50;
         this.state.gameStats.penalty = penalty;
 
-        // 3. Apply Penalty
+        // 2. Apply Penalty
         this.state.shiftScore = Math.max(0, this.state.shiftScore - penalty);
 
-        // 4. Apply XP floor: minimum XP = 100 * starting rank
+        // 3. Apply XP floor: minimum XP = 100 * starting rank
         // Prevents high-rank players from getting zero-gain runs
         const startingRank = calculateRankDetails(this.initialTotalScore).rank;
         const xpFloor = 100 * startingRank;
         this.state.shiftScore = Math.max(xpFloor, this.state.shiftScore);
 
-        // 5. Clear any active complications so they don't show on end screen
+        // 4. Clear any active complications so they don't show on end screen
         this.state.complications = [];
         this.state.activeComplicationId = null;
         this.state.prePoppedGoopGroups.clear();

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getScoreForRank, getXpToNextRank, calculateRankDetails, getMilestoneRanks, getNextMilestone, getMilestonesInRange } from '../utils/progression';
+import { getScoreForRank, getXpToNextRank, calculateRankDetails, getMilestoneRanks, getNextMilestone, getMilestonesInRange, calculateCappedProgression } from '../utils/progression';
 
 describe('getScoreForRank', () => {
   it('returns 3500 for rank 1 (flattened curve)', () => {
@@ -177,5 +177,89 @@ describe('getMilestonesInRange', () => {
 
   it('handles jumping from 0 to max rank', () => {
     expect(getMilestonesInRange(0, 50)).toEqual([10, 20, 30, 40, 50]);
+  });
+});
+
+describe('calculateCappedProgression', () => {
+  // Rank 10 starts at 46,250 XP, needs 6,000 to reach rank 11 (52,250)
+  const rank10Base = getScoreForRank(10); // 46,250
+  const rank11Base = getScoreForRank(11); // 52,250
+
+  describe('loss scenarios (won=false)', () => {
+    it('applies score normally when no rank up', () => {
+      const result = calculateCappedProgression(rank10Base, 3000, false);
+      expect(result.newCareerScore).toBe(rank10Base + 3000);
+      expect(result.ranksGained).toBe(0);
+    });
+
+    it('applies score with overflow when ranking up once', () => {
+      // Score enough to rank up once with overflow
+      const result = calculateCappedProgression(rank10Base, 7000, false);
+      expect(result.newCareerScore).toBe(rank10Base + 7000);
+      expect(result.ranksGained).toBe(1);
+    });
+
+    it('caps at +2 ranks on loss with huge score', () => {
+      // Score that would rank up 3+ times
+      const result = calculateCappedProgression(rank10Base, 50000, false);
+      expect(result.ranksGained).toBe(2);
+      expect(result.newCareerScore).toBe(getScoreForRank(12) + 100);
+    });
+  });
+
+  describe('win scenarios (won=true)', () => {
+    it('gives +1 rank at 100 XP when score alone would not rank up', () => {
+      // Low score that doesn't rank up
+      const result = calculateCappedProgression(rank10Base, 1000, true);
+      expect(result.ranksGained).toBe(1);
+      expect(result.newCareerScore).toBe(rank11Base + 100);
+    });
+
+    it('gives +2 ranks at 100 XP when score ranks up once', () => {
+      // Score ranks up once, win adds another
+      const result = calculateCappedProgression(rank10Base, 7000, true);
+      expect(result.ranksGained).toBe(2);
+      expect(result.newCareerScore).toBe(getScoreForRank(12) + 100);
+    });
+
+    it('caps at +2 ranks when score would rank up multiple times', () => {
+      // Score that would rank up 3+ times
+      const result = calculateCappedProgression(rank10Base, 50000, true);
+      expect(result.ranksGained).toBe(2);
+      expect(result.newCareerScore).toBe(getScoreForRank(12) + 100);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('handles rank 0 with score that ranks up once', () => {
+      // 4000 XP ranks up once (3500 needed), win adds another = +2
+      const result = calculateCappedProgression(0, 4000, true);
+      expect(result.ranksGained).toBe(2);
+      expect(result.newCareerScore).toBe(getScoreForRank(2) + 100);
+    });
+
+    it('handles rank 0 with low score (user bug report)', () => {
+      // 2198 XP does NOT rank up (need 3500), win should give +1 only
+      const result = calculateCappedProgression(0, 2198, true);
+      expect(result.ranksGained).toBe(1);
+      expect(result.newCareerScore).toBe(getScoreForRank(1) + 100); // 3600
+    });
+
+    it('respects MAX_RANK ceiling', () => {
+      const rank49Base = getScoreForRank(49);
+      const result = calculateCappedProgression(rank49Base, 100000, true);
+      expect(result.ranksGained).toBe(1); // Can only go to 50
+      expect(result.newCareerScore).toBe(getScoreForRank(50));
+    });
+
+    it('win at high progress uses score overflow if better', () => {
+      // At 75% of rank 10, score alone would rank up
+      const highProgress = rank10Base + 4500; // 4500/6000 = 75%
+      const result = calculateCappedProgression(highProgress, 3000, true);
+      // Score alone would: 4500 + 3000 = 7500, overflow 1500 into rank 11
+      // Win adds another rank: rank 12 at 100 XP
+      expect(result.ranksGained).toBe(2);
+      expect(result.newCareerScore).toBe(getScoreForRank(12) + 100);
+    });
   });
 });

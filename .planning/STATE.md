@@ -19,17 +19,19 @@ updated: 2026-01-28
 
 ## Next Steps
 
-**Current:** PRD.md comprehensive update 2026-01-28
-**Status:** Documentation complete
+**Current:** Win bonus rework complete 2026-01-28
+**Status:** Deployed
 
 **Completed (this session):**
-- Deep codebase analysis using 8 parallel exploration agents
-- PRD.md v6.0 rewrite with accurate values from code
-- Added tech notes for buffer rows, zone boundaries, iOS touch handling
-- Corrected formulas: crack growth interval (7-12s random), win burst condition
-- Fixed scoring details: adjacency NOT multiplied by combo
-- Added cumulative XP table, upgrade interaction details
-- Documented Goop Dump constants (18 pieces/wave, 80ms spawn, 600ms delay)
+- Removed old win bonus (`rank × 5000`) which caused multi-rank skipping
+- Implemented capped progression system:
+  - Win = guaranteed +1 rank (at 100 XP if score didn't rank you)
+  - If score already ranked you + win = +1 more rank at 100 XP
+  - Maximum +2 ranks per shift (prevents skipping unlocks)
+  - Score overflow preserved when not capped
+- Added `calculateCappedProgression()` function with 10 new tests
+- Fixed End Screen to show correct capped rank
+- Fixed Console to use saved career score when idle
 
 **Next:**
 - Pressure venting visual (visual polish)
@@ -201,6 +203,22 @@ Last session: 2026-01-28
 **Milestone:** v1.5 Visual Terminology & Grade System — SHIPPED
 
 ### This Session Summary (2026-01-28)
+
+**Win Bonus Rework — COMPLETE**
+
+Redesigned win bonus to prevent multi-rank skipping and improve pacing:
+- **Problem:** Old `rank × 5000` win bonus caused players to skip 5-10 ranks, missing unlocks
+- **New system:** Win = guaranteed +1 rank, max +2 ranks per shift total
+- **Implementation:**
+  - Added `calculateCappedProgression()` in progression.ts
+  - Updated App.tsx to use capped progression for saving
+  - Updated ConsoleView.tsx to show correct capped rank on End Screen
+  - Fixed idle console to use saved career score (not calculation)
+- **Testing:** 10 new test cases covering all scenarios
+
+6 files modified, 161 tests pass.
+
+### Previous Session Summary (2026-01-28)
 
 **PRD.md Comprehensive Update — COMPLETE**
 

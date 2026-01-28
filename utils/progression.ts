@@ -111,3 +111,75 @@ export const calculateRankDetails = (careerScore: number): RankDetails => {
     isMaxRank: rank >= MAX_RANK
   };
 };
+
+// --- Win Bonus / Capped Progression ---
+
+export interface ShiftResult {
+  newCareerScore: number;
+  ranksGained: number;
+}
+
+/**
+ * Calculate final career score after a shift, with win bonus and +2 rank cap.
+ *
+ * Rules:
+ * - Score is applied normally (can rank up 0-N times)
+ * - If won but score didn't rank up: guarantee +1 rank at 100 XP
+ * - If won and score ranked up: give another +1 rank at 100 XP
+ * - Max total is +2 ranks per shift
+ * - If capped, XP is set to 100 in the final rank
+ */
+export const calculateCappedProgression = (
+  currentCareerScore: number,
+  shiftScore: number,
+  won: boolean
+): ShiftResult => {
+  const startRank = calculateRankDetails(currentCareerScore).rank;
+  const maxRank = startRank + 2;
+
+  // Calculate what score alone would achieve
+  const uncappedScore = currentCareerScore + shiftScore;
+  const uncappedDetails = calculateRankDetails(uncappedScore);
+  const scoreRanksGained = uncappedDetails.rank - startRank;
+
+  let finalRank: number;
+  let finalCareerScore: number;
+
+  if (!won) {
+    // Loss: just apply score, capped at +2 ranks
+    if (scoreRanksGained <= 2) {
+      finalCareerScore = uncappedScore;
+      finalRank = uncappedDetails.rank;
+    } else {
+      // Cap at +2 ranks with 100 XP
+      finalRank = maxRank;
+      finalCareerScore = getScoreForRank(finalRank) + 100;
+    }
+  } else {
+    // Won: score + guaranteed rank up
+    if (scoreRanksGained === 0) {
+      // Score didn't rank up, win gives +1 rank at 100 XP
+      finalRank = startRank + 1;
+      finalCareerScore = getScoreForRank(finalRank) + 100;
+    } else if (scoreRanksGained === 1) {
+      // Score ranked up once, win gives another +1 rank at 100 XP
+      finalRank = startRank + 2;
+      finalCareerScore = getScoreForRank(finalRank) + 100;
+    } else {
+      // Score would rank up 2+ times, cap at +2 with 100 XP
+      finalRank = maxRank;
+      finalCareerScore = getScoreForRank(finalRank) + 100;
+    }
+  }
+
+  // Respect MAX_RANK ceiling
+  if (finalRank > MAX_RANK) {
+    finalRank = MAX_RANK;
+    finalCareerScore = getScoreForRank(MAX_RANK);
+  }
+
+  return {
+    newCareerScore: finalCareerScore,
+    ranksGained: finalRank - startRank
+  };
+};

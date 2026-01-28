@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GameState, ScreenType } from '../types';
 import { GameEngine } from '../core/GameEngine';
-import { calculateRankDetails } from '../utils/progression';
+import { calculateRankDetails, calculateCappedProgression } from '../utils/progression';
 import { SetPhaseCommand, StartRunCommand, ResolveComplicationCommand } from '../core/commands/actions';
 import { ConsoleLayoutSVG } from './Art';
 import { UpgradePanel } from './UpgradePanel';
@@ -26,11 +26,25 @@ interface ConsoleViewProps {
 }
 
 export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, careerScore, scraps, powerUps = {}, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, onDismissGameOver, equippedActives = [], onToggleEquip }) => {
-    // Calculate Rank based on:
-    // Engine's start-of-run total (which hasn't been updated with the run score yet if Game Over)
-    // + Current run score.
-    // This prevents double counting because operatorXP prop from parent might already include state.shiftScore after Game Over update.
-    const rankInfo = calculateRankDetails(engine.initialTotalScore + state.shiftScore);
+    // Calculate Rank:
+    // - During/after a game (shiftScore > 0): use capped progression to show what they'll earn
+    // - Idle console (shiftScore = 0): use careerScore prop from App (the saved value)
+    const isActiveGame = state.shiftScore > 0 || state.gameOver;
+
+    let rankInfo;
+    if (isActiveGame) {
+        // Show capped progression during game or end screen
+        const won = state.goalsCleared >= state.goalsTarget;
+        const { newCareerScore } = calculateCappedProgression(
+            engine.initialTotalScore,
+            state.shiftScore,
+            won
+        );
+        rankInfo = calculateRankDetails(newCareerScore);
+    } else {
+        // Idle console: use saved career score from App
+        rankInfo = calculateRankDetails(careerScore);
+    }
 
     // System upgrade panel state
     const [showSystemUpgrades, setShowSystemUpgrades] = useState(false);

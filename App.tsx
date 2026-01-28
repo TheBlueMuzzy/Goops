@@ -6,7 +6,7 @@ import { Settings } from './components/Settings';
 import { HowToPlay } from './components/HowToPlay';
 import { SaveData } from './types';
 import { loadSaveData, saveGameData, wipeSaveData } from './utils/storage';
-import { calculateRankDetails, getScoreForMidRank, getMilestonesInRange } from './utils/progression';
+import { calculateRankDetails, getScoreForMidRank, getMilestonesInRange, calculateCappedProgression } from './utils/progression';
 import { gameEventBus } from './core/events/EventBus';
 import { GameEventType } from './core/events/GameEvents';
 import { audio } from './utils/audio';
@@ -38,17 +38,21 @@ const App: React.FC = () => {
       audio.init(saveData.settings);
   }, []);
 
-  const handleRunComplete = useCallback((runScore: number) => {
+  const handleRunComplete = useCallback((result: { score: number; won: boolean }) => {
     setSaveData(prev => {
-      const newOperatorXP = prev.careerScore + runScore;
-
       const oldRankDetails = calculateRankDetails(prev.careerScore);
-      const newRankDetails = calculateRankDetails(newOperatorXP);
 
-      const rankDiff = newRankDetails.rank - oldRankDetails.rank;
+      // Use capped progression: win = guaranteed +1 rank, max +2 ranks per shift
+      const { newCareerScore, ranksGained } = calculateCappedProgression(
+        prev.careerScore,
+        result.score,
+        result.won
+      );
+
+      const newRankDetails = calculateRankDetails(newCareerScore);
 
       // Award 1 Point per Rank gained (no bonuses - exactly 1 per rank)
-      const pointsEarned = rankDiff > 0 ? rankDiff : 0;
+      const pointsEarned = ranksGained > 0 ? ranksGained : 0;
 
       // Track milestones crossed (for future UI celebration, no bonus points)
       const milestoneCandidates = getMilestonesInRange(oldRankDetails.rank, newRankDetails.rank);
@@ -61,7 +65,7 @@ const App: React.FC = () => {
 
       return {
         ...prev,
-        careerScore: newOperatorXP,
+        careerScore: newCareerScore,
         careerRank: newRankDetails.rank,
         scraps: prev.scraps + pointsEarned,
         milestonesReached: [...prev.milestonesReached, ...newMilestones],
