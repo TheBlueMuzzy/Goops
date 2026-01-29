@@ -1,13 +1,11 @@
 /**
- * Soft Body Demo v11 - Body-to-Body Collision
+ * Soft Body Demo v12 - Gentle Body Collision
  *
- * Improvements:
- * - Hub & spoke structure
- * - Extra cross springs for rigidity
- * - Subtle sinusoidal edge waves (async per vertex)
- * - Real body-to-body collision (edge-based detection)
- * - Soft collision response with friction
- * - Baumgarte position correction for stability
+ * Features:
+ * - Hub & spoke structure with cross springs
+ * - Dual-wave edge undulation for gloopy feel
+ * - Proximity-based body-to-body collision
+ * - Gentle push-apart response (no explosion!)
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -28,12 +26,9 @@ const GLOBAL_DAMP = 0.995;
 const BOUNCE = 0.3;
 const FRICTION = 0.85;
 
-// Body-to-body collision tuning
-const COLLISION_STIFFNESS = 600;   // How hard bodies push apart (softer = more squishy)
-const COLLISION_DAMPING = 20;      // Damping on collision response
-const COLLISION_SOFTNESS = 0.15;   // Allow this much overlap before full response (0-1)
-const COLLISION_FRICTION = 0.85;   // Friction between bodies (same as ground)
-const POSITION_CORRECTION = 0.35;  // Baumgarte stabilization factor (0.2-0.5)
+// Body-to-body collision tuning (gentle values to prevent explosion)
+const COLLISION_RADIUS = 8;        // Proximity threshold - vertices closer than this collide
+const COLLISION_PUSH = 0.3;        // How much to push apart (0-1, lower = softer)
 
 // Wave effect - dual waves for gloopy undulation
 const WAVE_AMPLITUDE = 2.25;   // Pixels of displacement
@@ -180,221 +175,129 @@ function createBody(offsetX: number, offsetY: number, color: string): Body {
   return { points, perimeterCount, springs, color, restVolume };
 }
 
-// --- Collision Detection ---
+// --- Collision Detection (Simple proximity-based) ---
 
-// Point-in-polygon test using ray casting (crossing number algorithm)
-function isPointInPolygon(px: number, py: number, polygon: Point[], count: number): boolean {
-  let crossings = 0;
+// Check distance from point to line segment, return closest point info
+function pointToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): {
+  dist: number;
+  closestX: number;
+  closestY: number;
+  t: number;
+} {
+  const ex = bx - ax;
+  const ey = by - ay;
+  const lenSq = ex * ex + ey * ey;
 
-  for (let i = 0; i < count; i++) {
-    const j = (i + 1) % count;
-    const yi = polygon[i].y;
-    const yj = polygon[j].y;
-    const xi = polygon[i].x;
-    const xj = polygon[j].x;
-
-    // Check if ray from point going right crosses this edge
-    if ((yi <= py && yj > py) || (yj <= py && yi > py)) {
-      // Compute x coordinate of intersection
-      const t = (py - yi) / (yj - yi);
-      const xIntersect = xi + t * (xj - xi);
-      if (px < xIntersect) {
-        crossings++;
-      }
-    }
+  if (lenSq < 0.0001) {
+    // Degenerate edge
+    const dx = px - ax;
+    const dy = py - ay;
+    return { dist: Math.sqrt(dx * dx + dy * dy), closestX: ax, closestY: ay, t: 0 };
   }
 
-  return (crossings % 2) === 1;
+  // Project point onto line, clamp to segment
+  let t = ((px - ax) * ex + (py - ay) * ey) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+
+  const closestX = ax + t * ex;
+  const closestY = ay + t * ey;
+  const dx = px - closestX;
+  const dy = py - closestY;
+
+  return { dist: Math.sqrt(dx * dx + dy * dy), closestX, closestY, t };
 }
 
-// Find closest edge to a point and return penetration info
-function findClosestEdge(
-  px: number, py: number, pvx: number, pvy: number,
-  polygon: Point[], count: number
-): { edgeIdx: number; depth: number; nx: number; ny: number; t: number } | null {
-  let minDist = Infinity;
-  let result: { edgeIdx: number; depth: number; nx: number; ny: number; t: number } | null = null;
-
-  for (let i = 0; i < count; i++) {
-    const j = (i + 1) % count;
-    const ax = polygon[i].x;
-    const ay = polygon[i].y;
-    const bx = polygon[j].x;
-    const by = polygon[j].y;
-
-    // Edge vector
-    const ex = bx - ax;
-    const ey = by - ay;
-    const edgeLen = Math.sqrt(ex * ex + ey * ey);
-    if (edgeLen < 0.001) continue;
-
-    // Normalized edge direction
-    const dx = ex / edgeLen;
-    const dy = ey / edgeLen;
-
-    // Project point onto edge line
-    const t = ((px - ax) * dx + (py - ay) * dy) / edgeLen;
-
-    // Clamp t to edge bounds
-    const tClamped = Math.max(0, Math.min(1, t));
-
-    // Closest point on edge
-    const closestX = ax + tClamped * ex;
-    const closestY = ay + tClamped * ey;
-
-    // Distance to edge
-    const distX = px - closestX;
-    const distY = py - closestY;
-    const dist = Math.sqrt(distX * distX + distY * distY);
-
-    if (dist < minDist) {
-      minDist = dist;
-
-      // Outward normal (perpendicular to edge, pointing right when going from a to b)
-      // For clockwise winding, this points outward
-      let nx = dy;
-      let ny = -dx;
-
-      // Ensure normal points from polygon center toward the point
-      // (the point is inside, so we need to push it out along this normal)
-      const centerX = (ax + bx) / 2;
-      const centerY = (ay + by) / 2;
-      const toCenterX = polygon.reduce((s, p, idx) => idx < count ? s + p.x : s, 0) / count - centerX;
-      const toCenterY = polygon.reduce((s, p, idx) => idx < count ? s + p.y : s, 0) / count - centerY;
-
-      // If normal points toward center, flip it
-      if (nx * toCenterX + ny * toCenterY > 0) {
-        nx = -nx;
-        ny = -ny;
-      }
-
-      result = {
-        edgeIdx: i,
-        depth: dist,
-        nx,
-        ny,
-        t: tClamped
-      };
-    }
-  }
-
-  return result;
-}
-
-// Apply collision response between a penetrating vertex and an edge
-function applyCollisionResponse(
-  vertex: Point,            // The penetrating vertex
-  edge1: Point,             // First edge endpoint
-  edge2: Point,             // Second edge endpoint
-  depth: number,            // Penetration depth
-  nx: number, ny: number,   // Outward normal
-  t: number                 // Position along edge (0-1)
-): void {
-  // Compute "soft" penetration - allow some overlap before full response
-  const softDepth = Math.max(0, depth - COLLISION_SOFTNESS * 10);
-  if (softDepth < 0.1) return;
-
-  // Compute relative velocity at contact
-  const edgeVx = edge1.vx * (1 - t) + edge2.vx * t;
-  const edgeVy = edge1.vy * (1 - t) + edge2.vy * t;
-  const relVx = vertex.vx - edgeVx;
-  const relVy = vertex.vy - edgeVy;
-
-  // Decompose into normal and tangent components
-  const relVn = relVx * nx + relVy * ny;  // Normal component (+ = separating)
-  const tx = -ny, ty = nx;                 // Tangent direction
-  const relVt = relVx * tx + relVy * ty;  // Tangent component (sliding velocity)
-
-  // Spring force based on soft penetration (allows squishiness)
-  const springForce = COLLISION_STIFFNESS * softDepth;
-
-  // Damping force - only for approaching velocity (relVn < 0)
-  const dampForce = COLLISION_DAMPING * Math.min(0, relVn);
-
-  // Total normal force
-  const normalForce = springForce + dampForce;
-
-  // Friction force - opposes tangential sliding
-  // Limit friction to Coulomb model: friction <= mu * normal force
-  const maxFriction = Math.abs(normalForce) * (1 - COLLISION_FRICTION);
-  const frictionForce = Math.sign(relVt) * Math.min(Math.abs(relVt) * 50, maxFriction);
-
-  // Time step approximation
-  const dtApprox = 0.008; // Half of typical substep dt
-
-  // Apply impulses to vertex (push out along normal, slow down along tangent)
-  vertex.vx += normalForce * nx * dtApprox;
-  vertex.vy += normalForce * ny * dtApprox;
-  vertex.vx -= frictionForce * tx * dtApprox;
-  vertex.vy -= frictionForce * ty * dtApprox;
-
-  // Apply equal-opposite forces to edge endpoints (proportional to t)
-  const edgeForceN = normalForce * dtApprox;
-  const edgeForceT = frictionForce * dtApprox;
-
-  edge1.vx -= edgeForceN * nx * (1 - t);
-  edge1.vy -= edgeForceN * ny * (1 - t);
-  edge1.vx += edgeForceT * tx * (1 - t);
-  edge1.vy += edgeForceT * ty * (1 - t);
-
-  edge2.vx -= edgeForceN * nx * t;
-  edge2.vy -= edgeForceN * ny * t;
-  edge2.vx += edgeForceT * tx * t;
-  edge2.vy += edgeForceT * ty * t;
-
-  // Baumgarte position correction - directly fix position to prevent drift
-  // Only correct the "hard" part of penetration (beyond softness threshold)
-  const hardPenetration = Math.max(0, depth - COLLISION_SOFTNESS * 5);
-  if (hardPenetration > 0.5) {
-    const correction = hardPenetration * POSITION_CORRECTION;
-    // 60% to vertex, 40% to edge (vertex is the intruder)
-    vertex.x += nx * correction * 0.6;
-    vertex.y += ny * correction * 0.6;
-    edge1.x -= nx * correction * 0.4 * (1 - t);
-    edge1.y -= ny * correction * 0.4 * (1 - t);
-    edge2.x -= nx * correction * 0.4 * t;
-    edge2.y -= ny * correction * 0.4 * t;
-  }
-}
-
-// Check and resolve collisions between two bodies
+// Simple proximity collision: push vertices apart if they get too close to edges
 function checkBodyCollision(bodyA: Body, bodyB: Body): void {
-  // Check if any perimeter vertex of B is inside A
-  for (let i = 0; i < bodyB.perimeterCount; i++) {
-    const pB = bodyB.points[i];
+  const radius = COLLISION_RADIUS;
+  const push = COLLISION_PUSH;
 
-    if (isPointInPolygon(pB.x, pB.y, bodyA.points, bodyA.perimeterCount)) {
-      const edge = findClosestEdge(pB.x, pB.y, pB.vx, pB.vy, bodyA.points, bodyA.perimeterCount);
+  // Check each vertex of B against each edge of A
+  for (let vi = 0; vi < bodyB.perimeterCount; vi++) {
+    const v = bodyB.points[vi];
 
-      if (edge && edge.depth > 0.1) {
-        const { edgeIdx, depth, nx, ny, t } = edge;
-        const j = (edgeIdx + 1) % bodyA.perimeterCount;
-        applyCollisionResponse(
-          pB,
-          bodyA.points[edgeIdx],
-          bodyA.points[j],
-          depth, nx, ny, t
-        );
+    for (let ei = 0; ei < bodyA.perimeterCount; ei++) {
+      const ej = (ei + 1) % bodyA.perimeterCount;
+      const e1 = bodyA.points[ei];
+      const e2 = bodyA.points[ej];
+
+      const { dist, closestX, closestY, t } = pointToSegment(v.x, v.y, e1.x, e1.y, e2.x, e2.y);
+
+      if (dist < radius && dist > 0.001) {
+        // Compute push direction (from edge toward vertex)
+        const nx = (v.x - closestX) / dist;
+        const ny = (v.y - closestY) / dist;
+
+        // How much penetration
+        const overlap = radius - dist;
+        const pushDist = overlap * push;
+
+        // Push vertex out
+        v.x += nx * pushDist * 0.6;
+        v.y += ny * pushDist * 0.6;
+
+        // Push edge points in (opposite direction), weighted by t
+        e1.x -= nx * pushDist * 0.4 * (1 - t);
+        e1.y -= ny * pushDist * 0.4 * (1 - t);
+        e2.x -= nx * pushDist * 0.4 * t;
+        e2.y -= ny * pushDist * 0.4 * t;
+
+        // Also dampen relative velocity to prevent bouncing
+        const relVn = (v.vx - (e1.vx * (1-t) + e2.vx * t)) * nx +
+                      (v.vy - (e1.vy * (1-t) + e2.vy * t)) * ny;
+
+        if (relVn < 0) {
+          // Approaching - dampen
+          const dampFactor = 0.3;
+          v.vx -= relVn * nx * dampFactor;
+          v.vy -= relVn * ny * dampFactor;
+          e1.vx += relVn * nx * dampFactor * (1 - t) * 0.5;
+          e1.vy += relVn * ny * dampFactor * (1 - t) * 0.5;
+          e2.vx += relVn * nx * dampFactor * t * 0.5;
+          e2.vy += relVn * ny * dampFactor * t * 0.5;
+        }
       }
     }
   }
 
-  // Check if any perimeter vertex of A is inside B (symmetric check)
-  for (let i = 0; i < bodyA.perimeterCount; i++) {
-    const pA = bodyA.points[i];
+  // Check each vertex of A against each edge of B (symmetric)
+  for (let vi = 0; vi < bodyA.perimeterCount; vi++) {
+    const v = bodyA.points[vi];
 
-    if (isPointInPolygon(pA.x, pA.y, bodyB.points, bodyB.perimeterCount)) {
-      const edge = findClosestEdge(pA.x, pA.y, pA.vx, pA.vy, bodyB.points, bodyB.perimeterCount);
+    for (let ei = 0; ei < bodyB.perimeterCount; ei++) {
+      const ej = (ei + 1) % bodyB.perimeterCount;
+      const e1 = bodyB.points[ei];
+      const e2 = bodyB.points[ej];
 
-      if (edge && edge.depth > 0.1) {
-        const { edgeIdx, depth, nx, ny, t } = edge;
-        const j = (edgeIdx + 1) % bodyB.perimeterCount;
-        applyCollisionResponse(
-          pA,
-          bodyB.points[edgeIdx],
-          bodyB.points[j],
-          depth, nx, ny, t
-        );
+      const { dist, closestX, closestY, t } = pointToSegment(v.x, v.y, e1.x, e1.y, e2.x, e2.y);
+
+      if (dist < radius && dist > 0.001) {
+        const nx = (v.x - closestX) / dist;
+        const ny = (v.y - closestY) / dist;
+
+        const overlap = radius - dist;
+        const pushDist = overlap * push;
+
+        v.x += nx * pushDist * 0.6;
+        v.y += ny * pushDist * 0.6;
+
+        e1.x -= nx * pushDist * 0.4 * (1 - t);
+        e1.y -= ny * pushDist * 0.4 * (1 - t);
+        e2.x -= nx * pushDist * 0.4 * t;
+        e2.y -= ny * pushDist * 0.4 * t;
+
+        const relVn = (v.vx - (e1.vx * (1-t) + e2.vx * t)) * nx +
+                      (v.vy - (e1.vy * (1-t) + e2.vy * t)) * ny;
+
+        if (relVn < 0) {
+          const dampFactor = 0.3;
+          v.vx -= relVn * nx * dampFactor;
+          v.vy -= relVn * ny * dampFactor;
+          e1.vx += relVn * nx * dampFactor * (1 - t) * 0.5;
+          e1.vy += relVn * ny * dampFactor * (1 - t) * 0.5;
+          e2.vx += relVn * nx * dampFactor * t * 0.5;
+          e2.vy += relVn * ny * dampFactor * t * 0.5;
+        }
       }
     }
   }
@@ -628,7 +531,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     <div className="w-full h-screen bg-slate-950 text-slate-200 flex flex-col items-center p-4">
       <div className="flex items-center gap-2 mb-4 flex-wrap justify-center">
         <button onClick={onBack} className="px-3 py-1.5 bg-slate-800 rounded text-sm">← Back</button>
-        <h1 className="text-lg font-bold">Soft Body v11</h1>
+        <h1 className="text-lg font-bold">Soft Body v12</h1>
         <button onClick={() => setShowVerts(v => !v)} className="px-2 py-1 bg-slate-700 rounded text-xs">
           verts {showVerts ? 'ON' : 'OFF'}
         </button>
@@ -693,8 +596,8 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </div>
 
       <div className="mt-2 text-xs text-slate-400 text-center max-w-md">
-        <p><strong>v11:</strong> Body-to-body collision with soft response.</p>
-        <p>Blue body falls and lands on red. Both deform at contact point.</p>
+        <p><strong>v12:</strong> Proximity-based body collision (gentle).</p>
+        <p>Blue falls onto red. Both squish softly at contact.</p>
       </div>
     </div>
   );
