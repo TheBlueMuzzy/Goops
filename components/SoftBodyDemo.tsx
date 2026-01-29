@@ -27,8 +27,8 @@ const BOUNCE = 0.3;
 const FRICTION = 0.85;
 
 // Body-to-body collision tuning (gentle values to prevent explosion)
-const COLLISION_RADIUS = 8;        // Proximity threshold - vertices closer than this collide
-const COLLISION_PUSH = 0.3;        // How much to push apart (0-1, lower = softer)
+const COLLISION_RADIUS = 5;        // Proximity threshold - vertices closer than this collide
+const COLLISION_PUSH = 0.35;       // How much to push apart (0-1, lower = softer)
 
 // Wave effect - dual waves for gloopy undulation
 const WAVE_AMPLITUDE = 2.25;   // Pixels of displacement
