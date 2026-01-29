@@ -1,14 +1,16 @@
 /**
- * Soft Body Demo v14 - Grid-Locked Mode
+ * Soft Body Demo v15 - Game-Accurate Physics
  *
- * Features:
- * - Hub & spoke structure with cross springs
- * - Dual-wave edge undulation for gloopy feel
- * - Grid-to-mesh generation (extractPerimeter, createBodyFromPerimeter)
- * - Test shapes: T, L, square, line
- * - NEW: Grid-locked mode (bodies stay anchored, only jiggle)
- * - NEW: Free physics mode (bodies fall, collide, tumble)
- * - NEW: Poke button to test jiggle response
+ * Simulates actual game mechanics:
+ * - Locked Goop: Anchored to grid, jiggles on impact, springs back
+ * - Active Goop: Falls in column (no horizontal drift), lands and locks
+ * - Collision: Both bodies squish on impact
+ * - Tank rotation would move the column (not implemented in demo yet)
+ *
+ * Key difference from free physics:
+ * - Bodies stay upright (no rotation/tumbling)
+ * - X position locked to column
+ * - Y position: locked=fixed, active=falling
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -64,9 +66,14 @@ interface Body {
   springs: Spring[];
   color: string;
   restVolume: number;
-  // Grid-locked mode: store rest positions to anchor shape
-  restPositions?: { x: number; y: number }[];
-  anchorY?: number;     // Y position where body is "locked" to grid
+  // Rest positions are RELATIVE offsets from gridPos
+  restOffsets: { x: number; y: number }[];
+  // Grid position (like the actual game uses)
+  gridX: number;        // Column position (fixed for falling, changes on tank rotation)
+  gridY: number;        // Row position (increases when falling, fixed when locked)
+  // State
+  isLocked: boolean;    // true = anchored to grid, false = falling
+  fallSpeed: number;    // Current fall speed (pixels per second)
 }
 
 // --- Grid-to-Mesh Generation ---
@@ -220,19 +227,21 @@ function extractPerimeter(
 /**
  * Create a complete Body from perimeter vertices.
  * Adds hub point at centroid, creates all spring connections.
+ * Rest offsets are stored RELATIVE to the centroid (gridPos origin).
  *
- * @param perimeter Array of perimeter points
+ * @param perimeter Array of perimeter points (absolute positions)
  * @param color Body color
+ * @param isLocked Whether body starts locked (true) or falling (false)
  * @returns Complete Body with physics springs
  */
-function createBodyFromPerimeter(perimeter: Point[], color: string): Body {
+function createBodyFromPerimeter(perimeter: Point[], color: string, isLocked: boolean = true): Body {
   if (perimeter.length < 3) {
     throw new Error('Need at least 3 perimeter points to create a body');
   }
 
   const perimeterCount = perimeter.length;
 
-  // Calculate centroid for hub
+  // Calculate centroid for hub - this becomes the grid position origin
   let cx = 0, cy = 0;
   for (const p of perimeter) {
     cx += p.x;
@@ -303,10 +312,22 @@ function createBodyFromPerimeter(perimeter: Point[], color: string): Body {
   // Calculate rest volume using shoelace formula
   const restVolume = calcVolume(points, perimeterCount);
 
-  // Store rest positions for grid-locked mode
-  const restPositions = points.map(p => ({ x: p.x, y: p.y }));
+  // Store rest offsets RELATIVE to centroid (gridPos)
+  // When body moves, we add gridPos to these offsets to get world position
+  const restOffsets = points.map(p => ({ x: p.x - cx, y: p.y - cy }));
 
-  return { points, perimeterCount, springs, color, restVolume, restPositions };
+  return {
+    points,
+    perimeterCount,
+    springs,
+    color,
+    restVolume,
+    restOffsets,
+    gridX: cx,  // Initial grid position = centroid
+    gridY: cy,
+    isLocked,
+    fallSpeed: isLocked ? 0 : 150  // Falling bodies start with some speed
+  };
 }
 
 /**
@@ -684,36 +705,57 @@ function updateBody(body: Body, dt: number, groundY: number): void {
   }
 }
 
-// Grid-locked physics: body stays anchored, only jiggle allowed
-const ANCHOR_STIFFNESS = 800;   // How strongly vertices are pulled to rest position
-const ANCHOR_DAMP = 25;         // Damping on anchor springs
+// Game-accurate physics constants
+const ANCHOR_STIFFNESS = 600;   // How strongly vertices are pulled to rest position
+const ANCHOR_DAMP = 20;         // Damping on anchor springs
+const FALL_GRAVITY = 200;       // Falling speed acceleration (pixels/sec²)
+const MAX_FALL_SPEED = 400;     // Max fall speed
 
-function updateBodyGridLocked(body: Body, dt: number): void {
-  const { points, perimeterCount, springs, restVolume, restPositions } = body;
-  if (!restPositions) return; // Need rest positions for grid-locked mode
-
+/**
+ * Game-accurate soft body physics:
+ * - Locked bodies: anchored to gridPos, vertices jiggle but spring back
+ * - Falling bodies: gridY increases (falls), vertices trail behind slightly
+ * - X position (gridX) is always fixed (tank rotation handles horizontal)
+ */
+function updateBodyGameAccurate(body: Body, dt: number, groundY: number): void {
+  const { points, perimeterCount, springs, restVolume, restOffsets, isLocked } = body;
   const n = points.length;
+
+  // --- 1. Update grid position (falling bodies move down) ---
+  if (!isLocked) {
+    // Accelerate fall
+    body.fallSpeed = Math.min(body.fallSpeed + FALL_GRAVITY * dt, MAX_FALL_SPEED);
+    body.gridY += body.fallSpeed * dt;
+  }
+
+  // --- 2. Calculate target positions (gridPos + restOffsets) ---
+  const targets = restOffsets.map(off => ({
+    x: body.gridX + off.x,
+    y: body.gridY + off.y
+  }));
+
+  // --- 3. Apply forces ---
   const fx: number[] = new Array(n).fill(0);
   const fy: number[] = new Array(n).fill(0);
 
-  // 1. Anchor forces - pull each point toward its rest position
+  // Anchor forces - pull vertices toward their target positions
   for (let i = 0; i < n; i++) {
     const p = points[i];
-    const rest = restPositions[i];
+    const target = targets[i];
 
-    const dx = rest.x - p.x;
-    const dy = rest.y - p.y;
+    const dx = target.x - p.x;
+    const dy = target.y - p.y;
 
-    // Spring force toward rest position
-    fx[i] += ANCHOR_STIFFNESS * dx;
-    fy[i] += ANCHOR_STIFFNESS * dy;
+    // Stronger anchoring for locked bodies, softer for falling (lets them trail)
+    const stiffness = isLocked ? ANCHOR_STIFFNESS : ANCHOR_STIFFNESS * 0.5;
 
-    // Damping
+    fx[i] += stiffness * dx;
+    fy[i] += stiffness * dy;
     fx[i] -= ANCHOR_DAMP * p.vx;
     fy[i] -= ANCHOR_DAMP * p.vy;
   }
 
-  // 2. Internal spring forces (for soft body deformation)
+  // Internal spring forces (maintains soft body shape)
   for (const spring of springs) {
     const pa = points[spring.a];
     const pb = points[spring.b];
@@ -726,8 +768,7 @@ function updateBodyGridLocked(body: Body, dt: number): void {
     const nx = dx / dist;
     const ny = dy / dist;
 
-    // Softer springs for grid-locked mode (let anchor do most work)
-    const springF = (SPRING_K * 0.3) * stretch;
+    const springF = (SPRING_K * 0.4) * stretch;
     const dvx = pb.vx - pa.vx;
     const dvy = pb.vy - pa.vy;
     const dampF = (SPRING_DAMP * 0.5) * (dvx * nx + dvy * ny);
@@ -740,10 +781,10 @@ function updateBodyGridLocked(body: Body, dt: number): void {
     fy[spring.b] -= totalF * ny;
   }
 
-  // 3. Pressure force (reduced for grid-locked, just for subtle puffiness)
+  // Pressure force (subtle puffiness)
   const currentVolume = calcVolume(points, perimeterCount);
   const volumeRatio = restVolume / Math.max(currentVolume, 100);
-  const pressure = (PRESSURE_K * 0.2) * (volumeRatio - 1);
+  const pressure = (PRESSURE_K * 0.15) * (volumeRatio - 1);
 
   for (let i = 0; i < perimeterCount; i++) {
     const prev = (i - 1 + perimeterCount) % perimeterCount;
@@ -767,7 +808,7 @@ function updateBodyGridLocked(body: Body, dt: number): void {
     fy[i] += pressure * avgNy;
   }
 
-  // 4. Integrate
+  // --- 4. Integrate ---
   for (let i = 0; i < n; i++) {
     const p = points[i];
 
@@ -779,6 +820,42 @@ function updateBodyGridLocked(body: Body, dt: number): void {
 
     p.x += p.vx * dt;
     p.y += p.vy * dt;
+  }
+}
+
+/**
+ * Check if falling body has landed on locked body or ground
+ */
+function checkLanding(falling: Body, locked: Body, groundY: number): boolean {
+  // Simple check: has the falling body's lowest point reached the locked body's top or ground?
+  let fallingBottom = 0;
+  for (let i = 0; i < falling.perimeterCount; i++) {
+    fallingBottom = Math.max(fallingBottom, falling.points[i].y);
+  }
+
+  let lockedTop = groundY;
+  for (let i = 0; i < locked.perimeterCount; i++) {
+    lockedTop = Math.min(lockedTop, locked.points[i].y);
+  }
+
+  // Landing threshold: close enough to locked body or ground
+  return fallingBottom >= lockedTop - 5 || fallingBottom >= groundY - 5;
+}
+
+/**
+ * Lock a falling body in place
+ */
+function lockBody(body: Body): void {
+  body.isLocked = true;
+  body.fallSpeed = 0;
+  // Recalculate rest offsets based on current positions (snap to where it landed)
+  const cx = body.gridX;
+  const cy = body.gridY;
+  for (let i = 0; i < body.points.length; i++) {
+    body.restOffsets[i] = {
+      x: body.points[i].x - cx,
+      y: body.points[i].y - cy
+    };
   }
 }
 
@@ -860,15 +937,26 @@ type ShapeType = 'T' | 'L' | 'square' | 'line' | 'legacy';
 /**
  * Create a body from a shape type using the new grid-to-mesh generation
  */
-function createGeneratedBody(shape: ShapeType, offsetX: number, offsetY: number, color: string): Body {
+function createGeneratedBody(shape: ShapeType, offsetX: number, offsetY: number, color: string, isLocked: boolean = true): Body {
   if (shape === 'legacy') {
     // Use original hardcoded T-shape for comparison
-    return createBody(offsetX, offsetY, color);
+    const body = createBody(offsetX, offsetY, color);
+    // Add missing fields for game-accurate mode
+    const cx = body.points.reduce((s, p) => s + p.x, 0) / body.points.length;
+    const cy = body.points.reduce((s, p) => s + p.y, 0) / body.points.length;
+    return {
+      ...body,
+      restOffsets: body.points.map(p => ({ x: p.x - cx, y: p.y - cy })),
+      gridX: cx,
+      gridY: cy,
+      isLocked,
+      fallSpeed: isLocked ? 0 : 150
+    };
   }
 
   const cells = createTestCells(shape as 'T' | 'L' | 'square' | 'line');
   const perimeter = extractPerimeter(cells, CELL_SIZE, offsetX, offsetY);
-  return createBodyFromPerimeter(perimeter, color);
+  return createBodyFromPerimeter(perimeter, color, isLocked);
 }
 
 // --- Component ---
@@ -879,7 +967,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [showSprings, setShowSprings] = useState(false);
   const [bottomShape, setBottomShape] = useState<ShapeType>('T');
   const [fallingShape, setFallingShape] = useState<ShapeType>('L');
-  const [gridLocked, setGridLocked] = useState(true); // Default to grid-locked mode
+  const [useGamePhysics, setUseGamePhysics] = useState(true); // Default to game-accurate
 
   const bodiesRef = useRef<{ bottom: Body; falling: Body } | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -888,11 +976,11 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   // Create bodies with current shapes
   const createBodies = useCallback((bShape: ShapeType, fShape: ShapeType) => {
     const centerX = 3 * CELL_SIZE;
-    // Position bodies so they don't overlap (especially important for grid-locked mode)
-    // Bottom body at row 6-7, falling body at row 2-3
+    // Bottom body: locked at bottom
+    // Falling body: starts at top, falls down
     return {
-      bottom: createGeneratedBody(bShape, centerX, 6 * CELL_SIZE, COLOR_BOTTOM),
-      falling: createGeneratedBody(fShape, centerX, 2 * CELL_SIZE, COLOR_FALLING)
+      bottom: createGeneratedBody(bShape, centerX, 7 * CELL_SIZE, COLOR_BOTTOM, true),  // locked
+      falling: createGeneratedBody(fShape, centerX, 1 * CELL_SIZE, COLOR_FALLING, false) // falling
     };
   }, []);
 
@@ -912,17 +1000,17 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setBottomShape(shape);
     const centerX = 3 * CELL_SIZE;
     if (bodiesRef.current) {
-      bodiesRef.current.bottom = createGeneratedBody(shape, centerX, 6 * CELL_SIZE, COLOR_BOTTOM);
+      bodiesRef.current.bottom = createGeneratedBody(shape, centerX, 7 * CELL_SIZE, COLOR_BOTTOM, true);
     }
     setTick(t => t + 1);
   }, []);
 
-  // Change falling shape
+  // Change falling shape (resets to top)
   const changeFallingShape = useCallback((shape: ShapeType) => {
     setFallingShape(shape);
     const centerX = 3 * CELL_SIZE;
     if (bodiesRef.current) {
-      bodiesRef.current.falling = createGeneratedBody(shape, centerX, 2 * CELL_SIZE, COLOR_FALLING);
+      bodiesRef.current.falling = createGeneratedBody(shape, centerX, 1 * CELL_SIZE, COLOR_FALLING, false);
     }
     setTick(t => t + 1);
   }, []);
@@ -954,13 +1042,22 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         const subDt = dt / subSteps;
 
         for (let s = 0; s < subSteps; s++) {
-          if (gridLocked) {
-            // Grid-locked mode: bodies stay anchored, only jiggle
-            updateBodyGridLocked(bodiesRef.current.falling, subDt);
-            updateBodyGridLocked(bodiesRef.current.bottom, subDt);
-            // No body-to-body collision in grid-locked (grid handles that)
+          if (useGamePhysics) {
+            // Game-accurate mode: falling body falls, locked body stays
+            updateBodyGameAccurate(bodiesRef.current.falling, subDt, PANEL_H);
+            updateBodyGameAccurate(bodiesRef.current.bottom, subDt, PANEL_H);
+
+            // Body-to-body collision (both can squish)
+            checkBodyCollision(bodiesRef.current.bottom, bodiesRef.current.falling);
+
+            // Check if falling body has landed
+            if (!bodiesRef.current.falling.isLocked) {
+              if (checkLanding(bodiesRef.current.falling, bodiesRef.current.bottom, PANEL_H)) {
+                lockBody(bodiesRef.current.falling);
+              }
+            }
           } else {
-            // Free physics mode: full simulation
+            // Free physics mode: full simulation (bodies tumble)
             updateBody(bodiesRef.current.falling, subDt, PANEL_H);
             updateBody(bodiesRef.current.bottom, subDt, PANEL_H);
             checkBodyCollision(bodiesRef.current.bottom, bodiesRef.current.falling);
@@ -976,7 +1073,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
-  }, [paused, gridLocked]);
+  }, [paused, useGamePhysics]);
 
   const bodies = bodiesRef.current;
   const fallingVol = bodies ? (calcVolume(bodies.falling.points, bodies.falling.perimeterCount) / bodies.falling.restVolume * 100).toFixed(0) : '?';
@@ -987,7 +1084,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     <div className="w-full h-screen bg-slate-950 text-slate-200 flex flex-col items-center p-4">
       <div className="flex items-center gap-2 mb-2 flex-wrap justify-center">
         <button onClick={onBack} className="px-3 py-1.5 bg-slate-800 rounded text-sm">← Back</button>
-        <h1 className="text-lg font-bold">Soft Body v14</h1>
+        <h1 className="text-lg font-bold">Soft Body v15</h1>
         <button onClick={() => setShowVerts(v => !v)} className="px-2 py-1 bg-slate-700 rounded text-xs">
           verts {showVerts ? 'ON' : 'OFF'}
         </button>
@@ -999,10 +1096,10 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </button>
         <button onClick={reset} className="px-3 py-1.5 bg-slate-800 rounded text-sm">↺</button>
         <button
-          onClick={() => setGridLocked(g => !g)}
-          className={`px-2 py-1 rounded text-xs ${gridLocked ? 'bg-green-700' : 'bg-orange-700'}`}
+          onClick={() => setUseGamePhysics(g => !g)}
+          className={`px-2 py-1 rounded text-xs ${useGamePhysics ? 'bg-green-700' : 'bg-orange-700'}`}
         >
-          {gridLocked ? 'Grid-Locked' : 'Free Physics'}
+          {useGamePhysics ? 'Game Mode' : 'Free Physics'}
         </button>
         <button onClick={pokeBodies} className="px-2 py-1 bg-purple-700 rounded text-xs">
           Poke!
@@ -1089,10 +1186,10 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </div>
 
       <div className="mt-2 text-xs text-slate-400 text-center max-w-md">
-        <p><strong>v14:</strong> Grid-locked mode for game integration.</p>
-        <p><span className="text-green-400">Grid-Locked:</span> Bodies stay anchored, only jiggle (like actual game).</p>
-        <p><span className="text-orange-400">Free Physics:</span> Bodies fall, tumble, collide (for testing).</p>
-        <p className="text-slate-500">Click "Poke!" to test jiggle response.</p>
+        <p><strong>v15:</strong> Game-accurate physics.</p>
+        <p><span className="text-green-400">Game Mode:</span> Blue falls down (column-locked), red is locked. Both squish on impact.</p>
+        <p><span className="text-orange-400">Free Physics:</span> Bodies tumble freely (for comparison).</p>
+        <p className="text-slate-500">Reset to drop blue again. Poke to test jiggle.</p>
       </div>
     </div>
   );
