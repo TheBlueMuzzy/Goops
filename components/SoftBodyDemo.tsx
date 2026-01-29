@@ -37,8 +37,8 @@ const COLLISION_PUSH = 0.35;       // How much to push apart (0-1, lower = softe
 
 // Wave effect - dual waves for gloopy undulation
 const WAVE_AMPLITUDE = 2.25;   // Pixels of displacement
-const WAVE1_SPEED = 1.275;     // Primary wave - cycles per second (reduced 25%)
-const WAVE2_SPEED = 1.05;      // Secondary wave - slower, creates undulation
+const WAVE1_SPEED = 0.6375;    // Primary wave - cycles per second (reduced 50%)
+const WAVE2_SPEED = 0.525;     // Secondary wave - slower, creates undulation
 const WAVE1_PHASE_OFFSET = 0.7;   // Positive = travels one direction
 const WAVE2_PHASE_OFFSET = -0.9;  // Negative = travels opposite direction
 
