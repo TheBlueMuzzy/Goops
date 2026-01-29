@@ -13,7 +13,7 @@ import { GameEventType, SwapHoldPayload } from '../core/events/GameEvents';
 import { ActiveAbilityCircle } from './ActiveAbilityCircle';
 import { PiecePreview } from './PiecePreview';
 import { UPGRADES } from '../constants';
-import { SoftBodyRenderer, GoopGroupInfo } from '../rendering/SoftBodyRenderer';
+import { SoftBodyRenderer, GoopGroupInfo, createBodyFromPerimeter, Point } from '../rendering/SoftBodyRenderer';
 import './GameBoard.css';
 
 // --- Props Interface ---
@@ -116,31 +116,139 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   }
 
   // Sync soft body renderer with game state
+  // Architecture:
+  // - Body stores: perimeterGridCoords (grid units) + points (pixel space for physics)
+  // - Physics operates on points[] in canonical pixel space
+  // - Rendering: projects perimeterGridCoords to screen, adds physics deformation
+  // This ensures correct cylindrical distortion at any tank rotation
   useEffect(() => {
     if (!useSoftBody || !softBodyRendererRef.current) return;
 
-    // Convert groups to GoopGroupInfo format
-    const groupsInfo = new Map<string, GoopGroupInfo>();
+    const renderer = softBodyRendererRef.current;
+    const seenGroups = new Set<string>();
+
     for (const [groupId, cells] of groups.entries()) {
       if (cells.length === 0) continue;
-      // Build cell set from grid coordinates (not screen coordinates)
-      const cellSet = new Set<string>();
-      for (const cell of cells) {
-        if (!cell.isFalling) {
-          // Use grid-relative coordinates for soft body mesh
-          cellSet.add(`${cell.visX},${cell.y - BUFFER_HEIGHT}`);
+
+      // Filter to only locked cells (not falling)
+      const lockedCells = cells.filter(c => !c.isFalling);
+      if (lockedCells.length === 0) continue;
+
+      seenGroups.add(groupId);
+
+      // Skip if body already exists and is valid
+      if (renderer.getBody(groupId)) continue;
+
+      // Calculate anchor in STABLE GRID space (doesn't change with rotation)
+      const anchorGridX = lockedCells.reduce((sum, c) => {
+        const gridX = normalizeX(c.visX + tankRotation);
+        return sum + gridX;
+      }, 0) / lockedCells.length;
+      const anchorRow = lockedCells.reduce((sum, c) => sum + (c.y - BUFFER_HEIGHT), 0) / lockedCells.length;
+
+      // Build cell lookup using GRID coordinates
+      const cellLookup = new Set<string>();
+      const cellGridData = lockedCells.map(c => {
+        const gridX = normalizeX(c.visX + tankRotation);
+        const row = c.y - BUFFER_HEIGHT;
+        cellLookup.add(`${gridX},${row}`);
+        return { gridX, row };
+      });
+
+      // Build perimeter edges in GRID UNITS (not pixels)
+      // gx/gy are grid offsets from anchor
+      interface GridEdge { gx1: number; gy1: number; gx2: number; gy2: number; }
+      const perimeterEdges: GridEdge[] = [];
+
+      for (const { gridX, row } of cellGridData) {
+        const left = gridX - anchorGridX;
+        const right = gridX + 1 - anchorGridX;
+        const top = row - anchorRow;
+        const bottom = row + 1 - anchorRow;
+
+        if (!cellLookup.has(`${gridX},${row - 1}`)) {
+          perimeterEdges.push({ gx1: left, gy1: top, gx2: right, gy2: top });
+        }
+        if (!cellLookup.has(`${normalizeX(gridX + 1)},${row}`)) {
+          perimeterEdges.push({ gx1: right, gy1: top, gx2: right, gy2: bottom });
+        }
+        if (!cellLookup.has(`${gridX},${row + 1}`)) {
+          perimeterEdges.push({ gx1: right, gy1: bottom, gx2: left, gy2: bottom });
+        }
+        if (!cellLookup.has(`${normalizeX(gridX - 1)},${row}`)) {
+          perimeterEdges.push({ gx1: left, gy1: bottom, gx2: left, gy2: top });
         }
       }
-      if (cellSet.size > 0) {
-        groupsInfo.set(groupId, {
-          cells: cellSet,
-          color: cells[0].color
-        });
+
+      if (perimeterEdges.length === 0) continue;
+
+      // Order edges into continuous polygon
+      const orderedEdges: GridEdge[] = [perimeterEdges[0]];
+      const usedEdges = new Set<number>([0]);
+
+      while (orderedEdges.length < perimeterEdges.length) {
+        const lastEdge = orderedEdges[orderedEdges.length - 1];
+        let foundNext = false;
+
+        for (let i = 0; i < perimeterEdges.length; i++) {
+          if (usedEdges.has(i)) continue;
+          const candidate = perimeterEdges[i];
+
+          if (Math.abs(candidate.gx1 - lastEdge.gx2) < 0.01 &&
+              Math.abs(candidate.gy1 - lastEdge.gy2) < 0.01) {
+            orderedEdges.push(candidate);
+            usedEdges.add(i);
+            foundNext = true;
+            break;
+          }
+        }
+
+        if (!foundNext) break;
+      }
+
+      // Extract vertices in GRID units and subdivide
+      const gridVertices = orderedEdges.map(e => ({ gx: e.gx1, gy: e.gy1 }));
+      const TARGET_SUBDIVISIONS_PER_CELL = 2;
+      const subdividedGridVertices: { gx: number; gy: number }[] = [];
+
+      for (let i = 0; i < gridVertices.length; i++) {
+        const curr = gridVertices[i];
+        const next = gridVertices[(i + 1) % gridVertices.length];
+        subdividedGridVertices.push(curr);
+
+        const dgx = next.gx - curr.gx;
+        const dgy = next.gy - curr.gy;
+        const dist = Math.sqrt(dgx * dgx + dgy * dgy);
+        const subdivisions = Math.floor(dist * TARGET_SUBDIVISIONS_PER_CELL);
+
+        for (let s = 1; s <= subdivisions; s++) {
+          const t = s / (subdivisions + 1);
+          subdividedGridVertices.push({ gx: curr.gx + dgx * t, gy: curr.gy + dgy * t });
+        }
+      }
+
+      // Create physics points in PIXEL space (scaled by BLOCK_SIZE)
+      // Physics simulation operates on these
+      const perimeter = subdividedGridVertices.map(v => ({
+        x: v.gx * BLOCK_SIZE, y: v.gy * BLOCK_SIZE, vx: 0, vy: 0
+      }));
+
+      if (perimeter.length >= 3) {
+        const body = createBodyFromPerimeter(perimeter, lockedCells[0].color, groupId, true);
+        body.anchorGridX = anchorGridX;
+        body.anchorRow = anchorRow;
+        // Store grid coordinates for per-vertex projection at render time
+        body.perimeterGridCoords = subdividedGridVertices;
+        (renderer as any).bodies.set(groupId, body);
       }
     }
 
-    // Update renderer - it will create/remove bodies as needed
-    softBodyRendererRef.current.updateFromGroups(groupsInfo, BLOCK_SIZE, 0, 0);
+    // Remove bodies for groups that no longer exist
+    for (const body of renderer.getBodies()) {
+      if (!seenGroups.has(body.groupId)) {
+        (renderer as any).bodies.delete(body.groupId);
+      }
+    }
   }, [useSoftBody, groups]);
 
   // Animation frame loop for soft body physics
@@ -176,10 +284,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   // Get soft bodies for rendering
   const softBodies = useMemo(() => {
     if (!useSoftBody || !softBodyRendererRef.current) return [];
-    // Force recalc on tick
+    // Force recalc on tick and rotation (transform depends on tankRotation)
     void softBodyTick;
+    void tankRotation;
     return softBodyRendererRef.current.getBodies();
-  }, [useSoftBody, softBodyTick]);
+  }, [useSoftBody, softBodyTick, tankRotation]);
 
   // Wild color cycling - wave effect moving left to right
   // Each X position shows a different phase of the color cycle
@@ -294,6 +403,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             }}
         >
             {maskDefinitions}
+
+            {/* Viewport clip for soft bodies (always defined, even on mobile) */}
+            {useSoftBody && (
+                <defs>
+                    <clipPath id="viewport-clip">
+                        <rect x={vbX} y={vbY} width={vbW} height={vbH} />
+                    </clipPath>
+                </defs>
+            )}
 
             {/* Background Layers */}
             <rect x={vbX} y={waterTopY} width={vbW} height={waterHeightPx} fill={pressureColor} />
@@ -424,23 +542,86 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 return null;
             })}
 
-            {/* Soft Body Goop Layer (feature flag) */}
-            {useSoftBody && softBodies.map((body) => {
-                const renderer = softBodyRendererRef.current;
-                if (!renderer) return null;
-                const path = renderer.getBodyPath(body);
-                return (
-                    <path
-                        key={`soft-${body.groupId}`}
-                        d={path}
-                        fill={body.color}
-                        fillOpacity={0.85}
-                        stroke={body.color}
-                        strokeWidth={2}
-                        className="soft-body-goop"
-                    />
-                );
-            })}
+            {/* Soft Body Goop Layer - per-vertex projection + physics deformation */}
+            {useSoftBody && (
+                <g clipPath="url(#viewport-clip)">
+                    {softBodies.map((body) => {
+                        if (body.anchorGridX === undefined || body.anchorRow === undefined) return null;
+                        if (!body.perimeterGridCoords || body.perimeterGridCoords.length < 3) return null;
+
+                        const projectedPoints: { x: number; y: number }[] = [];
+                        let anyVisible = false;
+
+                        for (let i = 0; i < body.perimeterCount; i++) {
+                            const gridCoord = body.perimeterGridCoords[i];
+                            const physicsPoint = body.points[i];
+
+                            // Calculate physics deformation (how much the point moved from rest)
+                            const restX = gridCoord.gx * BLOCK_SIZE;
+                            const restY = gridCoord.gy * BLOCK_SIZE;
+                            const deformX = physicsPoint.x - restX;
+                            const deformY = physicsPoint.y - restY;
+
+                            // Project the REST position using cylindrical projection
+                            const absoluteGridX = body.anchorGridX + gridCoord.gx;
+                            const absoluteRow = body.anchorRow + gridCoord.gy;
+
+                            let visX = absoluteGridX - tankRotation;
+                            if (visX > TANK_WIDTH / 2) visX -= TANK_WIDTH;
+                            if (visX < -TANK_WIDTH / 2) visX += TANK_WIDTH;
+
+                            if (visX >= -2 && visX <= TANK_VIEWPORT_WIDTH + 2) anyVisible = true;
+
+                            // Project to screen coordinates
+                            const screenX = visXToScreenX(visX);
+                            const screenY = absoluteRow * BLOCK_SIZE;
+
+                            // Add physics deformation (scaled by local projection factor for accuracy)
+                            // Approximate scale factor based on column width ratio
+                            const centerVisX = TANK_VIEWPORT_WIDTH / 2;
+                            const scaleFactor = Math.cos((visX - centerVisX) * 0.1) || 1;
+
+                            projectedPoints.push({
+                                x: screenX + deformX * scaleFactor,
+                                y: screenY + deformY
+                            });
+                        }
+
+                        if (!anyVisible) return null;
+
+                        // Build smooth Bezier path
+                        const count = projectedPoints.length;
+                        let pathD = `M ${projectedPoints[0].x} ${projectedPoints[0].y}`;
+
+                        for (let i = 0; i < count; i++) {
+                            const p0 = projectedPoints[(i - 1 + count) % count];
+                            const p1 = projectedPoints[i];
+                            const p2 = projectedPoints[(i + 1) % count];
+                            const p3 = projectedPoints[(i + 2) % count];
+
+                            // Catmull-Rom to Bezier conversion
+                            const cp1x = p1.x + (p2.x - p0.x) / 6;
+                            const cp1y = p1.y + (p2.y - p0.y) / 6;
+                            const cp2x = p2.x - (p3.x - p1.x) / 6;
+                            const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+                            pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+                        }
+
+                        return (
+                            <path
+                                key={`soft-${body.groupId}`}
+                                d={pathD}
+                                fill={body.color}
+                                fillOpacity={0.85}
+                                stroke={body.color}
+                                strokeWidth={2}
+                                className="soft-body-goop"
+                            />
+                        );
+                    })}
+                </g>
+            )}
 
             {/* Main Goop Groups (skip if soft body mode) */}
             {!useSoftBody && Array.from(groups.entries()).map(([gid, cells]) => {

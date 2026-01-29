@@ -41,6 +41,12 @@ export interface Body {
   isLocked: boolean;
   fallSpeed: number;
   groupId: string;
+  // Anchor for rotation-independent positioning
+  anchorGridX?: number;  // Stable grid X (0 to TANK_WIDTH-1), doesn't change with rotation
+  anchorRow?: number;    // Grid row (also stable)
+  // Original perimeter in GRID coordinates (relative to anchor)
+  // Used at render time for correct cylindrical projection
+  perimeterGridCoords?: { gx: number; gy: number }[];
 }
 
 // GoopGroup-like structure for updateFromGroups
