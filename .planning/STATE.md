@@ -54,11 +54,11 @@ See: [[PROJECT]] (updated 2026-01-27)
 ## Current Position
 
 Phase: 26 of 30 (Core SBG System)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-28 — Completed 26-01-PLAN.md (Body-to-Body Collision)
+Last activity: 2026-01-28 — Completed 26-02-PLAN.md (Grid-to-Mesh Generation)
 
-Progress: ██░░░░░░░░ 20% (v1.6 Soft Body Goop - Phase 26 in progress)
+Progress: ███░░░░░░░ 25% (v1.6 Soft Body Goop - Phase 26 in progress)
 
 ## What's Done
 
@@ -199,6 +199,21 @@ Last session: 2026-01-28
 
 ### This Session Summary (2026-01-28)
 
+**Phase 26 Plan 02: Grid-to-Mesh Generation — COMPLETE**
+
+Implemented grid-to-mesh conversion with game-accurate physics (v12 → v15):
+- **extractPerimeter():** Converts cell Set to ordered perimeter vertices
+- **createBodyFromPerimeter():** Creates Body with hub, springs, rest offsets
+- **Game-accurate physics:** Falling body descends (column-locked), locked body anchors
+- **Collision response:** Both bodies squish on impact, spring back to rest
+- **Demo:** Updated to v15, `?demo=softbody` — Game Mode vs Free Physics toggle
+
+4 commits: 0754f2d, 049588c, 292836b, 048a481
+
+**Next:** 26-03-PLAN.md (Renderer Integration)
+
+### Previous Session Summary (2026-01-28)
+
 **Phase 26 Plan 01: Body-to-Body Collision — COMPLETE**
 
 Implemented collision between soft bodies in demo (v10 → v12):
@@ -209,8 +224,6 @@ Implemented collision between soft bodies in demo (v10 → v12):
 - **Demo:** Updated to v12, accessible via `?demo=softbody`
 
 4 commits: 87a16b5, acfd16c, b3a2e97 (fix), 285e34d (tuning)
-
-**Next:** 26-02-PLAN.md (Grid-to-Mesh Generation)
 
 ### Previous Session Summary (2026-01-28)
 
