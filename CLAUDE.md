@@ -59,6 +59,8 @@ Use these at transition points — not constantly, but when you need direction.
 
 **Less common:** `/gsd:discuss-phase`, `/gsd:research-phase`, `/gsd:pause-work`, `/gsd:resume-work`
 
+**Note:** `/gsd:progress` should include the actual Future Ideas list from PRD.md (not just a reference). Don't add "work directly" suggestions beyond the skill template's routing options.
+
 ---
 
 ## Core Rules

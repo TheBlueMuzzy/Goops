@@ -194,10 +194,28 @@ All three complications have player-driven triggers AND mitigations.
 
 Last session: 2026-01-28
 **Version:** 1.1.13
-**Branch:** master (switch to `feature/soft-body-goop` before coding)
+**Branch:** `feature/soft-body-goop`
 **Milestone:** v1.6 Soft Body Goop — IN PROGRESS
 
 ### This Session Summary (2026-01-28)
+
+**Phase 26 Plan 03: Renderer Integration — IN PROGRESS**
+
+Integrated soft bodies into actual game with cylindrical projection support:
+
+- **Key architectural insight:** Physics must run in GRID UNITS (not pixels), projection applied per-vertex at render time
+- **Cylindrical projection fix:** Each vertex projected independently via `visXToScreenX(anchorVisX + gx)`
+- **Anchor system:** Bodies store stable `anchorGridX` (0-39), calculated as centroid of perimeter vertices
+- **Wrap-around handling:** Detects when cells span cylinder seam, adjusts coordinates for continuous perimeter
+- **Visibility fix:** Bodies recreated fresh each frame for visible groups only (prevents stale data after off-screen)
+- **Wave animation:** Applied in grid space (0.075 amplitude) for organic undulation
+- **Mobile tested:** Performs well on phone
+
+**Access:** `?softbody=true` URL param enables soft body rendering
+
+**Next:** Fine-tune soft body appearance (user requested)
+
+### Previous Session Summary (2026-01-28)
 
 **Phase 26 Plan 02: Grid-to-Mesh Generation — COMPLETE**
 
@@ -209,8 +227,6 @@ Implemented grid-to-mesh conversion with game-accurate physics (v12 → v15):
 - **Demo:** Updated to v15, `?demo=softbody` — Game Mode vs Free Physics toggle
 
 4 commits: 0754f2d, 049588c, 292836b, 048a481
-
-**Next:** 26-03-PLAN.md (Renderer Integration)
 
 ### Previous Session Summary (2026-01-28)
 

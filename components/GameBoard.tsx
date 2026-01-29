@@ -13,7 +13,7 @@ import { GameEventType, SwapHoldPayload } from '../core/events/GameEvents';
 import { ActiveAbilityCircle } from './ActiveAbilityCircle';
 import { PiecePreview } from './PiecePreview';
 import { UPGRADES } from '../constants';
-import { SoftBodyRenderer, GoopGroupInfo, createBodyFromPerimeter, Point } from '../rendering/SoftBodyRenderer';
+import { SoftBodyRenderer, GoopGroupInfo, createBodyFromPerimeter, Point, getWavyPointsGrid } from '../rendering/SoftBodyRenderer';
 import './GameBoard.css';
 
 // --- Props Interface ---
@@ -117,10 +117,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   // Sync soft body renderer with game state
   // Architecture:
-  // - Body stores: perimeterGridCoords (grid units) + points (pixel space for physics)
-  // - Physics operates on points[] in canonical pixel space
-  // - Rendering: projects perimeterGridCoords to screen, adds physics deformation
-  // This ensures correct cylindrical distortion at any tank rotation
+  // - Physics runs in GRID UNITS (not pixels) centered at (0, 0)
+  // - Anchor stores the absolute grid position of the body's centroid
+  // - At render time: project (anchor + physics position) to screen using cylindrical projection
+  // This ensures soft bodies distort correctly with the cylindrical view
   useEffect(() => {
     if (!useSoftBody || !softBodyRendererRef.current) return;
 
@@ -136,15 +136,27 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
       seenGroups.add(groupId);
 
-      // Skip if body already exists and is valid
-      if (renderer.getBody(groupId)) continue;
+      // Calculate if this group is currently visible BEFORE deciding to use cached body
+      // We need to check based on the cells' current positions, not stored anchor
+      const sampleCell = lockedCells[0];
+      const sampleVisX = sampleCell.visX;
+      const groupVisible = sampleVisX >= -2 && sampleVisX <= TANK_VIEWPORT_WIDTH + 2;
 
-      // Calculate anchor in STABLE GRID space (doesn't change with rotation)
-      const anchorGridX = lockedCells.reduce((sum, c) => {
-        const gridX = normalizeX(c.visX + tankRotation);
-        return sum + gridX;
-      }, 0) / lockedCells.length;
-      const anchorRow = lockedCells.reduce((sum, c) => sum + (c.y - BUFFER_HEIGHT), 0) / lockedCells.length;
+      // Only maintain bodies for visible groups - recreate when they become visible
+      const existingBody = renderer.getBody(groupId);
+      if (existingBody) {
+        if (!groupVisible) {
+          // Off-screen: delete the body, will recreate when visible again
+          (renderer as any).bodies.delete(groupId);
+          continue;
+        }
+        // Visible and exists: recreate to ensure fresh data
+        // (This is the key fix - always recreate visible bodies)
+        (renderer as any).bodies.delete(groupId);
+      }
+
+      // Skip creation for off-screen groups
+      if (!groupVisible) continue;
 
       // Build cell lookup using GRID coordinates
       const cellLookup = new Set<string>();
@@ -155,28 +167,42 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         return { gridX, row };
       });
 
-      // Build perimeter edges in GRID UNITS (not pixels)
-      // gx/gy are grid offsets from anchor
-      interface GridEdge { gx1: number; gy1: number; gx2: number; gy2: number; }
+      // Handle wrap-around: if cells span the seam (e.g., gridX 38,39,0,1),
+      // normalize to a continuous range for correct perimeter building
+      const gridXValues = cellGridData.map(c => c.gridX);
+      const minGridX = Math.min(...gridXValues);
+      const maxGridX = Math.max(...gridXValues);
+      const spansSeam = maxGridX - minGridX > TANK_WIDTH / 2;
+
+      // If spanning seam, shift low values up by TANK_WIDTH for calculations
+      const adjustedCellData = cellGridData.map(c => ({
+        gridX: spansSeam && c.gridX < TANK_WIDTH / 2 ? c.gridX + TANK_WIDTH : c.gridX,
+        row: c.row
+      }));
+
+      // Build perimeter edges in ABSOLUTE GRID coordinates first
+      interface GridEdge { x1: number; y1: number; x2: number; y2: number; }
       const perimeterEdges: GridEdge[] = [];
 
-      for (const { gridX, row } of cellGridData) {
-        const left = gridX - anchorGridX;
-        const right = gridX + 1 - anchorGridX;
-        const top = row - anchorRow;
-        const bottom = row + 1 - anchorRow;
+      for (const { gridX, row } of adjustedCellData) {
+        const left = gridX;
+        const right = gridX + 1;
+        const top = row;
+        const bottom = row + 1;
 
-        if (!cellLookup.has(`${gridX},${row - 1}`)) {
-          perimeterEdges.push({ gx1: left, gy1: top, gx2: right, gy2: top });
+        // Check neighbors (using original lookup which has normalized coords)
+        const origGridX = gridX >= TANK_WIDTH ? gridX - TANK_WIDTH : gridX;
+        if (!cellLookup.has(`${origGridX},${row - 1}`)) {
+          perimeterEdges.push({ x1: left, y1: top, x2: right, y2: top });
         }
-        if (!cellLookup.has(`${normalizeX(gridX + 1)},${row}`)) {
-          perimeterEdges.push({ gx1: right, gy1: top, gx2: right, gy2: bottom });
+        if (!cellLookup.has(`${normalizeX(origGridX + 1)},${row}`)) {
+          perimeterEdges.push({ x1: right, y1: top, x2: right, y2: bottom });
         }
-        if (!cellLookup.has(`${gridX},${row + 1}`)) {
-          perimeterEdges.push({ gx1: right, gy1: bottom, gx2: left, gy2: bottom });
+        if (!cellLookup.has(`${origGridX},${row + 1}`)) {
+          perimeterEdges.push({ x1: right, y1: bottom, x2: left, y2: bottom });
         }
-        if (!cellLookup.has(`${normalizeX(gridX - 1)},${row}`)) {
-          perimeterEdges.push({ gx1: left, gy1: bottom, gx2: left, gy2: top });
+        if (!cellLookup.has(`${normalizeX(origGridX - 1)},${row}`)) {
+          perimeterEdges.push({ x1: left, y1: bottom, x2: left, y2: top });
         }
       }
 
@@ -194,8 +220,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           if (usedEdges.has(i)) continue;
           const candidate = perimeterEdges[i];
 
-          if (Math.abs(candidate.gx1 - lastEdge.gx2) < 0.01 &&
-              Math.abs(candidate.gy1 - lastEdge.gy2) < 0.01) {
+          if (Math.abs(candidate.x1 - lastEdge.x2) < 0.01 &&
+              Math.abs(candidate.y1 - lastEdge.y2) < 0.01) {
             orderedEdges.push(candidate);
             usedEdges.add(i);
             foundNext = true;
@@ -206,39 +232,51 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         if (!foundNext) break;
       }
 
-      // Extract vertices in GRID units and subdivide
-      const gridVertices = orderedEdges.map(e => ({ gx: e.gx1, gy: e.gy1 }));
+      // Extract vertices and subdivide
+      const absVertices = orderedEdges.map(e => ({ x: e.x1, y: e.y1 }));
       const TARGET_SUBDIVISIONS_PER_CELL = 2;
-      const subdividedGridVertices: { gx: number; gy: number }[] = [];
+      const subdividedAbsVertices: { x: number; y: number }[] = [];
 
-      for (let i = 0; i < gridVertices.length; i++) {
-        const curr = gridVertices[i];
-        const next = gridVertices[(i + 1) % gridVertices.length];
-        subdividedGridVertices.push(curr);
+      for (let i = 0; i < absVertices.length; i++) {
+        const curr = absVertices[i];
+        const next = absVertices[(i + 1) % absVertices.length];
+        subdividedAbsVertices.push(curr);
 
-        const dgx = next.gx - curr.gx;
-        const dgy = next.gy - curr.gy;
-        const dist = Math.sqrt(dgx * dgx + dgy * dgy);
+        const dx = next.x - curr.x;
+        const dy = next.y - curr.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
         const subdivisions = Math.floor(dist * TARGET_SUBDIVISIONS_PER_CELL);
 
         for (let s = 1; s <= subdivisions; s++) {
           const t = s / (subdivisions + 1);
-          subdividedGridVertices.push({ gx: curr.gx + dgx * t, gy: curr.gy + dgy * t });
+          subdividedAbsVertices.push({ x: curr.x + dx * t, y: curr.y + dy * t });
         }
       }
 
-      // Create physics points in PIXEL space (scaled by BLOCK_SIZE)
-      // Physics simulation operates on these
-      const perimeter = subdividedGridVertices.map(v => ({
-        x: v.gx * BLOCK_SIZE, y: v.gy * BLOCK_SIZE, vx: 0, vy: 0
+      // Calculate the TRUE centroid of the perimeter shape
+      const centroidX = subdividedAbsVertices.reduce((sum, v) => sum + v.x, 0) / subdividedAbsVertices.length;
+      const centroidY = subdividedAbsVertices.reduce((sum, v) => sum + v.y, 0) / subdividedAbsVertices.length;
+
+      // Anchor is the centroid in stable grid coordinates (normalize if it wrapped)
+      const anchorGridX = centroidX >= TANK_WIDTH ? centroidX - TANK_WIDTH : centroidX;
+      const anchorRow = centroidY;
+
+      // Center vertices around (0, 0) for physics
+      const centeredVertices = subdividedAbsVertices.map(v => ({
+        gx: v.x - centroidX,
+        gy: v.y - centroidY
+      }));
+
+      // Create physics points in GRID space centered at origin
+      const perimeter = centeredVertices.map(v => ({
+        x: v.gx, y: v.gy, vx: 0, vy: 0
       }));
 
       if (perimeter.length >= 3) {
         const body = createBodyFromPerimeter(perimeter, lockedCells[0].color, groupId, true);
         body.anchorGridX = anchorGridX;
         body.anchorRow = anchorRow;
-        // Store grid coordinates for per-vertex projection at render time
-        body.perimeterGridCoords = subdividedGridVertices;
+        body.perimeterGridCoords = centeredVertices;
         (renderer as any).bodies.set(groupId, body);
       }
     }
@@ -249,7 +287,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         (renderer as any).bodies.delete(body.groupId);
       }
     }
-  }, [useSoftBody, groups]);
+  }, [useSoftBody, groups, tankRotation]);
 
   // Animation frame loop for soft body physics
   useEffect(() => {
@@ -542,55 +580,62 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 return null;
             })}
 
-            {/* Soft Body Goop Layer - per-vertex projection + physics deformation */}
+            {/* Soft Body Goop Layer - physics in grid space, project to screen at render */}
             {useSoftBody && (
-                <g clipPath="url(#viewport-clip)">
+                <g>
                     {softBodies.map((body) => {
                         if (body.anchorGridX === undefined || body.anchorRow === undefined) return null;
                         if (!body.perimeterGridCoords || body.perimeterGridCoords.length < 3) return null;
 
+                        // Calculate anchor's visual position ONCE to determine wrap behavior for whole body
+                        let anchorVisX = body.anchorGridX - tankRotation;
+                        if (anchorVisX > TANK_WIDTH / 2) anchorVisX -= TANK_WIDTH;
+                        if (anchorVisX < -TANK_WIDTH / 2) anchorVisX += TANK_WIDTH;
+
+                        // Check if body center is visible (with margin for body extent)
+                        const bodyVisible = anchorVisX >= -4 && anchorVisX <= TANK_VIEWPORT_WIDTH + 4;
+                        if (!bodyVisible) return null;
+
+                        // DEBUG: Use original grid coords directly (bypass physics) to test projection
+                        // This should show if the projection itself is working correctly
+                        const renderer = softBodyRendererRef.current;
+                        const time = renderer ? renderer.getTime() : 0;
+
+                        // Project each vertex from grid space to screen space
                         const projectedPoints: { x: number; y: number }[] = [];
-                        let anyVisible = false;
+                        const count = body.perimeterGridCoords.length;
 
-                        for (let i = 0; i < body.perimeterCount; i++) {
+                        for (let i = 0; i < count; i++) {
                             const gridCoord = body.perimeterGridCoords[i];
-                            const physicsPoint = body.points[i];
 
-                            // Calculate physics deformation (how much the point moved from rest)
-                            const restX = gridCoord.gx * BLOCK_SIZE;
-                            const restY = gridCoord.gy * BLOCK_SIZE;
-                            const deformX = physicsPoint.x - restX;
-                            const deformY = physicsPoint.y - restY;
+                            // Apply wave effect directly to grid coords (not physics)
+                            const prev = (i - 1 + count) % count;
+                            const next = (i + 1) % count;
+                            const e1x = gridCoord.gx - body.perimeterGridCoords[prev].gx;
+                            const e1y = gridCoord.gy - body.perimeterGridCoords[prev].gy;
+                            const e2x = body.perimeterGridCoords[next].gx - gridCoord.gx;
+                            const e2y = body.perimeterGridCoords[next].gy - gridCoord.gy;
+                            let nx = e1y + e2y;
+                            let ny = -(e1x + e2x);
+                            const len = Math.sqrt(nx * nx + ny * ny) || 1;
+                            nx /= len;
+                            ny /= len;
+                            const wave = Math.sin(time * 0.6375 * Math.PI * 2 + i * 0.7) * 0.075;
 
-                            // Project the REST position using cylindrical projection
-                            const absoluteGridX = body.anchorGridX + gridCoord.gx;
-                            const absoluteRow = body.anchorRow + gridCoord.gy;
+                            const gx = gridCoord.gx + nx * wave;
+                            const gy = gridCoord.gy + ny * wave;
 
-                            let visX = absoluteGridX - tankRotation;
-                            if (visX > TANK_WIDTH / 2) visX -= TANK_WIDTH;
-                            if (visX < -TANK_WIDTH / 2) visX += TANK_WIDTH;
-
-                            if (visX >= -2 && visX <= TANK_VIEWPORT_WIDTH + 2) anyVisible = true;
-
-                            // Project to screen coordinates
+                            // visX = anchorVisX + grid offset (no per-vertex wrapping)
+                            const visX = anchorVisX + gx;
                             const screenX = visXToScreenX(visX);
-                            const screenY = absoluteRow * BLOCK_SIZE;
+                            const screenY = (body.anchorRow + gy) * BLOCK_SIZE;
 
-                            // Add physics deformation (scaled by local projection factor for accuracy)
-                            // Approximate scale factor based on column width ratio
-                            const centerVisX = TANK_VIEWPORT_WIDTH / 2;
-                            const scaleFactor = Math.cos((visX - centerVisX) * 0.1) || 1;
-
-                            projectedPoints.push({
-                                x: screenX + deformX * scaleFactor,
-                                y: screenY + deformY
-                            });
+                            projectedPoints.push({ x: screenX, y: screenY });
                         }
 
-                        if (!anyVisible) return null;
+                        if (projectedPoints.length === 0) return null;
 
-                        // Build smooth Bezier path
-                        const count = projectedPoints.length;
+                        // Build smooth Bezier path (count already defined above)
                         let pathD = `M ${projectedPoints[0].x} ${projectedPoints[0].y}`;
 
                         for (let i = 0; i < count; i++) {

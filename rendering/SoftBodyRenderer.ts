@@ -68,12 +68,13 @@ const GLOBAL_DAMP = 0.995;
 const BOUNCE = 0.3;
 const FRICTION = 0.85;
 
-// Body-to-body collision
-const COLLISION_RADIUS = 5;
+// Body-to-body collision (in grid units for grid-space physics)
+const COLLISION_RADIUS = 0.15;  // ~5 pixels when BLOCK_SIZE=30
 const COLLISION_PUSH = 0.35;
 
 // Wave effect for ambient undulation
 const WAVE_AMPLITUDE = 2.25;
+const WAVE_AMPLITUDE_GRID = 0.075; // Wave amplitude in grid units (for grid-space physics)
 const WAVE1_SPEED = 0.6375;
 const WAVE2_SPEED = 0.525;
 const WAVE1_PHASE_OFFSET = 0.7;
@@ -249,24 +250,28 @@ export function createBodyFromPerimeter(
     return Math.sqrt(dx * dx + dy * dy);
   };
 
+  // Minimum spring length threshold (works for both pixel and grid unit modes)
+  // 0.15 grid units ≈ 5 pixels when BLOCK_SIZE=30
+  const MIN_SPRING_LEN = 0.15;
+
   // Adjacent perimeter springs
   for (let i = 0; i < perimeterCount; i++) {
     const j = (i + 1) % perimeterCount;
     const d = dist(i, j);
-    if (d > 5) springs.push({ a: i, b: j, restLen: d });
+    if (d > MIN_SPRING_LEN) springs.push({ a: i, b: j, restLen: d });
   }
 
   // Spoke springs (hub to perimeter)
   for (let i = 0; i < perimeterCount; i++) {
     const d = dist(hubIndex, i);
-    if (d > 5) springs.push({ a: hubIndex, b: i, restLen: d });
+    if (d > MIN_SPRING_LEN) springs.push({ a: hubIndex, b: i, restLen: d });
   }
 
   // Skip-2 springs
   for (let i = 0; i < perimeterCount; i++) {
     const j = (i + 2) % perimeterCount;
     const d = dist(i, j);
-    if (d > 5) springs.push({ a: i, b: j, restLen: d });
+    if (d > MIN_SPRING_LEN) springs.push({ a: i, b: j, restLen: d });
   }
 
   // Skip-4 springs (extra rigidity)
@@ -274,7 +279,7 @@ export function createBodyFromPerimeter(
     for (let i = 0; i < perimeterCount; i++) {
       const j = (i + 4) % perimeterCount;
       const d = dist(i, j);
-      if (d > 5) springs.push({ a: i, b: j, restLen: d });
+      if (d > MIN_SPRING_LEN) springs.push({ a: i, b: j, restLen: d });
     }
   }
 
@@ -472,7 +477,7 @@ export function updateBodyFreePhysics(body: Body, dt: number, groundY: number): 
 
   // Pressure force
   const currentVolume = calcVolume(points, perimeterCount);
-  const volumeRatio = restVolume / Math.max(currentVolume, 100);
+  const volumeRatio = restVolume / Math.max(currentVolume, 0.1);
   const pressure = PRESSURE_K * (volumeRatio - 1);
 
   for (let i = 0; i < perimeterCount; i++) {
@@ -587,7 +592,7 @@ export function updateBodyGameAccurate(body: Body, dt: number): void {
 
   // Pressure force
   const currentVolume = calcVolume(points, perimeterCount);
-  const volumeRatio = restVolume / Math.max(currentVolume, 100);
+  const volumeRatio = restVolume / Math.max(currentVolume, 0.1);
   const pressure = (PRESSURE_K * 0.15) * (volumeRatio - 1);
 
   for (let i = 0; i < perimeterCount; i++) {
@@ -673,6 +678,49 @@ export function getWavyPoints(
     const wave1 = Math.sin(time * WAVE1_SPEED * Math.PI * 2 + phase1);
     const wave2 = Math.sin(time * WAVE2_SPEED * Math.PI * 2 + phase2);
     const wave = (wave1 * 0.6 + wave2 * 0.4) * WAVE_AMPLITUDE;
+
+    result.push({
+      x: points[i].x + nx * wave,
+      y: points[i].y + ny * wave
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Get wavy points in GRID space (for cylindrical projection rendering)
+ * Uses smaller amplitude since coordinates are in grid units, not pixels
+ */
+export function getWavyPointsGrid(
+  points: Point[],
+  count: number,
+  time: number
+): { x: number; y: number }[] {
+  const result: { x: number; y: number }[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const prev = (i - 1 + count) % count;
+    const next = (i + 1) % count;
+
+    // Calculate outward normal
+    const e1x = points[i].x - points[prev].x;
+    const e1y = points[i].y - points[prev].y;
+    const e2x = points[next].x - points[i].x;
+    const e2y = points[next].y - points[i].y;
+
+    let nx = e1y + e2y;
+    let ny = -(e1x + e2x);
+    const len = Math.sqrt(nx * nx + ny * ny) || 1;
+    nx /= len;
+    ny /= len;
+
+    // Dual sinusoidal waves (amplitude in grid units)
+    const phase1 = i * WAVE1_PHASE_OFFSET;
+    const phase2 = i * WAVE2_PHASE_OFFSET;
+    const wave1 = Math.sin(time * WAVE1_SPEED * Math.PI * 2 + phase1);
+    const wave2 = Math.sin(time * WAVE2_SPEED * Math.PI * 2 + phase2);
+    const wave = (wave1 * 0.6 + wave2 * 0.4) * WAVE_AMPLITUDE_GRID;
 
     result.push({
       x: points[i].x + nx * wave,
