@@ -1,5 +1,5 @@
 /**
- * Soft Body Demo v15 - Game-Accurate Physics
+ * Soft Body Demo v16 - Using SoftBodyRenderer Module
  *
  * Simulates actual game mechanics:
  * - Locked Goop: Anchored to grid, jiggles on impact, springs back
@@ -14,6 +14,19 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Point,
+  Spring,
+  Body,
+  extractPerimeter,
+  createBodyFromPerimeter,
+  checkBodyCollision,
+  updateBodyGameAccurate,
+  updateBodyFreePhysics,
+  applyImpulse,
+  getWavyPoints,
+  createBezierPath
+} from '../rendering/SoftBodyRenderer';
 
 // --- Constants ---
 const CELL_SIZE = 50;
@@ -22,349 +35,48 @@ const GRID_H = 10;
 const PANEL_W = GRID_W * CELL_SIZE;
 const PANEL_H = GRID_H * CELL_SIZE;
 
-// Physics tuning
+// Physics tuning for free physics mode (demo-specific)
 const GRAVITY = 600;
-const SPRING_K = 500;        // Spring stiffness (increased)
-const SPRING_DAMP = 18;      // Spring damping
-const PRESSURE_K = 15000;    // Pressure strength (increased)
+const SPRING_K = 500;
+const SPRING_DAMP = 18;
+const PRESSURE_K = 15000;
 const GLOBAL_DAMP = 0.995;
 const BOUNCE = 0.3;
 const FRICTION = 0.85;
 
-// Body-to-body collision tuning (gentle values to prevent explosion)
-const COLLISION_RADIUS = 5;        // Proximity threshold - vertices closer than this collide
-const COLLISION_PUSH = 0.35;       // How much to push apart (0-1, lower = softer)
-
-// Wave effect - dual waves for gloopy undulation
-const WAVE_AMPLITUDE = 2.25;   // Pixels of displacement
-const WAVE1_SPEED = 0.6375;    // Primary wave - cycles per second (reduced 50%)
-const WAVE2_SPEED = 0.525;     // Secondary wave - slower, creates undulation
-const WAVE1_PHASE_OFFSET = 0.7;   // Positive = travels one direction
-const WAVE2_PHASE_OFFSET = -0.9;  // Negative = travels opposite direction
-
 const COLOR_BOTTOM = '#e63946';
 const COLOR_FALLING = '#457b9d';
 
-// --- Types ---
-interface Point {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  isHub?: boolean;  // Center point flag
+// --- Demo-specific types (extends module types with optional fields) ---
+// Demo bodies may lack groupId for legacy shapes
+interface DemoBody extends Omit<Body, 'groupId'> {
+  groupId?: string;
 }
 
-interface Spring {
-  a: number;
-  b: number;
-  restLen: number;
-}
-
-interface Body {
-  points: Point[];      // [0..n-1] = perimeter, [n] = hub
-  perimeterCount: number;
-  springs: Spring[];
-  color: string;
-  restVolume: number;
-  // Rest positions are RELATIVE offsets from gridPos
-  restOffsets: { x: number; y: number }[];
-  // Grid position (like the actual game uses)
-  gridX: number;        // Column position (fixed for falling, changes on tank rotation)
-  gridY: number;        // Row position (increases when falling, fixed when locked)
-  // State
-  isLocked: boolean;    // true = anchored to grid, false = falling
-  fallSpeed: number;    // Current fall speed (pixels per second)
-}
-
-// --- Grid-to-Mesh Generation ---
-
-/**
- * Extract perimeter vertices from a set of grid cells.
- * Algorithm:
- * 1. Find all edges that are on the perimeter (adjacent cell not in set)
- * 2. Order edges into a continuous polygon
- * 3. Subdivide long edges for smooth curves
- *
- * @param cells Set of "x,y" cell coordinates
- * @param cellSize Size of each cell in pixels
- * @param offsetX X offset for positioning
- * @param offsetY Y offset for positioning
- * @returns Ordered perimeter vertices (clockwise)
- */
-function extractPerimeter(
-  cells: Set<string>,
-  cellSize: number,
-  offsetX: number = 0,
-  offsetY: number = 0
-): Point[] {
-  if (cells.size === 0) return [];
-
-  // Edge representation: "x1,y1-x2,y2" where (x1,y1) and (x2,y2) are corners
-  // We'll store edges as start→end in clockwise order around cells
-  interface Edge {
-    x1: number; y1: number;
-    x2: number; y2: number;
-  }
-
-  const perimeterEdges: Edge[] = [];
-
-  // For each cell, check each of the 4 edges
-  // If the adjacent cell in that direction is NOT in the set, it's a perimeter edge
-  for (const cellKey of cells) {
-    const [cx, cy] = cellKey.split(',').map(Number);
-
-    // Cell corners (in pixel space):
-    // topLeft = (cx * cellSize, cy * cellSize)
-    // topRight = ((cx+1) * cellSize, cy * cellSize)
-    // bottomRight = ((cx+1) * cellSize, (cy+1) * cellSize)
-    // bottomLeft = (cx * cellSize, (cy+1) * cellSize)
-
-    const left = cx * cellSize + offsetX;
-    const right = (cx + 1) * cellSize + offsetX;
-    const top = cy * cellSize + offsetY;
-    const bottom = (cy + 1) * cellSize + offsetY;
-
-    // Top edge: if cell above (cx, cy-1) is not in set
-    if (!cells.has(`${cx},${cy - 1}`)) {
-      // Clockwise around cell: top edge goes left→right
-      perimeterEdges.push({ x1: left, y1: top, x2: right, y2: top });
-    }
-
-    // Right edge: if cell to right (cx+1, cy) is not in set
-    if (!cells.has(`${cx + 1},${cy}`)) {
-      // Clockwise: right edge goes top→bottom
-      perimeterEdges.push({ x1: right, y1: top, x2: right, y2: bottom });
-    }
-
-    // Bottom edge: if cell below (cx, cy+1) is not in set
-    if (!cells.has(`${cx},${cy + 1}`)) {
-      // Clockwise: bottom edge goes right→left
-      perimeterEdges.push({ x1: right, y1: bottom, x2: left, y2: bottom });
-    }
-
-    // Left edge: if cell to left (cx-1, cy) is not in set
-    if (!cells.has(`${cx - 1},${cy}`)) {
-      // Clockwise: left edge goes bottom→top
-      perimeterEdges.push({ x1: left, y1: bottom, x2: left, y2: top });
-    }
-  }
-
-  if (perimeterEdges.length === 0) return [];
-
-  // Order edges into a continuous polygon by chaining end→start
-  const orderedEdges: Edge[] = [];
-  const usedEdges = new Set<number>();
-
-  // Start with the first edge
-  orderedEdges.push(perimeterEdges[0]);
-  usedEdges.add(0);
-
-  while (orderedEdges.length < perimeterEdges.length) {
-    const lastEdge = orderedEdges[orderedEdges.length - 1];
-    let foundNext = false;
-
-    // Find an edge that starts where the last edge ends
-    for (let i = 0; i < perimeterEdges.length; i++) {
-      if (usedEdges.has(i)) continue;
-      const candidate = perimeterEdges[i];
-
-      // Check if this edge starts where last edge ends (with small tolerance for floating point)
-      if (Math.abs(candidate.x1 - lastEdge.x2) < 0.01 &&
-          Math.abs(candidate.y1 - lastEdge.y2) < 0.01) {
-        orderedEdges.push(candidate);
-        usedEdges.add(i);
-        foundNext = true;
-        break;
-      }
-    }
-
-    if (!foundNext) {
-      // If we can't find a continuing edge, the shape might have holes or be disconnected
-      // For now, just break and use what we have
-      break;
-    }
-  }
-
-  // Extract vertices from ordered edges (just the start points, since end of one = start of next)
-  const vertices: { x: number; y: number }[] = orderedEdges.map(e => ({ x: e.x1, y: e.y1 }));
-
-  // Subdivide long edges to get smoother curves
-  // Target ~15-20px spacing between vertices
-  const TARGET_SPACING = 18;
-  const subdividedVertices: { x: number; y: number }[] = [];
-
-  for (let i = 0; i < vertices.length; i++) {
-    const curr = vertices[i];
-    const next = vertices[(i + 1) % vertices.length];
-
-    subdividedVertices.push(curr);
-
-    const dx = next.x - curr.x;
-    const dy = next.y - curr.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // How many subdivisions needed?
-    const subdivisions = Math.floor(dist / TARGET_SPACING);
-
-    for (let s = 1; s <= subdivisions; s++) {
-      const t = s / (subdivisions + 1);
-      subdividedVertices.push({
-        x: curr.x + dx * t,
-        y: curr.y + dy * t
-      });
-    }
-  }
-
-  // Convert to Point format with zero velocity
-  return subdividedVertices.map(v => ({
-    x: v.x,
-    y: v.y,
-    vx: 0,
-    vy: 0
-  }));
-}
-
-/**
- * Create a complete Body from perimeter vertices.
- * Adds hub point at centroid, creates all spring connections.
- * Rest offsets are stored RELATIVE to the centroid (gridPos origin).
- *
- * @param perimeter Array of perimeter points (absolute positions)
- * @param color Body color
- * @param isLocked Whether body starts locked (true) or falling (false)
- * @returns Complete Body with physics springs
- */
-function createBodyFromPerimeter(perimeter: Point[], color: string, isLocked: boolean = true): Body {
-  if (perimeter.length < 3) {
-    throw new Error('Need at least 3 perimeter points to create a body');
-  }
-
-  const perimeterCount = perimeter.length;
-
-  // Calculate centroid for hub - this becomes the grid position origin
-  let cx = 0, cy = 0;
-  for (const p of perimeter) {
-    cx += p.x;
-    cy += p.y;
-  }
-  cx /= perimeterCount;
-  cy /= perimeterCount;
-
-  const hub: Point = {
-    x: cx,
-    y: cy,
-    vx: 0,
-    vy: 0,
-    isHub: true
-  };
-
-  // All points: perimeter + hub
-  const points = [...perimeter, hub];
-  const hubIndex = perimeterCount;
-
-  // Create springs
-  const springs: Spring[] = [];
-
-  // Helper to calculate distance between two points
-  const dist = (i: number, j: number) => {
-    const dx = points[j].x - points[i].x;
-    const dy = points[j].y - points[i].y;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  // 1. Adjacent perimeter springs (connect consecutive points)
-  for (let i = 0; i < perimeterCount; i++) {
-    const j = (i + 1) % perimeterCount;
-    const d = dist(i, j);
-    if (d > 5) { // Skip very short springs that cause instability
-      springs.push({ a: i, b: j, restLen: d });
-    }
-  }
-
-  // 2. Spoke springs (hub to each perimeter point)
-  for (let i = 0; i < perimeterCount; i++) {
-    const d = dist(hubIndex, i);
-    if (d > 5) {
-      springs.push({ a: hubIndex, b: i, restLen: d });
-    }
-  }
-
-  // 3. Skip-2 springs (structural cross-bracing)
-  for (let i = 0; i < perimeterCount; i++) {
-    const j = (i + 2) % perimeterCount;
-    const d = dist(i, j);
-    if (d > 5) {
-      springs.push({ a: i, b: j, restLen: d });
-    }
-  }
-
-  // 4. Skip-4 springs for extra rigidity (only if enough points)
-  if (perimeterCount > 8) {
-    for (let i = 0; i < perimeterCount; i++) {
-      const j = (i + 4) % perimeterCount;
-      const d = dist(i, j);
-      if (d > 5) {
-        springs.push({ a: i, b: j, restLen: d });
-      }
-    }
-  }
-
-  // Calculate rest volume using shoelace formula
-  const restVolume = calcVolume(points, perimeterCount);
-
-  // Store rest offsets RELATIVE to centroid (gridPos)
-  // When body moves, we add gridPos to these offsets to get world position
-  const restOffsets = points.map(p => ({ x: p.x - cx, y: p.y - cy }));
-
-  return {
-    points,
-    perimeterCount,
-    springs,
-    color,
-    restVolume,
-    restOffsets,
-    gridX: cx,  // Initial grid position = centroid
-    gridY: cy,
-    isLocked,
-    fallSpeed: isLocked ? 0 : 150  // Falling bodies start with some speed
-  };
-}
-
-/**
- * Helper: Create a cell set for common test shapes
- */
+// --- Helper: Create test cell sets ---
 function createTestCells(shape: 'T' | 'L' | 'square' | 'line'): Set<string> {
   const cells = new Set<string>();
 
   switch (shape) {
     case 'T':
-      // T-shape:
-      //  XXX
-      //   X
       cells.add('0,0');
       cells.add('1,0');
       cells.add('2,0');
       cells.add('1,1');
       break;
     case 'L':
-      // L-shape:
-      //  X
-      //  X
-      //  XX
       cells.add('0,0');
       cells.add('0,1');
       cells.add('0,2');
       cells.add('1,2');
       break;
     case 'square':
-      // 2x2 square
       cells.add('0,0');
       cells.add('1,0');
       cells.add('0,1');
       cells.add('1,1');
       break;
     case 'line':
-      // Vertical line
       cells.add('0,0');
       cells.add('0,1');
       cells.add('0,2');
@@ -375,8 +87,7 @@ function createTestCells(shape: 'T' | 'L' | 'square' | 'line'): Set<string> {
   return cells;
 }
 
-// --- Legacy Geometry (for comparison) ---
-
+// --- Legacy T-perimeter (for comparison mode) ---
 function createTPerimeter(offsetX: number, offsetY: number): Point[] {
   const cs = CELL_SIZE;
   const outline = [
@@ -409,16 +120,6 @@ function createTPerimeter(offsetX: number, offsetY: number): Point[] {
   }));
 }
 
-// Calculate centroid
-function calcCentroid(points: Point[]): { x: number; y: number } {
-  let sx = 0, sy = 0;
-  for (const p of points) {
-    sx += p.x;
-    sy += p.y;
-  }
-  return { x: sx / points.length, y: sy / points.length };
-}
-
 // Calculate polygon area (perimeter points only)
 function calcVolume(points: Point[], count: number): number {
   let sum = 0;
@@ -429,195 +130,81 @@ function calcVolume(points: Point[], count: number): number {
   return Math.abs(sum) * 0.5;
 }
 
-// Create body with hub
-function createBody(offsetX: number, offsetY: number, color: string): Body {
+// Create legacy body with hub (for comparison mode)
+function createLegacyBody(offsetX: number, offsetY: number, color: string): DemoBody {
   const perimeter = createTPerimeter(offsetX, offsetY);
   const perimeterCount = perimeter.length;
 
   // Calculate centroid for hub
-  const centroid = calcCentroid(perimeter);
+  let cx = 0, cy = 0;
+  for (const p of perimeter) {
+    cx += p.x;
+    cy += p.y;
+  }
+  cx /= perimeterCount;
+  cy /= perimeterCount;
+
   const hub: Point = {
-    x: centroid.x,
-    y: centroid.y,
+    x: cx,
+    y: cy,
     vx: 0,
     vy: 0,
     isHub: true
   };
 
-  // All points: perimeter + hub
   const points = [...perimeter, hub];
   const hubIndex = perimeterCount;
 
-  // Create springs
   const springs: Spring[] = [];
+
+  // Helper distance function
+  const dist = (i: number, j: number) => {
+    const dx = points[j].x - points[i].x;
+    const dy = points[j].y - points[i].y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
 
   // 1. Perimeter springs (adjacent points)
   for (let i = 0; i < perimeterCount; i++) {
     const j = (i + 1) % perimeterCount;
-    const dx = points[j].x - points[i].x;
-    const dy = points[j].y - points[i].y;
-    springs.push({ a: i, b: j, restLen: Math.sqrt(dx * dx + dy * dy) });
+    springs.push({ a: i, b: j, restLen: dist(i, j) });
   }
 
   // 2. Spoke springs (hub to each perimeter point)
   for (let i = 0; i < perimeterCount; i++) {
-    const dx = points[i].x - hub.x;
-    const dy = points[i].y - hub.y;
-    springs.push({ a: hubIndex, b: i, restLen: Math.sqrt(dx * dx + dy * dy) });
+    springs.push({ a: hubIndex, b: i, restLen: dist(hubIndex, i) });
   }
 
-  // 3. Skip-one springs for more rigidity (connect every other perimeter point)
+  // 3. Skip-one springs
   for (let i = 0; i < perimeterCount; i++) {
     const j = (i + 2) % perimeterCount;
-    const dx = points[j].x - points[i].x;
-    const dy = points[j].y - points[i].y;
-    springs.push({ a: i, b: j, restLen: Math.sqrt(dx * dx + dy * dy) });
+    springs.push({ a: i, b: j, restLen: dist(i, j) });
   }
 
-  // 4. Skip-three springs for extra structure
+  // 4. Skip-three springs
   for (let i = 0; i < perimeterCount; i++) {
     const j = (i + 4) % perimeterCount;
-    const dx = points[j].x - points[i].x;
-    const dy = points[j].y - points[i].y;
-    springs.push({ a: i, b: j, restLen: Math.sqrt(dx * dx + dy * dy) });
+    springs.push({ a: i, b: j, restLen: dist(i, j) });
   }
 
   const restVolume = calcVolume(points, perimeterCount);
 
-  return { points, perimeterCount, springs, color, restVolume };
+  return {
+    points,
+    perimeterCount,
+    springs,
+    color,
+    restVolume,
+    restOffsets: points.map(p => ({ x: p.x - cx, y: p.y - cy })),
+    gridX: cx,
+    gridY: cy,
+    isLocked: true,
+    fallSpeed: 0
+  };
 }
 
-// --- Collision Detection (Simple proximity-based) ---
-
-// Check distance from point to line segment, return closest point info
-function pointToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): {
-  dist: number;
-  closestX: number;
-  closestY: number;
-  t: number;
-} {
-  const ex = bx - ax;
-  const ey = by - ay;
-  const lenSq = ex * ex + ey * ey;
-
-  if (lenSq < 0.0001) {
-    // Degenerate edge
-    const dx = px - ax;
-    const dy = py - ay;
-    return { dist: Math.sqrt(dx * dx + dy * dy), closestX: ax, closestY: ay, t: 0 };
-  }
-
-  // Project point onto line, clamp to segment
-  let t = ((px - ax) * ex + (py - ay) * ey) / lenSq;
-  t = Math.max(0, Math.min(1, t));
-
-  const closestX = ax + t * ex;
-  const closestY = ay + t * ey;
-  const dx = px - closestX;
-  const dy = py - closestY;
-
-  return { dist: Math.sqrt(dx * dx + dy * dy), closestX, closestY, t };
-}
-
-// Simple proximity collision: push vertices apart if they get too close to edges
-function checkBodyCollision(bodyA: Body, bodyB: Body): void {
-  const radius = COLLISION_RADIUS;
-  const push = COLLISION_PUSH;
-
-  // Check each vertex of B against each edge of A
-  for (let vi = 0; vi < bodyB.perimeterCount; vi++) {
-    const v = bodyB.points[vi];
-
-    for (let ei = 0; ei < bodyA.perimeterCount; ei++) {
-      const ej = (ei + 1) % bodyA.perimeterCount;
-      const e1 = bodyA.points[ei];
-      const e2 = bodyA.points[ej];
-
-      const { dist, closestX, closestY, t } = pointToSegment(v.x, v.y, e1.x, e1.y, e2.x, e2.y);
-
-      if (dist < radius && dist > 0.001) {
-        // Compute push direction (from edge toward vertex)
-        const nx = (v.x - closestX) / dist;
-        const ny = (v.y - closestY) / dist;
-
-        // How much penetration
-        const overlap = radius - dist;
-        const pushDist = overlap * push;
-
-        // Push vertex out
-        v.x += nx * pushDist * 0.6;
-        v.y += ny * pushDist * 0.6;
-
-        // Push edge points in (opposite direction), weighted by t
-        e1.x -= nx * pushDist * 0.4 * (1 - t);
-        e1.y -= ny * pushDist * 0.4 * (1 - t);
-        e2.x -= nx * pushDist * 0.4 * t;
-        e2.y -= ny * pushDist * 0.4 * t;
-
-        // Also dampen relative velocity to prevent bouncing
-        const relVn = (v.vx - (e1.vx * (1-t) + e2.vx * t)) * nx +
-                      (v.vy - (e1.vy * (1-t) + e2.vy * t)) * ny;
-
-        if (relVn < 0) {
-          // Approaching - dampen
-          const dampFactor = 0.3;
-          v.vx -= relVn * nx * dampFactor;
-          v.vy -= relVn * ny * dampFactor;
-          e1.vx += relVn * nx * dampFactor * (1 - t) * 0.5;
-          e1.vy += relVn * ny * dampFactor * (1 - t) * 0.5;
-          e2.vx += relVn * nx * dampFactor * t * 0.5;
-          e2.vy += relVn * ny * dampFactor * t * 0.5;
-        }
-      }
-    }
-  }
-
-  // Check each vertex of A against each edge of B (symmetric)
-  for (let vi = 0; vi < bodyA.perimeterCount; vi++) {
-    const v = bodyA.points[vi];
-
-    for (let ei = 0; ei < bodyB.perimeterCount; ei++) {
-      const ej = (ei + 1) % bodyB.perimeterCount;
-      const e1 = bodyB.points[ei];
-      const e2 = bodyB.points[ej];
-
-      const { dist, closestX, closestY, t } = pointToSegment(v.x, v.y, e1.x, e1.y, e2.x, e2.y);
-
-      if (dist < radius && dist > 0.001) {
-        const nx = (v.x - closestX) / dist;
-        const ny = (v.y - closestY) / dist;
-
-        const overlap = radius - dist;
-        const pushDist = overlap * push;
-
-        v.x += nx * pushDist * 0.6;
-        v.y += ny * pushDist * 0.6;
-
-        e1.x -= nx * pushDist * 0.4 * (1 - t);
-        e1.y -= ny * pushDist * 0.4 * (1 - t);
-        e2.x -= nx * pushDist * 0.4 * t;
-        e2.y -= ny * pushDist * 0.4 * t;
-
-        const relVn = (v.vx - (e1.vx * (1-t) + e2.vx * t)) * nx +
-                      (v.vy - (e1.vy * (1-t) + e2.vy * t)) * ny;
-
-        if (relVn < 0) {
-          const dampFactor = 0.3;
-          v.vx -= relVn * nx * dampFactor;
-          v.vy -= relVn * ny * dampFactor;
-          e1.vx += relVn * nx * dampFactor * (1 - t) * 0.5;
-          e1.vy += relVn * ny * dampFactor * (1 - t) * 0.5;
-          e2.vx += relVn * nx * dampFactor * t * 0.5;
-          e2.vy += relVn * ny * dampFactor * t * 0.5;
-        }
-      }
-    }
-  }
-}
-
-// --- Physics ---
-
-function updateBody(body: Body, dt: number, groundY: number): void {
+// --- Free physics update (demo-specific, allows tumbling) ---
+function updateBodyFree(body: DemoBody, dt: number, groundY: number): void {
   const { points, perimeterCount, springs, restVolume } = body;
   const n = points.length;
 
@@ -655,7 +242,7 @@ function updateBody(body: Body, dt: number, groundY: number): void {
     fy[spring.b] -= totalF * ny;
   }
 
-  // 3. Pressure force (on perimeter points only)
+  // 3. Pressure force
   const currentVolume = calcVolume(points, perimeterCount);
   const volumeRatio = restVolume / Math.max(currentVolume, 100);
   const pressure = PRESSURE_K * (volumeRatio - 1);
@@ -669,7 +256,6 @@ function updateBody(body: Body, dt: number, groundY: number): void {
     const e2x = points[next].x - points[i].x;
     const e2y = points[next].y - points[i].y;
 
-    // Outward normals (for clockwise winding: rotate edge 90° right)
     const n1x = e1y, n1y = -e1x;
     const n2x = e2y, n2y = -e2x;
 
@@ -705,129 +291,8 @@ function updateBody(body: Body, dt: number, groundY: number): void {
   }
 }
 
-// Game-accurate physics constants
-const ANCHOR_STIFFNESS = 600;   // How strongly vertices are pulled to rest position
-const ANCHOR_DAMP = 20;         // Damping on anchor springs
-const FALL_GRAVITY = 200;       // Falling speed acceleration (pixels/sec²)
-const MAX_FALL_SPEED = 400;     // Max fall speed
-
-/**
- * Game-accurate soft body physics:
- * - Locked bodies: anchored to gridPos, vertices jiggle but spring back
- * - Falling bodies: gridY increases (falls), vertices trail behind slightly
- * - X position (gridX) is always fixed (tank rotation handles horizontal)
- */
-function updateBodyGameAccurate(body: Body, dt: number, groundY: number): void {
-  const { points, perimeterCount, springs, restVolume, restOffsets, isLocked } = body;
-  const n = points.length;
-
-  // --- 1. Update grid position (falling bodies move down) ---
-  if (!isLocked) {
-    // Accelerate fall
-    body.fallSpeed = Math.min(body.fallSpeed + FALL_GRAVITY * dt, MAX_FALL_SPEED);
-    body.gridY += body.fallSpeed * dt;
-  }
-
-  // --- 2. Calculate target positions (gridPos + restOffsets) ---
-  const targets = restOffsets.map(off => ({
-    x: body.gridX + off.x,
-    y: body.gridY + off.y
-  }));
-
-  // --- 3. Apply forces ---
-  const fx: number[] = new Array(n).fill(0);
-  const fy: number[] = new Array(n).fill(0);
-
-  // Anchor forces - pull vertices toward their target positions
-  for (let i = 0; i < n; i++) {
-    const p = points[i];
-    const target = targets[i];
-
-    const dx = target.x - p.x;
-    const dy = target.y - p.y;
-
-    // Stronger anchoring for locked bodies, softer for falling (lets them trail)
-    const stiffness = isLocked ? ANCHOR_STIFFNESS : ANCHOR_STIFFNESS * 0.5;
-
-    fx[i] += stiffness * dx;
-    fy[i] += stiffness * dy;
-    fx[i] -= ANCHOR_DAMP * p.vx;
-    fy[i] -= ANCHOR_DAMP * p.vy;
-  }
-
-  // Internal spring forces (maintains soft body shape)
-  for (const spring of springs) {
-    const pa = points[spring.a];
-    const pb = points[spring.b];
-
-    const dx = pb.x - pa.x;
-    const dy = pb.y - pa.y;
-    const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
-    const stretch = dist - spring.restLen;
-
-    const nx = dx / dist;
-    const ny = dy / dist;
-
-    const springF = (SPRING_K * 0.4) * stretch;
-    const dvx = pb.vx - pa.vx;
-    const dvy = pb.vy - pa.vy;
-    const dampF = (SPRING_DAMP * 0.5) * (dvx * nx + dvy * ny);
-
-    const totalF = springF + dampF;
-
-    fx[spring.a] += totalF * nx;
-    fy[spring.a] += totalF * ny;
-    fx[spring.b] -= totalF * nx;
-    fy[spring.b] -= totalF * ny;
-  }
-
-  // Pressure force (subtle puffiness)
-  const currentVolume = calcVolume(points, perimeterCount);
-  const volumeRatio = restVolume / Math.max(currentVolume, 100);
-  const pressure = (PRESSURE_K * 0.15) * (volumeRatio - 1);
-
-  for (let i = 0; i < perimeterCount; i++) {
-    const prev = (i - 1 + perimeterCount) % perimeterCount;
-    const next = (i + 1) % perimeterCount;
-
-    const e1x = points[i].x - points[prev].x;
-    const e1y = points[i].y - points[prev].y;
-    const e2x = points[next].x - points[i].x;
-    const e2y = points[next].y - points[i].y;
-
-    const n1x = e1y, n1y = -e1x;
-    const n2x = e2y, n2y = -e2x;
-
-    let avgNx = n1x + n2x;
-    let avgNy = n1y + n2y;
-    const len = Math.sqrt(avgNx * avgNx + avgNy * avgNy) || 1;
-    avgNx /= len;
-    avgNy /= len;
-
-    fx[i] += pressure * avgNx;
-    fy[i] += pressure * avgNy;
-  }
-
-  // --- 4. Integrate ---
-  for (let i = 0; i < n; i++) {
-    const p = points[i];
-
-    p.vx += fx[i] * dt;
-    p.vy += fy[i] * dt;
-
-    p.vx *= GLOBAL_DAMP;
-    p.vy *= GLOBAL_DAMP;
-
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-  }
-}
-
-/**
- * Check if falling body has landed on locked body or ground
- */
-function checkLanding(falling: Body, locked: Body, groundY: number): boolean {
-  // Simple check: has the falling body's lowest point reached the locked body's top or ground?
+// --- Landing detection ---
+function checkLanding(falling: DemoBody, locked: DemoBody, groundY: number): boolean {
   let fallingBottom = 0;
   for (let i = 0; i < falling.perimeterCount; i++) {
     fallingBottom = Math.max(fallingBottom, falling.points[i].y);
@@ -838,17 +303,13 @@ function checkLanding(falling: Body, locked: Body, groundY: number): boolean {
     lockedTop = Math.min(lockedTop, locked.points[i].y);
   }
 
-  // Landing threshold: close enough to locked body or ground
   return fallingBottom >= lockedTop - 5 || fallingBottom >= groundY - 5;
 }
 
-/**
- * Lock a falling body in place
- */
-function lockBody(body: Body): void {
+// --- Lock a falling body ---
+function lockBody(body: DemoBody): void {
   body.isLocked = true;
   body.fallSpeed = 0;
-  // Recalculate rest offsets based on current positions (snap to where it landed)
   const cx = body.gridX;
   const cy = body.gridY;
   for (let i = 0; i < body.points.length; i++) {
@@ -859,104 +320,24 @@ function lockBody(body: Body): void {
   }
 }
 
-// Apply an impulse to a body (for testing jiggle response)
-function applyImpulse(body: Body, ix: number, iy: number): void {
-  for (const p of body.points) {
-    p.vx += ix;
-    p.vy += iy;
-  }
-}
-
-// --- Rendering ---
-
-// Apply wave displacement to points - dual waves for gloopy feel
-function getWavyPoints(points: Point[], count: number, time: number): { x: number; y: number }[] {
-  const result: { x: number; y: number }[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const prev = (i - 1 + count) % count;
-    const next = (i + 1) % count;
-
-    // Calculate outward normal at this vertex
-    const e1x = points[i].x - points[prev].x;
-    const e1y = points[i].y - points[prev].y;
-    const e2x = points[next].x - points[i].x;
-    const e2y = points[next].y - points[i].y;
-
-    // Average normal
-    let nx = e1y + e2y;
-    let ny = -(e1x + e2x);
-    const len = Math.sqrt(nx * nx + ny * ny) || 1;
-    nx /= len;
-    ny /= len;
-
-    // Dual sinusoidal waves with different frequencies for undulation
-    const phase1 = i * WAVE1_PHASE_OFFSET;
-    const phase2 = i * WAVE2_PHASE_OFFSET;
-    const wave1 = Math.sin(time * WAVE1_SPEED * Math.PI * 2 + phase1);
-    const wave2 = Math.sin(time * WAVE2_SPEED * Math.PI * 2 + phase2);
-
-    // Combine waves (average them for smoother undulation)
-    const wave = (wave1 * 0.6 + wave2 * 0.4) * WAVE_AMPLITUDE;
-
-    result.push({
-      x: points[i].x + nx * wave,
-      y: points[i].y + ny * wave
-    });
-  }
-
-  return result;
-}
-
-function createPath(points: { x: number; y: number }[], count: number): string {
-  if (count < 3) return '';
-
-  let d = `M ${points[0].x} ${points[0].y}`;
-
-  for (let i = 0; i < count; i++) {
-    const p0 = points[(i - 1 + count) % count];
-    const p1 = points[i];
-    const p2 = points[(i + 1) % count];
-    const p3 = points[(i + 2) % count];
-
-    const t = 0.5;
-    const cp1x = p1.x + (p2.x - p0.x) * t / 3;
-    const cp1y = p1.y + (p2.y - p0.y) * t / 3;
-    const cp2x = p2.x - (p3.x - p1.x) * t / 3;
-    const cp2y = p2.y - (p3.y - p1.y) * t / 3;
-
-    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
-  }
-
-  return d + ' Z';
-}
-
 // Shape types for the demo
 type ShapeType = 'T' | 'L' | 'square' | 'line' | 'legacy';
 
 /**
  * Create a body from a shape type using the new grid-to-mesh generation
  */
-function createGeneratedBody(shape: ShapeType, offsetX: number, offsetY: number, color: string, isLocked: boolean = true): Body {
+function createGeneratedBody(shape: ShapeType, offsetX: number, offsetY: number, color: string, isLocked: boolean = true): DemoBody {
   if (shape === 'legacy') {
-    // Use original hardcoded T-shape for comparison
-    const body = createBody(offsetX, offsetY, color);
-    // Add missing fields for game-accurate mode
-    const cx = body.points.reduce((s, p) => s + p.x, 0) / body.points.length;
-    const cy = body.points.reduce((s, p) => s + p.y, 0) / body.points.length;
-    return {
-      ...body,
-      restOffsets: body.points.map(p => ({ x: p.x - cx, y: p.y - cy })),
-      gridX: cx,
-      gridY: cy,
-      isLocked,
-      fallSpeed: isLocked ? 0 : 150
-    };
+    const body = createLegacyBody(offsetX, offsetY, color);
+    body.isLocked = isLocked;
+    body.fallSpeed = isLocked ? 0 : 150;
+    return body;
   }
 
   const cells = createTestCells(shape as 'T' | 'L' | 'square' | 'line');
   const perimeter = extractPerimeter(cells, CELL_SIZE, offsetX, offsetY);
-  return createBodyFromPerimeter(perimeter, color, isLocked);
+  const body = createBodyFromPerimeter(perimeter, color, `demo-${shape}`, isLocked);
+  return body as DemoBody;
 }
 
 // --- Component ---
@@ -967,20 +348,18 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [showSprings, setShowSprings] = useState(false);
   const [bottomShape, setBottomShape] = useState<ShapeType>('T');
   const [fallingShape, setFallingShape] = useState<ShapeType>('L');
-  const [useGamePhysics, setUseGamePhysics] = useState(true); // Default to game-accurate
+  const [useGamePhysics, setUseGamePhysics] = useState(true);
 
-  const bodiesRef = useRef<{ bottom: Body; falling: Body } | null>(null);
+  const bodiesRef = useRef<{ bottom: DemoBody; falling: DemoBody } | null>(null);
   const lastTimeRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
 
   // Create bodies with current shapes
   const createBodies = useCallback((bShape: ShapeType, fShape: ShapeType) => {
     const centerX = 3 * CELL_SIZE;
-    // Bottom body: locked at bottom
-    // Falling body: starts at top, falls down
     return {
-      bottom: createGeneratedBody(bShape, centerX, 7 * CELL_SIZE, COLOR_BOTTOM, true),  // locked
-      falling: createGeneratedBody(fShape, centerX, 1 * CELL_SIZE, COLOR_FALLING, false) // falling
+      bottom: createGeneratedBody(bShape, centerX, 7 * CELL_SIZE, COLOR_BOTTOM, true),
+      falling: createGeneratedBody(fShape, centerX, 1 * CELL_SIZE, COLOR_FALLING, false)
     };
   }, []);
 
@@ -995,7 +374,6 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setTick(0);
   }, [bottomShape, fallingShape, createBodies]);
 
-  // Change bottom shape
   const changeBottomShape = useCallback((shape: ShapeType) => {
     setBottomShape(shape);
     const centerX = 3 * CELL_SIZE;
@@ -1005,7 +383,6 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setTick(t => t + 1);
   }, []);
 
-  // Change falling shape (resets to top)
   const changeFallingShape = useCallback((shape: ShapeType) => {
     setFallingShape(shape);
     const centerX = 3 * CELL_SIZE;
@@ -1015,12 +392,10 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setTick(t => t + 1);
   }, []);
 
-  // Poke bodies to test jiggle
   const pokeBodies = useCallback(() => {
     if (bodiesRef.current) {
-      // Apply random impulse to both bodies
-      applyImpulse(bodiesRef.current.bottom, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
-      applyImpulse(bodiesRef.current.falling, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
+      applyImpulse(bodiesRef.current.bottom as Body, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
+      applyImpulse(bodiesRef.current.falling as Body, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
     }
   }, []);
 
@@ -1043,24 +418,22 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         for (let s = 0; s < subSteps; s++) {
           if (useGamePhysics) {
-            // Game-accurate mode: falling body falls, locked body stays
-            updateBodyGameAccurate(bodiesRef.current.falling, subDt, PANEL_H);
-            updateBodyGameAccurate(bodiesRef.current.bottom, subDt, PANEL_H);
+            // Game-accurate mode: use module function
+            updateBodyGameAccurate(bodiesRef.current.falling as Body, subDt);
+            updateBodyGameAccurate(bodiesRef.current.bottom as Body, subDt);
 
-            // Body-to-body collision (both can squish)
-            checkBodyCollision(bodiesRef.current.bottom, bodiesRef.current.falling);
+            checkBodyCollision(bodiesRef.current.bottom as Body, bodiesRef.current.falling as Body);
 
-            // Check if falling body has landed
             if (!bodiesRef.current.falling.isLocked) {
               if (checkLanding(bodiesRef.current.falling, bodiesRef.current.bottom, PANEL_H)) {
                 lockBody(bodiesRef.current.falling);
               }
             }
           } else {
-            // Free physics mode: full simulation (bodies tumble)
-            updateBody(bodiesRef.current.falling, subDt, PANEL_H);
-            updateBody(bodiesRef.current.bottom, subDt, PANEL_H);
-            checkBodyCollision(bodiesRef.current.bottom, bodiesRef.current.falling);
+            // Free physics mode: local function (allows tumbling with ground)
+            updateBodyFree(bodiesRef.current.falling, subDt, PANEL_H);
+            updateBodyFree(bodiesRef.current.bottom, subDt, PANEL_H);
+            checkBodyCollision(bodiesRef.current.bottom as Body, bodiesRef.current.falling as Body);
           }
         }
 
@@ -1084,7 +457,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     <div className="w-full h-screen bg-slate-950 text-slate-200 flex flex-col items-center p-4">
       <div className="flex items-center gap-2 mb-2 flex-wrap justify-center">
         <button onClick={onBack} className="px-3 py-1.5 bg-slate-800 rounded text-sm">← Back</button>
-        <h1 className="text-lg font-bold">Soft Body v15</h1>
+        <h1 className="text-lg font-bold">Soft Body v16</h1>
         <button onClick={() => setShowVerts(v => !v)} className="px-2 py-1 bg-slate-700 rounded text-xs">
           verts {showVerts ? 'ON' : 'OFF'}
         </button>
@@ -1163,7 +536,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 />
               ))}
               {/* Shape with wavy edges */}
-              <path d={createPath(wavyPts, body.perimeterCount)} fill={body.color} opacity={0.85} />
+              <path d={createBezierPath(wavyPts, body.perimeterCount)} fill={body.color} opacity={0.85} />
               {/* Vertices (physics positions, not wavy) */}
               {showVerts && body.points.map((p, pi) => (
                 <circle
@@ -1186,7 +559,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </div>
 
       <div className="mt-2 text-xs text-slate-400 text-center max-w-md">
-        <p><strong>v15:</strong> Game-accurate physics.</p>
+        <p><strong>v16:</strong> Using SoftBodyRenderer module.</p>
         <p><span className="text-green-400">Game Mode:</span> Blue falls down (column-locked), red is locked. Both squish on impact.</p>
         <p><span className="text-orange-400">Free Physics:</span> Bodies tumble freely (for comparison).</p>
         <p className="text-slate-500">Reset to drop blue again. Poke to test jiggle.</p>
