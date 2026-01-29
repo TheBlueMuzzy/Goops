@@ -41,6 +41,10 @@ interface GameProps {
 const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, scraps, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, equippedActives = [], onToggleEquip }) => {
   const { engine, gameState } = useGameEngine(initialTotalScore, powerUps, onRunComplete, equippedActives);
 
+  // Feature flag: soft body rendering (via URL param ?softbody=true)
+  const useSoftBody = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('softbody') === 'true';
+
   // Handle active ability activation
   const handleActivateAbility = useCallback((upgradeId: string) => {
     engine.execute(new ActivateAbilityCommand(upgradeId));
@@ -330,6 +334,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             powerUps={powerUps}
             storedGoop={engine.state.storedGoop}
             nextGoop={engine.state.nextGoop}
+            useSoftBody={useSoftBody}
          />
          {/* Lights brightness is now controlled by state.lightsBrightness (player-controlled via fast drop) */}
       </div>

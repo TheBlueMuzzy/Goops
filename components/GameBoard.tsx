@@ -1,5 +1,5 @@
 // --- Imports ---
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { GameState, GoopState, TankSystem, ScreenType, GoopTemplate, DumpPiece, Crack } from '../types';
 import { TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, COLORS, TANK_WIDTH, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 import { normalizeX, getGhostY, getPaletteForRank } from '../utils/gameLogic';
@@ -7,12 +7,13 @@ import { isMobile } from '../utils/device';
 import { HudMeter } from './HudMeter';
 import { VIEWBOX, BLOCK_SIZE, visXToScreenX } from '../utils/coordinateTransform';
 import { useInputHandlers } from '../hooks/useInputHandlers';
-import { getBlobPath, getContourPath, buildRenderableGroups } from '../utils/goopRenderer';
+import { getBlobPath, getContourPath, buildRenderableGroups, RenderableCell } from '../utils/goopRenderer';
 import { gameEventBus } from '../core/events/EventBus';
 import { GameEventType, SwapHoldPayload } from '../core/events/GameEvents';
 import { ActiveAbilityCircle } from './ActiveAbilityCircle';
 import { PiecePreview } from './PiecePreview';
 import { UPGRADES } from '../constants';
+import { SoftBodyRenderer, GoopGroupInfo } from '../rendering/SoftBodyRenderer';
 import './GameBoard.css';
 
 // --- Props Interface ---
@@ -31,6 +32,7 @@ interface GameBoardProps {
   powerUps?: Record<string, number>;  // Upgrade levels for GOOP_SWAP effect
   storedGoop?: GoopTemplate | null;  // Held goop for preview
   nextGoop?: GoopTemplate | null;    // Next goop for preview
+  useSoftBody?: boolean;  // Feature flag: render locked goop as soft bodies
 }
 
 // --- Component ---
@@ -38,7 +40,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, lightsBrightness = 100,
     laserCharge = 100, controlsHeat = 0, complicationCooldowns,
     equippedActives = [], activeCharges = {}, onActivateAbility,
-    powerUps, storedGoop, nextGoop
+    powerUps, storedGoop, nextGoop, useSoftBody = false
 }) => {
   const { grid, tankRotation, activeGoop, looseGoop, floatingTexts, shiftTime, goalMarks, crackCells, dumpPieces } = state;
 
@@ -103,6 +105,81 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       () => buildRenderableGroups(grid, tankRotation, looseGoop),
       [grid, tankRotation, looseGoop]
   );
+
+  // --- Soft Body Rendering (feature flag) ---
+  const softBodyRendererRef = useRef<SoftBodyRenderer | null>(null);
+  const [softBodyTick, setSoftBodyTick] = useState(0);
+
+  // Initialize renderer
+  if (useSoftBody && !softBodyRendererRef.current) {
+    softBodyRendererRef.current = new SoftBodyRenderer();
+  }
+
+  // Sync soft body renderer with game state
+  useEffect(() => {
+    if (!useSoftBody || !softBodyRendererRef.current) return;
+
+    // Convert groups to GoopGroupInfo format
+    const groupsInfo = new Map<string, GoopGroupInfo>();
+    for (const [groupId, cells] of groups.entries()) {
+      if (cells.length === 0) continue;
+      // Build cell set from grid coordinates (not screen coordinates)
+      const cellSet = new Set<string>();
+      for (const cell of cells) {
+        if (!cell.isFalling) {
+          // Use grid-relative coordinates for soft body mesh
+          cellSet.add(`${cell.visX},${cell.y - BUFFER_HEIGHT}`);
+        }
+      }
+      if (cellSet.size > 0) {
+        groupsInfo.set(groupId, {
+          cells: cellSet,
+          color: cells[0].color
+        });
+      }
+    }
+
+    // Update renderer - it will create/remove bodies as needed
+    softBodyRendererRef.current.updateFromGroups(groupsInfo, BLOCK_SIZE, 0, 0);
+  }, [useSoftBody, groups]);
+
+  // Animation frame loop for soft body physics
+  useEffect(() => {
+    if (!useSoftBody || !softBodyRendererRef.current) return;
+    if (state.phase !== ScreenType.TankScreen) return; // Only animate during gameplay
+
+    let rafId: number;
+    let lastTime = 0;
+
+    const loop = (timestamp: number) => {
+      if (lastTime === 0) lastTime = timestamp;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.033);
+      lastTime = timestamp;
+
+      if (softBodyRendererRef.current && dt > 0) {
+        // Sub-steps for stability
+        const subSteps = 2;
+        const subDt = dt / subSteps;
+        for (let i = 0; i < subSteps; i++) {
+          softBodyRendererRef.current.tick(subDt);
+        }
+        setSoftBodyTick(t => t + 1);
+      }
+
+      rafId = requestAnimationFrame(loop);
+    };
+
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [useSoftBody, state.phase]);
+
+  // Get soft bodies for rendering
+  const softBodies = useMemo(() => {
+    if (!useSoftBody || !softBodyRendererRef.current) return [];
+    // Force recalc on tick
+    void softBodyTick;
+    return softBodyRendererRef.current.getBodies();
+  }, [useSoftBody, softBodyTick]);
 
   // Wild color cycling - wave effect moving left to right
   // Each X position shows a different phase of the color cycle
@@ -347,8 +424,26 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 return null;
             })}
 
-            {/* Main Goop Groups */}
-            {Array.from(groups.entries()).map(([gid, cells]) => {
+            {/* Soft Body Goop Layer (feature flag) */}
+            {useSoftBody && softBodies.map((body) => {
+                const renderer = softBodyRendererRef.current;
+                if (!renderer) return null;
+                const path = renderer.getBodyPath(body);
+                return (
+                    <path
+                        key={`soft-${body.groupId}`}
+                        d={path}
+                        fill={body.color}
+                        fillOpacity={0.85}
+                        stroke={body.color}
+                        strokeWidth={2}
+                        className="soft-body-goop"
+                    />
+                );
+            })}
+
+            {/* Main Goop Groups (skip if soft body mode) */}
+            {!useSoftBody && Array.from(groups.entries()).map(([gid, cells]) => {
                 if (cells.length === 0) return null;
                 const sample = cells[0];
                 const color = sample.color;
