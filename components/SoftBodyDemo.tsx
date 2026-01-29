@@ -1,13 +1,14 @@
 /**
- * Soft Body Demo v13 - Grid-to-Mesh Generation
+ * Soft Body Demo v14 - Grid-Locked Mode
  *
  * Features:
  * - Hub & spoke structure with cross springs
  * - Dual-wave edge undulation for gloopy feel
- * - Proximity-based body-to-body collision
- * - Gentle push-apart response (no explosion!)
- * - NEW: Grid-to-mesh generation (extractPerimeter, createBodyFromPerimeter)
- * - NEW: Test shapes: T, L, square, line
+ * - Grid-to-mesh generation (extractPerimeter, createBodyFromPerimeter)
+ * - Test shapes: T, L, square, line
+ * - NEW: Grid-locked mode (bodies stay anchored, only jiggle)
+ * - NEW: Free physics mode (bodies fall, collide, tumble)
+ * - NEW: Poke button to test jiggle response
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -63,6 +64,9 @@ interface Body {
   springs: Spring[];
   color: string;
   restVolume: number;
+  // Grid-locked mode: store rest positions to anchor shape
+  restPositions?: { x: number; y: number }[];
+  anchorY?: number;     // Y position where body is "locked" to grid
 }
 
 // --- Grid-to-Mesh Generation ---
@@ -299,7 +303,10 @@ function createBodyFromPerimeter(perimeter: Point[], color: string): Body {
   // Calculate rest volume using shoelace formula
   const restVolume = calcVolume(points, perimeterCount);
 
-  return { points, perimeterCount, springs, color, restVolume };
+  // Store rest positions for grid-locked mode
+  const restPositions = points.map(p => ({ x: p.x, y: p.y }));
+
+  return { points, perimeterCount, springs, color, restVolume, restPositions };
 }
 
 /**
@@ -677,6 +684,112 @@ function updateBody(body: Body, dt: number, groundY: number): void {
   }
 }
 
+// Grid-locked physics: body stays anchored, only jiggle allowed
+const ANCHOR_STIFFNESS = 800;   // How strongly vertices are pulled to rest position
+const ANCHOR_DAMP = 25;         // Damping on anchor springs
+
+function updateBodyGridLocked(body: Body, dt: number): void {
+  const { points, perimeterCount, springs, restVolume, restPositions } = body;
+  if (!restPositions) return; // Need rest positions for grid-locked mode
+
+  const n = points.length;
+  const fx: number[] = new Array(n).fill(0);
+  const fy: number[] = new Array(n).fill(0);
+
+  // 1. Anchor forces - pull each point toward its rest position
+  for (let i = 0; i < n; i++) {
+    const p = points[i];
+    const rest = restPositions[i];
+
+    const dx = rest.x - p.x;
+    const dy = rest.y - p.y;
+
+    // Spring force toward rest position
+    fx[i] += ANCHOR_STIFFNESS * dx;
+    fy[i] += ANCHOR_STIFFNESS * dy;
+
+    // Damping
+    fx[i] -= ANCHOR_DAMP * p.vx;
+    fy[i] -= ANCHOR_DAMP * p.vy;
+  }
+
+  // 2. Internal spring forces (for soft body deformation)
+  for (const spring of springs) {
+    const pa = points[spring.a];
+    const pb = points[spring.b];
+
+    const dx = pb.x - pa.x;
+    const dy = pb.y - pa.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+    const stretch = dist - spring.restLen;
+
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    // Softer springs for grid-locked mode (let anchor do most work)
+    const springF = (SPRING_K * 0.3) * stretch;
+    const dvx = pb.vx - pa.vx;
+    const dvy = pb.vy - pa.vy;
+    const dampF = (SPRING_DAMP * 0.5) * (dvx * nx + dvy * ny);
+
+    const totalF = springF + dampF;
+
+    fx[spring.a] += totalF * nx;
+    fy[spring.a] += totalF * ny;
+    fx[spring.b] -= totalF * nx;
+    fy[spring.b] -= totalF * ny;
+  }
+
+  // 3. Pressure force (reduced for grid-locked, just for subtle puffiness)
+  const currentVolume = calcVolume(points, perimeterCount);
+  const volumeRatio = restVolume / Math.max(currentVolume, 100);
+  const pressure = (PRESSURE_K * 0.2) * (volumeRatio - 1);
+
+  for (let i = 0; i < perimeterCount; i++) {
+    const prev = (i - 1 + perimeterCount) % perimeterCount;
+    const next = (i + 1) % perimeterCount;
+
+    const e1x = points[i].x - points[prev].x;
+    const e1y = points[i].y - points[prev].y;
+    const e2x = points[next].x - points[i].x;
+    const e2y = points[next].y - points[i].y;
+
+    const n1x = e1y, n1y = -e1x;
+    const n2x = e2y, n2y = -e2x;
+
+    let avgNx = n1x + n2x;
+    let avgNy = n1y + n2y;
+    const len = Math.sqrt(avgNx * avgNx + avgNy * avgNy) || 1;
+    avgNx /= len;
+    avgNy /= len;
+
+    fx[i] += pressure * avgNx;
+    fy[i] += pressure * avgNy;
+  }
+
+  // 4. Integrate
+  for (let i = 0; i < n; i++) {
+    const p = points[i];
+
+    p.vx += fx[i] * dt;
+    p.vy += fy[i] * dt;
+
+    p.vx *= GLOBAL_DAMP;
+    p.vy *= GLOBAL_DAMP;
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+  }
+}
+
+// Apply an impulse to a body (for testing jiggle response)
+function applyImpulse(body: Body, ix: number, iy: number): void {
+  for (const p of body.points) {
+    p.vx += ix;
+    p.vy += iy;
+  }
+}
+
 // --- Rendering ---
 
 // Apply wave displacement to points - dual waves for gloopy feel
@@ -766,6 +879,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [showSprings, setShowSprings] = useState(false);
   const [bottomShape, setBottomShape] = useState<ShapeType>('T');
   const [fallingShape, setFallingShape] = useState<ShapeType>('L');
+  const [gridLocked, setGridLocked] = useState(true); // Default to grid-locked mode
 
   const bodiesRef = useRef<{ bottom: Body; falling: Body } | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -774,9 +888,11 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   // Create bodies with current shapes
   const createBodies = useCallback((bShape: ShapeType, fShape: ShapeType) => {
     const centerX = 3 * CELL_SIZE;
+    // Position bodies so they don't overlap (especially important for grid-locked mode)
+    // Bottom body at row 6-7, falling body at row 2-3
     return {
-      bottom: createGeneratedBody(bShape, centerX, 7 * CELL_SIZE, COLOR_BOTTOM),
-      falling: createGeneratedBody(fShape, centerX, 0, COLOR_FALLING)
+      bottom: createGeneratedBody(bShape, centerX, 6 * CELL_SIZE, COLOR_BOTTOM),
+      falling: createGeneratedBody(fShape, centerX, 2 * CELL_SIZE, COLOR_FALLING)
     };
   }, []);
 
@@ -796,7 +912,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setBottomShape(shape);
     const centerX = 3 * CELL_SIZE;
     if (bodiesRef.current) {
-      bodiesRef.current.bottom = createGeneratedBody(shape, centerX, 7 * CELL_SIZE, COLOR_BOTTOM);
+      bodiesRef.current.bottom = createGeneratedBody(shape, centerX, 6 * CELL_SIZE, COLOR_BOTTOM);
     }
     setTick(t => t + 1);
   }, []);
@@ -806,9 +922,18 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setFallingShape(shape);
     const centerX = 3 * CELL_SIZE;
     if (bodiesRef.current) {
-      bodiesRef.current.falling = createGeneratedBody(shape, centerX, 0, COLOR_FALLING);
+      bodiesRef.current.falling = createGeneratedBody(shape, centerX, 2 * CELL_SIZE, COLOR_FALLING);
     }
     setTick(t => t + 1);
+  }, []);
+
+  // Poke bodies to test jiggle
+  const pokeBodies = useCallback(() => {
+    if (bodiesRef.current) {
+      // Apply random impulse to both bodies
+      applyImpulse(bodiesRef.current.bottom, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
+      applyImpulse(bodiesRef.current.falling, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
+    }
   }, []);
 
   useEffect(() => {
@@ -829,12 +954,17 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         const subDt = dt / subSteps;
 
         for (let s = 0; s < subSteps; s++) {
-          // Both bodies use real ground at bottom of panel
-          updateBody(bodiesRef.current.falling, subDt, PANEL_H);
-          updateBody(bodiesRef.current.bottom, subDt, PANEL_H);
-
-          // Body-to-body collision
-          checkBodyCollision(bodiesRef.current.bottom, bodiesRef.current.falling);
+          if (gridLocked) {
+            // Grid-locked mode: bodies stay anchored, only jiggle
+            updateBodyGridLocked(bodiesRef.current.falling, subDt);
+            updateBodyGridLocked(bodiesRef.current.bottom, subDt);
+            // No body-to-body collision in grid-locked (grid handles that)
+          } else {
+            // Free physics mode: full simulation
+            updateBody(bodiesRef.current.falling, subDt, PANEL_H);
+            updateBody(bodiesRef.current.bottom, subDt, PANEL_H);
+            checkBodyCollision(bodiesRef.current.bottom, bodiesRef.current.falling);
+          }
         }
 
         timeRef.current += dt;
@@ -846,7 +976,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
-  }, [paused]);
+  }, [paused, gridLocked]);
 
   const bodies = bodiesRef.current;
   const fallingVol = bodies ? (calcVolume(bodies.falling.points, bodies.falling.perimeterCount) / bodies.falling.restVolume * 100).toFixed(0) : '?';
@@ -857,7 +987,7 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     <div className="w-full h-screen bg-slate-950 text-slate-200 flex flex-col items-center p-4">
       <div className="flex items-center gap-2 mb-2 flex-wrap justify-center">
         <button onClick={onBack} className="px-3 py-1.5 bg-slate-800 rounded text-sm">← Back</button>
-        <h1 className="text-lg font-bold">Soft Body v13</h1>
+        <h1 className="text-lg font-bold">Soft Body v14</h1>
         <button onClick={() => setShowVerts(v => !v)} className="px-2 py-1 bg-slate-700 rounded text-xs">
           verts {showVerts ? 'ON' : 'OFF'}
         </button>
@@ -868,6 +998,15 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           {paused ? '▶' : '⏸'}
         </button>
         <button onClick={reset} className="px-3 py-1.5 bg-slate-800 rounded text-sm">↺</button>
+        <button
+          onClick={() => setGridLocked(g => !g)}
+          className={`px-2 py-1 rounded text-xs ${gridLocked ? 'bg-green-700' : 'bg-orange-700'}`}
+        >
+          {gridLocked ? 'Grid-Locked' : 'Free Physics'}
+        </button>
+        <button onClick={pokeBodies} className="px-2 py-1 bg-purple-700 rounded text-xs">
+          Poke!
+        </button>
       </div>
 
       {/* Shape selection */}
@@ -950,9 +1089,10 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </div>
 
       <div className="mt-2 text-xs text-slate-400 text-center max-w-md">
-        <p><strong>v13:</strong> Grid-to-mesh generation from cell sets.</p>
-        <p>Select shapes above. Bodies are generated from grid cells, not hardcoded.</p>
-        <p className="text-slate-500">T/L/square/line use new system. "legacy" uses original hardcoded T.</p>
+        <p><strong>v14:</strong> Grid-locked mode for game integration.</p>
+        <p><span className="text-green-400">Grid-Locked:</span> Bodies stay anchored, only jiggle (like actual game).</p>
+        <p><span className="text-orange-400">Free Physics:</span> Bodies fall, tumble, collide (for testing).</p>
+        <p className="text-slate-500">Click "Poke!" to test jiggle response.</p>
       </div>
     </div>
   );
