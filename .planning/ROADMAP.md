@@ -157,7 +157,7 @@ Plans:
 **Plans**: 3
 
 Plans:
-- [ ] 26-01: Body-to-Body Collision (2 tasks + checkpoint)
+- [x] 26-01: Body-to-Body Collision (2 tasks + checkpoint) — completed 2026-01-28
 - [ ] 26-02: Grid-to-Mesh Generation (2 tasks + checkpoint)
 - [ ] 26-03: Renderer Integration (2 tasks + checkpoint)
 
@@ -232,7 +232,7 @@ Plans:
 | 23. Code Rename | v1.4 | 7/7 | Shipped | 2026-01-27 |
 | 24. UI & Documentation | v1.4 | 1/1 | Shipped | 2026-01-27 |
 | 25. Research & Prototype | v1.6 | 1/1 | Complete | 2026-01-28 |
-| 26. Core SBG System | v1.6 | 0/3 | Planned | - |
+| 26. Core SBG System | v1.6 | 1/3 | In progress | - |
 | 27. Physics Response | v1.6 | 0/? | Not started | - |
 | 28. Merge Transitions | v1.6 | 0/? | Not started | - |
 | 29. Fill Animation | v1.6 | 0/? | Not started | - |

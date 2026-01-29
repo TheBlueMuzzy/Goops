@@ -53,12 +53,12 @@ See: [[PROJECT]] (updated 2026-01-27)
 
 ## Current Position
 
-Phase: 25 of 30 (Research & Prototype)
-Plan: Complete
-Status: Phase 25 prototype done, ready for Phase 26
-Last activity: 2026-01-28 — Soft body prototype v10 complete
+Phase: 26 of 30 (Core SBG System)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-28 — Completed 26-01-PLAN.md (Body-to-Body Collision)
 
-Progress: █░░░░░░░░░ 17% (v1.6 Soft Body Goop - 1/6 phases)
+Progress: ██░░░░░░░░ 20% (v1.6 Soft Body Goop - Phase 26 in progress)
 
 ## What's Done
 
@@ -199,6 +199,21 @@ Last session: 2026-01-28
 
 ### This Session Summary (2026-01-28)
 
+**Phase 26 Plan 01: Body-to-Body Collision — COMPLETE**
+
+Implemented collision between soft bodies in demo (v10 → v12):
+- **Initial attempt:** Point-in-polygon with force-based response — caused explosion/implosion
+- **Final solution:** Proximity-based collision — vertex-to-edge distance check with gentle push
+- **Key params:** 5px collision radius, 35% position correction per frame
+- **Result:** Bodies land on each other with satisfying squish, no jitter or explosion
+- **Demo:** Updated to v12, accessible via `?demo=softbody`
+
+4 commits: 87a16b5, acfd16c, b3a2e97 (fix), 285e34d (tuning)
+
+**Next:** 26-02-PLAN.md (Grid-to-Mesh Generation)
+
+### Previous Session Summary (2026-01-28)
+
 **Phase 25: Soft Body Prototype v10 — COMPLETE**
 
 Built working soft body physics demo accessible via `?demo=softbody`:
@@ -208,9 +223,7 @@ Built working soft body physics demo accessible via `?demo=softbody`:
 - **Tuned feel:** Bounce, friction, spring stiffness all balanced for satisfying jello physics
 - **Demo features:** Toggle verts, toggle springs visualization, pause, reset
 
-**Next:** Phase 26 (Body-to-Body Collision) and Phase 27 (Merge Animation) — the hard parts.
-
-### Previous Session Summary (2026-01-28)
+### Earlier Session Summary (2026-01-28)
 
 **Win Bonus Rework — COMPLETE**
 
