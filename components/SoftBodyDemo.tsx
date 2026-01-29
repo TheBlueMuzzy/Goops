@@ -1,11 +1,13 @@
 /**
- * Soft Body Demo v12 - Gentle Body Collision
+ * Soft Body Demo v13 - Grid-to-Mesh Generation
  *
  * Features:
  * - Hub & spoke structure with cross springs
  * - Dual-wave edge undulation for gloopy feel
  * - Proximity-based body-to-body collision
  * - Gentle push-apart response (no explosion!)
+ * - NEW: Grid-to-mesh generation (extractPerimeter, createBodyFromPerimeter)
+ * - NEW: Test shapes: T, L, square, line
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -63,7 +65,289 @@ interface Body {
   restVolume: number;
 }
 
-// --- Geometry ---
+// --- Grid-to-Mesh Generation ---
+
+/**
+ * Extract perimeter vertices from a set of grid cells.
+ * Algorithm:
+ * 1. Find all edges that are on the perimeter (adjacent cell not in set)
+ * 2. Order edges into a continuous polygon
+ * 3. Subdivide long edges for smooth curves
+ *
+ * @param cells Set of "x,y" cell coordinates
+ * @param cellSize Size of each cell in pixels
+ * @param offsetX X offset for positioning
+ * @param offsetY Y offset for positioning
+ * @returns Ordered perimeter vertices (clockwise)
+ */
+function extractPerimeter(
+  cells: Set<string>,
+  cellSize: number,
+  offsetX: number = 0,
+  offsetY: number = 0
+): Point[] {
+  if (cells.size === 0) return [];
+
+  // Edge representation: "x1,y1-x2,y2" where (x1,y1) and (x2,y2) are corners
+  // We'll store edges as start→end in clockwise order around cells
+  interface Edge {
+    x1: number; y1: number;
+    x2: number; y2: number;
+  }
+
+  const perimeterEdges: Edge[] = [];
+
+  // For each cell, check each of the 4 edges
+  // If the adjacent cell in that direction is NOT in the set, it's a perimeter edge
+  for (const cellKey of cells) {
+    const [cx, cy] = cellKey.split(',').map(Number);
+
+    // Cell corners (in pixel space):
+    // topLeft = (cx * cellSize, cy * cellSize)
+    // topRight = ((cx+1) * cellSize, cy * cellSize)
+    // bottomRight = ((cx+1) * cellSize, (cy+1) * cellSize)
+    // bottomLeft = (cx * cellSize, (cy+1) * cellSize)
+
+    const left = cx * cellSize + offsetX;
+    const right = (cx + 1) * cellSize + offsetX;
+    const top = cy * cellSize + offsetY;
+    const bottom = (cy + 1) * cellSize + offsetY;
+
+    // Top edge: if cell above (cx, cy-1) is not in set
+    if (!cells.has(`${cx},${cy - 1}`)) {
+      // Clockwise around cell: top edge goes left→right
+      perimeterEdges.push({ x1: left, y1: top, x2: right, y2: top });
+    }
+
+    // Right edge: if cell to right (cx+1, cy) is not in set
+    if (!cells.has(`${cx + 1},${cy}`)) {
+      // Clockwise: right edge goes top→bottom
+      perimeterEdges.push({ x1: right, y1: top, x2: right, y2: bottom });
+    }
+
+    // Bottom edge: if cell below (cx, cy+1) is not in set
+    if (!cells.has(`${cx},${cy + 1}`)) {
+      // Clockwise: bottom edge goes right→left
+      perimeterEdges.push({ x1: right, y1: bottom, x2: left, y2: bottom });
+    }
+
+    // Left edge: if cell to left (cx-1, cy) is not in set
+    if (!cells.has(`${cx - 1},${cy}`)) {
+      // Clockwise: left edge goes bottom→top
+      perimeterEdges.push({ x1: left, y1: bottom, x2: left, y2: top });
+    }
+  }
+
+  if (perimeterEdges.length === 0) return [];
+
+  // Order edges into a continuous polygon by chaining end→start
+  const orderedEdges: Edge[] = [];
+  const usedEdges = new Set<number>();
+
+  // Start with the first edge
+  orderedEdges.push(perimeterEdges[0]);
+  usedEdges.add(0);
+
+  while (orderedEdges.length < perimeterEdges.length) {
+    const lastEdge = orderedEdges[orderedEdges.length - 1];
+    let foundNext = false;
+
+    // Find an edge that starts where the last edge ends
+    for (let i = 0; i < perimeterEdges.length; i++) {
+      if (usedEdges.has(i)) continue;
+      const candidate = perimeterEdges[i];
+
+      // Check if this edge starts where last edge ends (with small tolerance for floating point)
+      if (Math.abs(candidate.x1 - lastEdge.x2) < 0.01 &&
+          Math.abs(candidate.y1 - lastEdge.y2) < 0.01) {
+        orderedEdges.push(candidate);
+        usedEdges.add(i);
+        foundNext = true;
+        break;
+      }
+    }
+
+    if (!foundNext) {
+      // If we can't find a continuing edge, the shape might have holes or be disconnected
+      // For now, just break and use what we have
+      break;
+    }
+  }
+
+  // Extract vertices from ordered edges (just the start points, since end of one = start of next)
+  const vertices: { x: number; y: number }[] = orderedEdges.map(e => ({ x: e.x1, y: e.y1 }));
+
+  // Subdivide long edges to get smoother curves
+  // Target ~15-20px spacing between vertices
+  const TARGET_SPACING = 18;
+  const subdividedVertices: { x: number; y: number }[] = [];
+
+  for (let i = 0; i < vertices.length; i++) {
+    const curr = vertices[i];
+    const next = vertices[(i + 1) % vertices.length];
+
+    subdividedVertices.push(curr);
+
+    const dx = next.x - curr.x;
+    const dy = next.y - curr.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // How many subdivisions needed?
+    const subdivisions = Math.floor(dist / TARGET_SPACING);
+
+    for (let s = 1; s <= subdivisions; s++) {
+      const t = s / (subdivisions + 1);
+      subdividedVertices.push({
+        x: curr.x + dx * t,
+        y: curr.y + dy * t
+      });
+    }
+  }
+
+  // Convert to Point format with zero velocity
+  return subdividedVertices.map(v => ({
+    x: v.x,
+    y: v.y,
+    vx: 0,
+    vy: 0
+  }));
+}
+
+/**
+ * Create a complete Body from perimeter vertices.
+ * Adds hub point at centroid, creates all spring connections.
+ *
+ * @param perimeter Array of perimeter points
+ * @param color Body color
+ * @returns Complete Body with physics springs
+ */
+function createBodyFromPerimeter(perimeter: Point[], color: string): Body {
+  if (perimeter.length < 3) {
+    throw new Error('Need at least 3 perimeter points to create a body');
+  }
+
+  const perimeterCount = perimeter.length;
+
+  // Calculate centroid for hub
+  let cx = 0, cy = 0;
+  for (const p of perimeter) {
+    cx += p.x;
+    cy += p.y;
+  }
+  cx /= perimeterCount;
+  cy /= perimeterCount;
+
+  const hub: Point = {
+    x: cx,
+    y: cy,
+    vx: 0,
+    vy: 0,
+    isHub: true
+  };
+
+  // All points: perimeter + hub
+  const points = [...perimeter, hub];
+  const hubIndex = perimeterCount;
+
+  // Create springs
+  const springs: Spring[] = [];
+
+  // Helper to calculate distance between two points
+  const dist = (i: number, j: number) => {
+    const dx = points[j].x - points[i].x;
+    const dy = points[j].y - points[i].y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // 1. Adjacent perimeter springs (connect consecutive points)
+  for (let i = 0; i < perimeterCount; i++) {
+    const j = (i + 1) % perimeterCount;
+    const d = dist(i, j);
+    if (d > 5) { // Skip very short springs that cause instability
+      springs.push({ a: i, b: j, restLen: d });
+    }
+  }
+
+  // 2. Spoke springs (hub to each perimeter point)
+  for (let i = 0; i < perimeterCount; i++) {
+    const d = dist(hubIndex, i);
+    if (d > 5) {
+      springs.push({ a: hubIndex, b: i, restLen: d });
+    }
+  }
+
+  // 3. Skip-2 springs (structural cross-bracing)
+  for (let i = 0; i < perimeterCount; i++) {
+    const j = (i + 2) % perimeterCount;
+    const d = dist(i, j);
+    if (d > 5) {
+      springs.push({ a: i, b: j, restLen: d });
+    }
+  }
+
+  // 4. Skip-4 springs for extra rigidity (only if enough points)
+  if (perimeterCount > 8) {
+    for (let i = 0; i < perimeterCount; i++) {
+      const j = (i + 4) % perimeterCount;
+      const d = dist(i, j);
+      if (d > 5) {
+        springs.push({ a: i, b: j, restLen: d });
+      }
+    }
+  }
+
+  // Calculate rest volume using shoelace formula
+  const restVolume = calcVolume(points, perimeterCount);
+
+  return { points, perimeterCount, springs, color, restVolume };
+}
+
+/**
+ * Helper: Create a cell set for common test shapes
+ */
+function createTestCells(shape: 'T' | 'L' | 'square' | 'line'): Set<string> {
+  const cells = new Set<string>();
+
+  switch (shape) {
+    case 'T':
+      // T-shape:
+      //  XXX
+      //   X
+      cells.add('0,0');
+      cells.add('1,0');
+      cells.add('2,0');
+      cells.add('1,1');
+      break;
+    case 'L':
+      // L-shape:
+      //  X
+      //  X
+      //  XX
+      cells.add('0,0');
+      cells.add('0,1');
+      cells.add('0,2');
+      cells.add('1,2');
+      break;
+    case 'square':
+      // 2x2 square
+      cells.add('0,0');
+      cells.add('1,0');
+      cells.add('0,1');
+      cells.add('1,1');
+      break;
+    case 'line':
+      // Vertical line
+      cells.add('0,0');
+      cells.add('0,1');
+      cells.add('0,2');
+      cells.add('0,3');
+      break;
+  }
+
+  return cells;
+}
+
+// --- Legacy Geometry (for comparison) ---
 
 function createTPerimeter(offsetX: number, offsetY: number): Point[] {
   const cs = CELL_SIZE;
@@ -457,34 +741,74 @@ function createPath(points: { x: number; y: number }[], count: number): string {
   return d + ' Z';
 }
 
+// Shape types for the demo
+type ShapeType = 'T' | 'L' | 'square' | 'line' | 'legacy';
+
+/**
+ * Create a body from a shape type using the new grid-to-mesh generation
+ */
+function createGeneratedBody(shape: ShapeType, offsetX: number, offsetY: number, color: string): Body {
+  if (shape === 'legacy') {
+    // Use original hardcoded T-shape for comparison
+    return createBody(offsetX, offsetY, color);
+  }
+
+  const cells = createTestCells(shape as 'T' | 'L' | 'square' | 'line');
+  const perimeter = extractPerimeter(cells, CELL_SIZE, offsetX, offsetY);
+  return createBodyFromPerimeter(perimeter, color);
+}
+
 // --- Component ---
 export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [tick, setTick] = useState(0);
   const [paused, setPaused] = useState(false);
   const [showVerts, setShowVerts] = useState(false);
   const [showSprings, setShowSprings] = useState(false);
+  const [bottomShape, setBottomShape] = useState<ShapeType>('T');
+  const [fallingShape, setFallingShape] = useState<ShapeType>('L');
 
   const bodiesRef = useRef<{ bottom: Body; falling: Body } | null>(null);
   const lastTimeRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
 
-  if (!bodiesRef.current) {
+  // Create bodies with current shapes
+  const createBodies = useCallback((bShape: ShapeType, fShape: ShapeType) => {
     const centerX = 3 * CELL_SIZE;
-    bodiesRef.current = {
-      bottom: createBody(centerX, 7 * CELL_SIZE, COLOR_BOTTOM),
-      falling: createBody(centerX, 0, COLOR_FALLING)
+    return {
+      bottom: createGeneratedBody(bShape, centerX, 7 * CELL_SIZE, COLOR_BOTTOM),
+      falling: createGeneratedBody(fShape, centerX, 0, COLOR_FALLING)
     };
+  }, []);
+
+  if (!bodiesRef.current) {
+    bodiesRef.current = createBodies(bottomShape, fallingShape);
   }
 
   const reset = useCallback(() => {
-    const centerX = 3 * CELL_SIZE;
-    bodiesRef.current = {
-      bottom: createBody(centerX, 7 * CELL_SIZE, COLOR_BOTTOM),
-      falling: createBody(centerX, 0, COLOR_FALLING)
-    };
+    bodiesRef.current = createBodies(bottomShape, fallingShape);
     lastTimeRef.current = 0;
     timeRef.current = 0;
     setTick(0);
+  }, [bottomShape, fallingShape, createBodies]);
+
+  // Change bottom shape
+  const changeBottomShape = useCallback((shape: ShapeType) => {
+    setBottomShape(shape);
+    const centerX = 3 * CELL_SIZE;
+    if (bodiesRef.current) {
+      bodiesRef.current.bottom = createGeneratedBody(shape, centerX, 7 * CELL_SIZE, COLOR_BOTTOM);
+    }
+    setTick(t => t + 1);
+  }, []);
+
+  // Change falling shape
+  const changeFallingShape = useCallback((shape: ShapeType) => {
+    setFallingShape(shape);
+    const centerX = 3 * CELL_SIZE;
+    if (bodiesRef.current) {
+      bodiesRef.current.falling = createGeneratedBody(shape, centerX, 0, COLOR_FALLING);
+    }
+    setTick(t => t + 1);
   }, []);
 
   useEffect(() => {
@@ -527,11 +851,13 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const bodies = bodiesRef.current;
   const fallingVol = bodies ? (calcVolume(bodies.falling.points, bodies.falling.perimeterCount) / bodies.falling.restVolume * 100).toFixed(0) : '?';
 
+  const shapes: ShapeType[] = ['T', 'L', 'square', 'line', 'legacy'];
+
   return (
     <div className="w-full h-screen bg-slate-950 text-slate-200 flex flex-col items-center p-4">
-      <div className="flex items-center gap-2 mb-4 flex-wrap justify-center">
+      <div className="flex items-center gap-2 mb-2 flex-wrap justify-center">
         <button onClick={onBack} className="px-3 py-1.5 bg-slate-800 rounded text-sm">← Back</button>
-        <h1 className="text-lg font-bold">Soft Body v12</h1>
+        <h1 className="text-lg font-bold">Soft Body v13</h1>
         <button onClick={() => setShowVerts(v => !v)} className="px-2 py-1 bg-slate-700 rounded text-xs">
           verts {showVerts ? 'ON' : 'OFF'}
         </button>
@@ -542,6 +868,34 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           {paused ? '▶' : '⏸'}
         </button>
         <button onClick={reset} className="px-3 py-1.5 bg-slate-800 rounded text-sm">↺</button>
+      </div>
+
+      {/* Shape selection */}
+      <div className="flex items-center gap-4 mb-3 text-xs">
+        <div className="flex items-center gap-1">
+          <span className="text-red-400">Red:</span>
+          {shapes.map(s => (
+            <button
+              key={`b-${s}`}
+              onClick={() => changeBottomShape(s)}
+              className={`px-2 py-0.5 rounded ${bottomShape === s ? 'bg-red-700' : 'bg-slate-700'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-blue-400">Blue:</span>
+          {shapes.map(s => (
+            <button
+              key={`f-${s}`}
+              onClick={() => changeFallingShape(s)}
+              className={`px-2 py-0.5 rounded ${fallingShape === s ? 'bg-blue-700' : 'bg-slate-700'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
 
       <svg width={PANEL_W} height={PANEL_H} style={{ background: '#1e293b', borderRadius: 8 }}>
@@ -596,8 +950,9 @@ export const SoftBodyDemo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </div>
 
       <div className="mt-2 text-xs text-slate-400 text-center max-w-md">
-        <p><strong>v12:</strong> Proximity-based body collision (gentle).</p>
-        <p>Blue falls onto red. Both squish softly at contact.</p>
+        <p><strong>v13:</strong> Grid-to-mesh generation from cell sets.</p>
+        <p>Select shapes above. Bodies are generated from grid cells, not hardcoded.</p>
+        <p className="text-slate-500">T/L/square/line use new system. "legacy" uses original hardcoded T.</p>
       </div>
     </div>
   );
