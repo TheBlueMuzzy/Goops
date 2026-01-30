@@ -681,4 +681,138 @@ Phase: 1 — Single cell with 12 Verlet vertices, springs, pressure, Catmull-Rom
 
 ---
 
-*Vision + Research documented 2026-01-30. Ready for implementation.*
+# Prototype Roadmap
+
+Each prototype answers a specific question. Build in order — if one fails, tune before moving on.
+
+## Proto-1: Single Blob Physics
+
+**Question:** Does Verlet + springs + pressure + Catmull-Rom actually feel/look right?
+
+**Implementation:**
+- 12 vertices in a circle
+- Ring springs + cross springs + pressure
+- Click/drag to poke it, watch it jiggle and recover
+- Interactive sliders: damping (ζ), stiffness (k), pressure strength
+- Tune until it feels "gummy" vs "bouncy" vs "dead"
+
+**Proves:** Core physics engine works, parameter sweet spot found
+
+---
+
+## Proto-2: Blob Follows Cursor
+
+**Question:** Does "render layer follows data layer" actually work?
+
+**Implementation:**
+- Same blob from Proto-1
+- Blob's "home position" = cursor position
+- Spring pulls blob toward cursor
+- Move slowly = blob follows smoothly
+- Move fast/jump = blob overshoots, bounces back, settles
+
+**Proves:** The two-layer architecture (data drives render) is viable
+
+---
+
+## Proto-3: Rotation Response
+
+**Question:** What happens when we rotate 90° instantly?
+
+**Implementation:**
+- Blob attached to a grid cell position
+- Button to rotate 90° (simulates piece rotation)
+- Home positions jump instantly, blob springs to catch up
+- Spam the button — does lag accumulate or does it handle it?
+
+**Proves:** Rotation won't look broken during gameplay
+
+---
+
+## Proto-4: Two Blobs Attraction
+
+**Question:** Do vertex-to-vertex springs create the "reaching" effect?
+
+**Implementation:**
+- Two blobs, same color
+- Drag one around
+- When close: springs form, vertices stretch toward each other
+- When far: springs break, blobs independent
+- Sliders: attraction radius, rest length, spring stiffness
+
+**Proves:** Inter-cell attraction looks like "reaching" not "magnet snap"
+
+---
+
+## Proto-5: Goo Filter Variations
+
+**Question:** What filter settings create the best membrane merge look?
+
+**Implementation:**
+- Two or three same-color blobs, overlapping
+- Side-by-side or toggle between filter settings
+- Variables: stdDeviation (blur), alpha matrix values
+- Compare: no filter vs subtle vs aggressive
+
+**Proves:** We can get smooth membrane merge without metaball math
+
+---
+
+## Proto-6: Multi-Cell Piece
+
+**Question:** Does a piece made of 4 blobs behave as one unit?
+
+**Implementation:**
+- T-piece shape (4 cells)
+- All cells share physics, move together
+- Drag piece around, rotate it
+- Cells maintain relative positions but each jiggles individually
+
+**Proves:** Pieces work as cohesive units
+
+---
+
+## Proto-7: Landing and Locked Goop
+
+**Question:** Does collision jiggle look right? Does attraction to locked goop work?
+
+**Implementation:**
+- Floor with some locked goop cells
+- Falling piece lands on them
+- See: overshoot, bounce, settle
+- See: attraction springs form to same-color locked cells
+
+**Proves:** The full gameplay loop (fall → land → attract → settle) works
+
+---
+
+## Proto-8: Performance Stress Test
+
+**Question:** Can we run 36 cells × 12 vertices at 40+ FPS?
+
+**Implementation:**
+- Full grid of 36 cells, all with active physics
+- FPS counter
+- Toggle spatial hashing on/off
+- Mobile throttle simulation (requestAnimationFrame at 40fps)
+
+**Proves:** This won't kill mobile performance
+
+---
+
+## Prototype Summary
+
+| ID | Name | Core Question |
+|----|------|---------------|
+| [[#Proto-1: Single Blob Physics]] | Single Blob Physics | Does the physics feel right? |
+| [[#Proto-2: Blob Follows Cursor]] | Blob Follows Cursor | Does data→render separation work? |
+| [[#Proto-3: Rotation Response]] | Rotation Response | Can we handle instant 90° rotation? |
+| [[#Proto-4: Two Blobs Attraction]] | Two Blobs Attraction | Does "reaching" effect look good? |
+| [[#Proto-5: Goo Filter Variations]] | Goo Filter Variations | What filter settings look best? |
+| [[#Proto-6: Multi-Cell Piece]] | Multi-Cell Piece | Do pieces work as units? |
+| [[#Proto-7: Landing and Locked Goop]] | Landing + Locked | Does full landing sequence work? |
+| [[#Proto-8: Performance Stress Test]] | Performance Test | Can mobile handle it? |
+
+---
+
+*Vision + Research + Prototype Roadmap documented 2026-01-30. Ready for implementation.*
