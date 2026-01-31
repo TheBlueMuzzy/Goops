@@ -17,11 +17,21 @@ interface Vertex {
   oldPos: Vec2;
   homeOffset: Vec2;
   mass: number;
+  attractionRadius: number;  // Multiplier for this vertex's attraction reach (0.3-1.5)
 }
 
 interface Spring {
   a: number;
   b: number;
+  restLength: number;
+}
+
+// Springs that form between vertices of DIFFERENT blobs
+interface AttractionSpring {
+  blobA: number;
+  vertA: number;
+  blobB: number;
+  vertB: number;
   restLength: number;
 }
 
@@ -42,6 +52,11 @@ interface PhysicsParams {
   pressure: number;
   iterations: number;
   homeStiffness: number;
+  // Attraction between blobs
+  attractionRadius: number;      // How close vertices must be to form springs
+  attractionRestLength: number;  // Target distance when "merged" (0 = touching)
+  attractionStiffness: number;   // Base pull strength
+  goopiness: number;             // Break distance - how far springs stretch before snapping
 }
 
 interface FilterParams {
@@ -61,13 +76,18 @@ const DEFAULT_PHYSICS: PhysicsParams = {
   pressure: 2.5,
   iterations: 3,
   homeStiffness: 0.08,
+  // Attraction params - tuned for mozzarella pull effect
+  attractionRadius: 20,          // How close vertices must be to connect
+  attractionRestLength: 0,       // Pull all the way together
+  attractionStiffness: 0.005,    // Gentle pull
+  goopiness: 25,                 // Break distance - snappy mozzarella
 };
 
 // User's preferred settings
 const FILTER_PRESETS = {
-  none: { enabled: false, stdDeviation: 8, alphaMultiplier: 20, alphaOffset: -7 },
+  none: { enabled: false, stdDeviation: 8, alphaMultiplier: 20, alphaOffset: -12 },
   subtle: { enabled: true, stdDeviation: 5, alphaMultiplier: 15, alphaOffset: -6 },
-  medium: { enabled: true, stdDeviation: 8, alphaMultiplier: 20, alphaOffset: -7 },
+  medium: { enabled: true, stdDeviation: 8, alphaMultiplier: 20, alphaOffset: -12 },
   aggressive: { enabled: true, stdDeviation: 12, alphaMultiplier: 25, alphaOffset: -9 },
 };
 
@@ -87,22 +107,30 @@ function createBlob(centerX: number, centerY: number, shape: ShapeType, color: s
   let perimeterPoints: Vec2[];
   let crossPairs: number[][];
 
+  // Attraction radius multipliers: outer edges reach far (1.5), inner corners stay tight (0.3)
+  const OUTER = 1.5;
+  const INNER = 0.3;
+  const MID = 1.0;
+  let attractionMultipliers: number[];
+
   if (shape === 'T') {
     // T-tetromino:  ███   (3 wide, 2 tall)
     //                █
     // Single perimeter around entire shape
     perimeterPoints = [
-      { x: -1.5 * u, y: -1 * u },    // 0: top-left
-      { x: -0.5 * u, y: -1 * u },    // 1
-      { x: 0.5 * u, y: -1 * u },     // 2
-      { x: 1.5 * u, y: -1 * u },     // 3: top-right
-      { x: 1.5 * u, y: 0 * u },      // 4
-      { x: 0.5 * u, y: 0 * u },      // 5: inner right
-      { x: 0.5 * u, y: 1 * u },      // 6: stem bottom-right
-      { x: -0.5 * u, y: 1 * u },     // 7: stem bottom-left
-      { x: -0.5 * u, y: 0 * u },     // 8: inner left
-      { x: -1.5 * u, y: 0 * u },     // 9
+      { x: -1.5 * u, y: -1 * u },    // 0: top-left (outer corner)
+      { x: -0.5 * u, y: -1 * u },    // 1: top edge
+      { x: 0.5 * u, y: -1 * u },     // 2: top edge
+      { x: 1.5 * u, y: -1 * u },     // 3: top-right (outer corner)
+      { x: 1.5 * u, y: 0 * u },      // 4: right edge
+      { x: 0.5 * u, y: 0 * u },      // 5: inner right (concave)
+      { x: 0.5 * u, y: 1 * u },      // 6: stem bottom-right (outer)
+      { x: -0.5 * u, y: 1 * u },     // 7: stem bottom-left (outer)
+      { x: -0.5 * u, y: 0 * u },     // 8: inner left (concave)
+      { x: -1.5 * u, y: 0 * u },     // 9: left edge
     ];
+    // Inner concave corners (5, 8) have low radius; outer corners have high
+    attractionMultipliers = [OUTER, MID, MID, OUTER, MID, INNER, OUTER, OUTER, INNER, MID];
     crossPairs = [
       [0, 4], [0, 5], [3, 9], [3, 8],
       [1, 8], [2, 5], [5, 8], [6, 9],
@@ -118,19 +146,21 @@ function createBlob(centerX: number, centerY: number, shape: ShapeType, color: s
     //  |               |
     // 10---9-------8---7
     perimeterPoints = [
-      { x: -1.5 * u, y: -1 * u },    // 0: top-left outer
-      { x: -0.5 * u, y: -1 * u },    // 1: top-left inner top
-      { x: -0.5 * u, y: 0 * u },     // 2: notch left
-      { x: 0.5 * u, y: 0 * u },      // 3: notch right
-      { x: 0.5 * u, y: -1 * u },     // 4: top-right inner top
-      { x: 1.5 * u, y: -1 * u },     // 5: top-right outer
+      { x: -1.5 * u, y: -1 * u },    // 0: top-left outer (corner)
+      { x: -0.5 * u, y: -1 * u },    // 1: top-left inner top (corner)
+      { x: -0.5 * u, y: 0 * u },     // 2: notch left (concave)
+      { x: 0.5 * u, y: 0 * u },      // 3: notch right (concave)
+      { x: 0.5 * u, y: -1 * u },     // 4: top-right inner top (corner)
+      { x: 1.5 * u, y: -1 * u },     // 5: top-right outer (corner)
       { x: 1.5 * u, y: 0 * u },      // 6: right side middle
-      { x: 1.5 * u, y: 1 * u },      // 7: bottom-right
+      { x: 1.5 * u, y: 1 * u },      // 7: bottom-right (corner)
       { x: 0.5 * u, y: 1 * u },      // 8: bottom inner right
       { x: -0.5 * u, y: 1 * u },     // 9: bottom inner left
-      { x: -1.5 * u, y: 1 * u },     // 10: bottom-left
+      { x: -1.5 * u, y: 1 * u },     // 10: bottom-left (corner)
       { x: -1.5 * u, y: 0 * u },     // 11: left side middle
     ];
+    // Notch corners (2, 3) are concave - low attraction. Outer corners high.
+    attractionMultipliers = [OUTER, OUTER, INNER, INNER, OUTER, OUTER, MID, OUTER, MID, MID, OUTER, MID];
     crossPairs = [
       [0, 6], [5, 10], [1, 11], [4, 6],
       [2, 9], [3, 8], [0, 9], [5, 8],
@@ -138,13 +168,15 @@ function createBlob(centerX: number, centerY: number, shape: ShapeType, color: s
     ];
   }
 
-  // Create vertices
-  for (const pt of perimeterPoints) {
+  // Create vertices with attraction radius multipliers
+  for (let i = 0; i < perimeterPoints.length; i++) {
+    const pt = perimeterPoints[i];
     vertices.push({
       pos: { x: centerX + pt.x, y: centerY + pt.y },
       oldPos: { x: centerX + pt.x, y: centerY + pt.y },
       homeOffset: { x: pt.x, y: pt.y },
       mass: 1.0,
+      attractionRadius: attractionMultipliers[i],
     });
   }
 
@@ -290,6 +322,125 @@ function applyPressure(blob: Blob, params: PhysicsParams): void {
 }
 
 // ============================================================================
+// ATTRACTION SPRINGS (between different blobs)
+// ============================================================================
+
+function updateAttractionSprings(
+  blobs: Blob[],
+  springs: AttractionSpring[],
+  params: PhysicsParams
+): AttractionSpring[] {
+  const newSprings: AttractionSpring[] = [];
+  const existingPairs = new Set<string>();
+
+  // PHASE 1: Keep existing springs if distance < goopiness (break distance)
+  for (const spring of springs) {
+    const vA = blobs[spring.blobA].vertices[spring.vertA];
+    const vB = blobs[spring.blobB].vertices[spring.vertB];
+    const dx = vB.pos.x - vA.pos.x;
+    const dy = vB.pos.y - vA.pos.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < params.goopiness) {
+      // Spring survives - under break distance
+      newSprings.push(spring);
+      existingPairs.add(`${spring.blobA}-${spring.vertA}-${spring.blobB}-${spring.vertB}`);
+    }
+    // else: spring breaks (mozzarella snaps)
+  }
+
+  // PHASE 2: Create new springs for nearby vertices of different blobs
+  for (let bi = 0; bi < blobs.length; bi++) {
+    for (let bj = bi + 1; bj < blobs.length; bj++) {
+      const blobA = blobs[bi];
+      const blobB = blobs[bj];
+
+      // Quick distance check between blob centers
+      const centerDx = blobA.targetX - blobB.targetX;
+      const centerDy = blobA.targetY - blobB.targetY;
+      const centerDist = Math.sqrt(centerDx * centerDx + centerDy * centerDy);
+
+      // Skip if blobs are too far apart (optimization)
+      if (centerDist > params.attractionRadius * 6) continue;
+
+      // Check all vertex pairs
+      for (let vi = 0; vi < blobA.vertices.length; vi++) {
+        for (let vj = 0; vj < blobB.vertices.length; vj++) {
+          const vA = blobA.vertices[vi];
+          const vB = blobB.vertices[vj];
+
+          // Skip if spring already exists
+          const pairKey = `${bi}-${vi}-${bj}-${vj}`;
+          if (existingPairs.has(pairKey)) continue;
+
+          const dx = vB.pos.x - vA.pos.x;
+          const dy = vB.pos.y - vA.pos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          // Effective radius = sum of both vertices' attraction radii
+          const radiusA = params.attractionRadius * vA.attractionRadius;
+          const radiusB = params.attractionRadius * vB.attractionRadius;
+          const effectiveRadius = radiusA + radiusB;
+
+          if (dist < effectiveRadius) {
+            // Create new spring
+            newSprings.push({
+              blobA: bi,
+              vertA: vi,
+              blobB: bj,
+              vertB: vj,
+              restLength: params.attractionRestLength,
+            });
+            existingPairs.add(pairKey);
+          }
+        }
+      }
+    }
+  }
+
+  return newSprings;
+}
+
+function applyAttractionSprings(
+  blobs: Blob[],
+  springs: AttractionSpring[],
+  params: PhysicsParams
+): void {
+  // Stiffness ramp: 10% at max distance → 100% when close
+  const MIN_STIFFNESS = params.attractionStiffness * 0.1;
+  const MAX_STIFFNESS = params.attractionStiffness;
+
+  for (const spring of springs) {
+    const vA = blobs[spring.blobA].vertices[spring.vertA];
+    const vB = blobs[spring.blobB].vertices[spring.vertB];
+
+    const dx = vB.pos.x - vA.pos.x;
+    const dy = vB.pos.y - vA.pos.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 0.0001) continue;
+
+    // Calculate max connection distance (sum of radii)
+    const maxDist = params.attractionRadius * (vA.attractionRadius + vB.attractionRadius);
+
+    // Interpolate stiffness: far = weak "reaching", close = strong pull
+    // t=0 at maxDist, t=1 at restLength
+    const t = 1 - Math.max(0, Math.min(1, (dist - spring.restLength) / (maxDist - spring.restLength)));
+    const stiffness = MIN_STIFFNESS + t * (MAX_STIFFNESS - MIN_STIFFNESS);
+
+    // Apply spring force
+    const error = dist - spring.restLength;
+    const fx = (dx / dist) * error * stiffness;
+    const fy = (dy / dist) * error * stiffness;
+
+    vA.pos.x += fx;
+    vA.pos.y += fy;
+    vB.pos.x -= fx;
+    vB.pos.y -= fy;
+  }
+}
+
+// ============================================================================
 // RENDERING
 // ============================================================================
 
@@ -328,12 +479,14 @@ export function SoftBodyProto5b() {
   const animationRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const blobsRef = useRef<Blob[]>([]);
+  const attractionSpringsRef = useRef<AttractionSpring[]>([]);
   const dragIndexRef = useRef<number | null>(null);
   const dragOffsetRef = useRef<Vec2>({ x: 0, y: 0 });
 
-  const [physics] = useState<PhysicsParams>(DEFAULT_PHYSICS);
+  const [physics, setPhysics] = useState<PhysicsParams>(DEFAULT_PHYSICS);
   const [filterParams, setFilterParams] = useState<FilterParams>(FILTER_PRESETS.medium);
   const [activePreset, setActivePreset] = useState<string>('medium');
+  const [showSprings, setShowSprings] = useState(false);
   const [, forceUpdate] = useState({});
 
   // Initialize blobs
@@ -368,6 +521,14 @@ export function SoftBodyProto5b() {
         }
         applyPressure(blob, physics);
       }
+
+      // Update and apply attraction springs between blobs
+      attractionSpringsRef.current = updateAttractionSprings(
+        blobsRef.current,
+        attractionSpringsRef.current,
+        physics
+      );
+      applyAttractionSprings(blobsRef.current, attractionSpringsRef.current, physics);
 
       forceUpdate({});
       animationRef.current = requestAnimationFrame(animate);
@@ -545,6 +706,60 @@ export function SoftBodyProto5b() {
         </div>
       </div>
 
+      {/* Attraction Controls */}
+      <div style={{
+        display: 'flex',
+        gap: 20,
+        marginBottom: 20,
+        background: '#34495e',
+        padding: 15,
+        borderRadius: 8,
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+      }}>
+        <label style={{ display: 'flex', flexDirection: 'column', fontSize: 12 }}>
+          <span style={{ color: '#f39c12', fontWeight: 'bold' }}>Goopiness: {physics.goopiness}px</span>
+          <input
+            type="range" min="30" max="150" step="5"
+            value={physics.goopiness}
+            onChange={e => setPhysics(p => ({ ...p, goopiness: Number(e.target.value) }))}
+            style={{ width: 120 }}
+          />
+          <span style={{ fontSize: 10, opacity: 0.7 }}>Break distance (mozzarella)</span>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', fontSize: 12 }}>
+          <span>Attraction Radius: {physics.attractionRadius}px</span>
+          <input
+            type="range" min="15" max="60" step="5"
+            value={physics.attractionRadius}
+            onChange={e => setPhysics(p => ({ ...p, attractionRadius: Number(e.target.value) }))}
+            style={{ width: 100 }}
+          />
+          <span style={{ fontSize: 10, opacity: 0.7 }}>How close to connect</span>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', fontSize: 12 }}>
+          <span>Attraction Strength: {physics.attractionStiffness.toFixed(3)}</span>
+          <input
+            type="range" min="0.005" max="0.08" step="0.005"
+            value={physics.attractionStiffness}
+            onChange={e => setPhysics(p => ({ ...p, attractionStiffness: Number(e.target.value) }))}
+            style={{ width: 100 }}
+          />
+          <span style={{ fontSize: 10, opacity: 0.7 }}>Pull force (10%-100%)</span>
+        </label>
+        <div style={{ display: 'flex', flexDirection: 'column', fontSize: 12, justifyContent: 'center' }}>
+          <span style={{ opacity: 0.7 }}>Springs: {attractionSpringsRef.current.length}</span>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+          <input
+            type="checkbox"
+            checked={showSprings}
+            onChange={e => setShowSprings(e.target.checked)}
+          />
+          <span>Show Springs</span>
+        </label>
+      </div>
+
       {/* SVG Canvas */}
       <svg
         ref={svgRef}
@@ -570,6 +785,58 @@ export function SoftBodyProto5b() {
 
         {/* All blobs in one filtered group */}
         <g filter={filterParams.enabled ? 'url(#goo-filter-5b)' : undefined}>
+          {/* Draw tendrils as "beads on a string" - circles along path that filter merges */}
+          {attractionSpringsRef.current.map((spring, i) => {
+            const vA = blobsRef.current[spring.blobA]?.vertices[spring.vertA];
+            const vB = blobsRef.current[spring.blobB]?.vertices[spring.vertB];
+            if (!vA || !vB) return null;
+
+            const dx = vB.pos.x - vA.pos.x;
+            const dy = vB.pos.y - vA.pos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // How stretched is this spring? (0 = touching, 1 = at break point)
+            const stretchRatio = Math.min(1, dist / physics.goopiness);
+
+            // Bead sizing: larger beads when relaxed, smaller when stretched
+            const maxBeadRadius = 8;
+            const minBeadRadius = 4;
+            const beadRadius = maxBeadRadius - (maxBeadRadius - minBeadRadius) * stretchRatio;
+
+            // Number of beads scales with distance (more beads = continuous look)
+            const beadSpacing = beadRadius * 1.5; // Overlap slightly for filter to merge
+            const numBeads = Math.max(2, Math.ceil(dist / beadSpacing));
+
+            // Generate bead positions along the line
+            const beads = [];
+            for (let j = 0; j <= numBeads; j++) {
+              const t = j / numBeads;
+              // Taper: beads in middle are slightly smaller
+              const midTaper = 1 - 0.3 * Math.sin(t * Math.PI); // Pinch in middle
+              const r = beadRadius * midTaper;
+              beads.push({
+                cx: vA.pos.x + dx * t,
+                cy: vA.pos.y + dy * t,
+                r: Math.max(minBeadRadius * 0.5, r),
+              });
+            }
+
+            return (
+              <g key={`tendril-${i}`}>
+                {beads.map((bead, j) => (
+                  <circle
+                    key={j}
+                    cx={bead.cx}
+                    cy={bead.cy}
+                    r={bead.r}
+                    fill="#e74c3c"
+                  />
+                ))}
+              </g>
+            );
+          })}
+
+          {/* Main blob shapes */}
           {blobsRef.current.map((blob, i) => (
             <path
               key={i}
@@ -580,6 +847,32 @@ export function SoftBodyProto5b() {
             />
           ))}
         </g>
+
+        {/* Debug: Show attraction springs */}
+        {showSprings && attractionSpringsRef.current.map((spring, i) => {
+          const vA = blobsRef.current[spring.blobA]?.vertices[spring.vertA];
+          const vB = blobsRef.current[spring.blobB]?.vertices[spring.vertB];
+          if (!vA || !vB) return null;
+          const dx = vB.pos.x - vA.pos.x;
+          const dy = vB.pos.y - vA.pos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          // Color based on stretch: green when close, yellow mid, red near break
+          const stretchRatio = dist / physics.goopiness;
+          const r = Math.min(255, Math.floor(stretchRatio * 255));
+          const g = Math.max(0, 255 - Math.floor(stretchRatio * 255));
+          return (
+            <line
+              key={`spring-${i}`}
+              x1={vA.pos.x}
+              y1={vA.pos.y}
+              x2={vB.pos.x}
+              y2={vB.pos.y}
+              stroke={`rgb(${r},${g},100)`}
+              strokeWidth={2}
+              opacity={0.7}
+            />
+          );
+        })}
 
         {/* Center markers */}
         {blobsRef.current.map((blob, i) => (
@@ -603,12 +896,18 @@ export function SoftBodyProto5b() {
         fontSize: 13,
         lineHeight: 1.6,
       }}>
-        <strong>Difference from Proto-5:</strong> Each shape is ONE soft body with a continuous
-        perimeter, not composed of separate block blobs. This should give more cohesive rotation
-        and better membrane behavior.
+        <strong>Proto-5b + Attraction:</strong> Single-perimeter shapes with physics-based
+        attraction springs. When pieces get close, springs form. Pull them apart to see the
+        "mozzarella pull" effect — they stretch until breaking at the Goopiness distance.
         <br /><br />
-        <strong>Test:</strong> Rotate pieces — they should deform as a unit, not fly apart.
-        Drag T into U's alcove to see merge effect.
+        <strong>Goopiness:</strong> Controls how far the "mozzarella strings" stretch before snapping.
+        Higher = longer stretchy connections when pulling apart.
+        <br /><br />
+        <strong>Stiffness Ramp:</strong> Attraction is weak (10%) at max distance (reaching effect)
+        and strong (100%) when close (solid merge). This creates natural-looking goop behavior.
+        <br /><br />
+        <strong>Test:</strong> Drag T into U's notch, let them merge, then slowly pull apart
+        to see the stretching effect.
       </div>
     </div>
   );
