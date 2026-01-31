@@ -342,10 +342,40 @@ Proto-5b is the winner with all features working:
 
 **Remaining Prototypes Before Game Integration:**
 
-1. **Proto-6: Fill/Pour** — Goop "filling" a piece shape (animation when piece spawns?)
-2. **Proto-7: Pop** — What happens visually when goop is cleared/popped
-3. **Proto-8: Loose Goop** — Free-flowing goop when freed from locked state
-4. **Proto-9+: Integration** — Into actual game
+### Proto-6: Fill/Pour
+**Question:** How does goop visually "fill" into a piece shape?
+
+Possible approaches:
+- **Pour from top:** Goop flows down and fills the shape like liquid
+- **Expand from center:** Starts as small blob, expands to fill perimeter
+- **Instant with wobble:** Full shape appears, then wobbles/settles
+- **Drip accumulation:** Small blobs drip in and merge together
+
+**When this happens in game:** When a new piece spawns? When piece locks?
+
+### Proto-7: Pop
+**Question:** What happens visually when goop is cleared?
+
+Possible approaches:
+- **Burst outward:** Vertices explode from center, then fade
+- **Splatter:** Fragments fly off, stick to nearby surfaces briefly
+- **Dissolve:** Shape shrinks/fades with wobble
+- **Vacuum suck:** Gets pulled toward a point (the crack being sealed?)
+
+**When this happens in game:** When a goop group is popped/cleared
+
+### Proto-8: Loose Goop
+**Question:** How does freed goop behave when disconnected?
+
+This is the **LooseGoop** system — when corner-connected blocks separate, or when goop is freed:
+- **Falls with physics:** Gravity + soft body deformation as it drops
+- **Splashes on landing:** Squishes when hitting other goop/bottom
+- **Merges with same color:** Attraction springs pull it into existing groups
+- **Flows around obstacles:** Deforms to fit available space
+
+**When this happens in game:** After pops, when corrupted pieces split
+
+**Proto-9+: Integration** — Into actual game
 
 **Architecture Insight (from user):**
 - Game piece "home" = current invisible data piece position
