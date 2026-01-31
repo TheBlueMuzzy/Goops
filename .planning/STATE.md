@@ -20,7 +20,7 @@ updated: 2026-01-30
 ## Next Steps
 
 **Current:** Soft Body Goop prototype implementation
-**Status:** PROTOTYPES 1-4 COMPLETE — Parameter tuning done, per-block attraction working
+**Status:** PROTOTYPES 1-4 COMPLETE — Ready for Proto-5 (goo filter / membrane merge)
 **Branch:** `soft-body-experiment`
 
 **Vision + Research document:** `.planning/SOFTBODY-VISION.md`
@@ -72,23 +72,35 @@ updated: 2026-01-30
 - Deviation meter useful for tuning — peak stays bounded
 - No infinite lag accumulation observed
 
-#### Proto-4: Two Blobs Attraction ✅ (In Progress)
+#### Proto-4: Two Blobs Attraction ✅ COMPLETE
 **Question:** Do vertex-to-vertex springs create the "reaching" effect?
-**Answer:** YES — but needs PER-BLOCK attraction radius (not whole-piece)
+**Answer:** YES — with per-vertex radii and variable stiffness
 
-**Current Implementation:**
+**Final Implementation:**
 - T-tetromino (anchored, 4 blocks) + U-pentomino (draggable, 5 blocks)
-- Per-block attraction zones (each cell has its own radius)
-- Block centers rotate with blob rotation
-- Vertex-to-vertex springs form only between nearby blocks
-- Default attraction radius = UNIT_SIZE (30px = one block length)
+- **Per-vertex attraction radii** (multipliers: outer=1.5x, inner=0.3x of slider)
+- Connection triggers when circles TOUCH (sum of both radii)
+- **Variable stiffness**: 10% at max distance → 100% when close (reaching → snapping)
+- Block proximity filter scales with slider (4x for adequate range)
+
+**Tuned Parameters:**
+- Attraction Radius: slider × multiplier (outer vertices reach farther)
+- Break Distance: 60 (effective stickiness)
+- Rest Length: 0 (required for future merge calculations)
+- Stiffness: ramps from 10% → 100% based on spring length
 
 **Key Learnings:**
-- Global vertex-to-vertex attraction doesn't work for complex shapes
-- Per-block radius keeps attraction LOCAL (stem attracts to alcove, not whole piece)
-- This is critical for hexominoes where global radius would be too large
-- Each block needs: center position, list of vertex indices
-- Block centers must rotate when blob rotates
+1. Per-VERTEX radius (not per-block) gives finest control
+2. Outer vertices (edges) need larger radius; inner vertices (notches) need tiny radius
+3. Connection = `dist < radiusA + radiusB` (circles touching, not overlapping)
+4. Variable stiffness creates "searching/reaching" at range, firm pull when close
+5. Block filter must scale with slider to avoid hard-coded bottleneck
+6. Existing springs preserved independently of block proximity (only vertex distance matters)
+
+**Critical Constraints for Proto-5+:**
+- Attraction radius must NOT match or exceed grid vertex spacing (30px)
+- If it does, vertices connect to wrong neighbors across the shape
+- With multipliers: outer=1.5×30=45px reaches appropriately; inner=0.3×30=9px stays local
 
 ### Prototype Access URLs
 
@@ -106,12 +118,31 @@ updated: 2026-01-30
 7. **Proto-7:** Landing and Locked Goop — collision jiggle + attraction to settled pieces
 8. **Proto-8:** Performance Stress Test — 36 cells × 12 vertices at 40+ FPS mobile
 
+### Consolidated Parameter Recommendations (Proto 1-4)
+
+For Proto-5 and beyond, start with these base settings:
+
+| Parameter | Value | Source | Notes |
+|-----------|-------|--------|-------|
+| Damping | 0.94 | Proto-3 | Quick settle without overshoot |
+| Stiffness | 10-20 | Proto-1/2 | Soft but holds shape |
+| Pressure | 2.5 | Proto-1 | Minimal effect at this scale |
+| Iterations | 3 | Proto-1 | Stable without expensive |
+| Home Stiffness | 0.05-0.18 | Proto-2/3 | Lower=gummy, higher=snappy |
+| Attraction Radius | 20-25 | Proto-4 | Must be < 30 (vertex spacing) |
+| Outer Multiplier | 1.5 | Proto-4 | Edges reach farther |
+| Inner Multiplier | 0.3 | Proto-4 | Notches stay local |
+| Rest Length | 0 | Proto-4 | Required for merge detection |
+| Break Distance | 60 | Proto-4 | Effective stickiness |
+| Stiffness Ramp | 10%→100% | Proto-4 | Reaching → snapping |
+
 ### Resume Command
 ```
 Continue soft-body prototypes. Branch: soft-body-experiment
-Proto-4 complete with per-block attraction.
-Next: Proto-5 (goo filter) or continue refining Proto-4.
+Proto-4 COMPLETE with per-vertex radii + variable stiffness.
+Next: Proto-5 (goo filter / membrane merge visuals).
 Access prototypes at localhost:PORT/GOOPS/?proto=N
+See "Consolidated Parameter Recommendations" above for base settings.
 ```
 
 **Previous work (2026-01-28):**
@@ -282,44 +313,29 @@ Last session: 2026-01-31
 
 ### This Session Summary (2026-01-31)
 
-**Soft Body Goop Prototypes 1-4 — COMPLETE**
+**Proto-4 Refined — Per-Vertex Attraction + Variable Stiffness**
 
-Built and tuned 4 interactive prototypes validating soft body physics approach:
+Major improvements to Proto-4 attraction system:
 
-**Proto-1: Single Blob Physics**
-- Verlet integration with position-based spring constraints
-- T-tetromino shape with 10 perimeter vertices
-- Ring springs (perimeter) + cross springs (structural) + pressure
-- Catmull-Rom → Bezier smooth curve rendering
-- Interactive sliders for all parameters
-- **Finding:** "Gummy jello" feel at damping=0.975, stiffness=20, iterations=3+
+1. **Fixed spring preservation bug** — existing springs now checked independently of block proximity
+2. **Per-vertex attraction radii** — outer vertices (1.5x) reach farther, inner vertices (0.3x) stay local
+3. **Circle-touch connection** — `dist < radiusA + radiusB` triggers when circles touch, not overlap
+4. **Variable stiffness ramp** — 10% at max distance (gentle reaching) → 100% when close (firm pull)
+5. **Scaled block filter** — 4x slider value prevents hard-coded bottleneck at large radii
 
-**Proto-2: Blob Follows Cursor**
-- Blob target position follows cursor or click
-- homeStiffness controls lag/responsiveness
-- Rotate button tests shape morphing
-- **Finding:** Fantastic rotation morph at homeStiffness=0.03, damping=0.92
+**Final Proto-4 Parameters:**
+- Break Distance: 60 (stickiness feel)
+- Rest Length: 0 (required for merge calculations)
+- Outer Multiplier: 1.5x slider
+- Inner Multiplier: 0.3x slider
+- Stiffness Ramp: 10% → 100% based on spring length
 
-**Proto-3: Rotation Stress Test**
-- Fixed position blob with rotate button + auto-rotate toggle
-- Deviation meter tracks how far blob is from target
-- Peak deviation tracking for lag accumulation detection
-- **Finding:** No lag accumulation at 100ms auto-rotate with homeStiffness=0.18
-
-**Proto-4: Two Blobs Attraction**
-- T-tetromino (anchored) + U-pentomino (draggable)
-- Per-block attraction radius (not whole-piece) — CRITICAL INSIGHT
-- Each cell has its own attraction zone with vertex assignments
-- Block centers rotate with blob rotation
-- Rotate buttons for each shape
-- **Finding:** Per-block attraction keeps "reaching" effect local, essential for hexominoes
-
-**Technical Insights:**
-1. Position-based constraints >> force-based (stability)
-2. Skip first frame physics to prevent explosion
-3. homeOffset per vertex defines rest shape
-4. Per-block attraction radius essential for complex shapes
-5. Block centers must rotate with shape rotation
+**Critical Insights for Proto-5+:**
+- Attraction radius must be < vertex grid spacing (30px) or wrong connections form
+- High home stiffness + high attraction stiffness = goop stays true to placement
+- Lower values = more organic movement but may drift from data grid
+- Rest length MUST be 0 or very close for merge detection to work
+- Break distance 60-65 gives good "sticky" feeling
 
 **All prototypes accessible via:** `localhost:PORT/GOOPS/?proto=N`
 

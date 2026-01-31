@@ -17,6 +17,7 @@ interface Vertex {
   oldPos: Vec2;
   homeOffset: Vec2;
   mass: number;
+  attractionRadius: number;  // Per-vertex attraction radius
 }
 
 interface Spring {
@@ -72,10 +73,10 @@ const DEFAULT_PARAMS: PhysicsParams = {
   pressure: 2.5,
   iterations: 3,
   homeStiffness: 0.05,
-  attractionRadius: UNIT_SIZE,  // One block length
-  attractionRestLength: 5,
+  attractionRadius: UNIT_SIZE,  // Base radius (slider controls this)
+  attractionRestLength: 0,      // Must touch to "merge"
   attractionStiffness: 0.02,
-  breakDistance: 120,
+  breakDistance: 60,            // Break when pulled apart
 };
 
 // ============================================================================
@@ -95,6 +96,12 @@ function createBlob(centerX: number, centerY: number, color: string, shape: Shap
   let perimeterPoints: Vec2[];
   let crossPairs: number[][];
   let blockDefs: { center: Vec2; vertices: number[] }[];
+  let vertexRadii: number[];  // Per-vertex attraction radius MULTIPLIERS
+
+  // Multipliers applied to params.attractionRadius (slider value)
+  // Outer edges reach farther, inner corners stay tight
+  const OUTER_MULT = 1.5;   // 150% of slider value
+  const INNER_MULT = 0.3;   // 30% of slider value
 
   if (shape === 'T') {
     // T-tetromino:  ███   (3 wide, 2 tall)
@@ -111,6 +118,19 @@ function createBlob(centerX: number, centerY: number, color: string, shape: Shap
       { x: -0.5 * u, y: 1 * u },     // 7: stem bottom-left
       { x: -0.5 * u, y: 0 * u },     // 8: inner left
       { x: -1.5 * u, y: 0 * u },     // 9
+    ];
+    // Vertices 5, 8 are inner corners (where stem meets bar)
+    vertexRadii = [
+      OUTER_MULT,  // 0: top-left corner
+      OUTER_MULT,  // 1: top edge
+      OUTER_MULT,  // 2: top edge
+      OUTER_MULT,  // 3: top-right corner
+      OUTER_MULT,  // 4: right edge
+      INNER_MULT,  // 5: INNER right (stem junction)
+      OUTER_MULT,  // 6: stem bottom-right
+      OUTER_MULT,  // 7: stem bottom-left
+      INNER_MULT,  // 8: INNER left (stem junction)
+      OUTER_MULT,  // 9: left edge
     ];
     crossPairs = [
       [0, 4], [0, 5], [3, 9], [3, 8],
@@ -150,6 +170,21 @@ function createBlob(centerX: number, centerY: number, color: string, shape: Shap
       { x: -1.5 * u, y: 1 * u },     // 10: bottom-left
       { x: -1.5 * u, y: 0 * u },     // 11: left side middle
     ];
+    // Vertices 2, 3 are the notch corners (inner)
+    vertexRadii = [
+      OUTER_MULT,  // 0: top-left outer corner
+      OUTER_MULT,  // 1: top edge (left arm)
+      INNER_MULT,  // 2: NOTCH left corner
+      INNER_MULT,  // 3: NOTCH right corner
+      OUTER_MULT,  // 4: top edge (right arm)
+      OUTER_MULT,  // 5: top-right outer corner
+      OUTER_MULT,  // 6: right edge
+      OUTER_MULT,  // 7: bottom-right corner
+      OUTER_MULT,  // 8: bottom edge
+      OUTER_MULT,  // 9: bottom edge
+      OUTER_MULT,  // 10: bottom-left corner
+      OUTER_MULT,  // 11: left edge
+    ];
     crossPairs = [
       [0, 6], [5, 10], [1, 11], [4, 6],
       [2, 9], [3, 8], [0, 9], [5, 8],
@@ -165,12 +200,14 @@ function createBlob(centerX: number, centerY: number, color: string, shape: Shap
     ];
   }
 
-  for (const pt of perimeterPoints) {
+  for (let i = 0; i < perimeterPoints.length; i++) {
+    const pt = perimeterPoints[i];
     vertices.push({
       pos: { x: centerX + pt.x, y: centerY + pt.y },
       oldPos: { x: centerX + pt.x, y: centerY + pt.y },
       homeOffset: { x: pt.x, y: pt.y },
       mass: 1.0,
+      attractionRadius: vertexRadii[i],
     });
   }
 
@@ -325,8 +362,25 @@ function updateAttractionSprings(
   params: PhysicsParams
 ): AttractionSpring[] {
   const newSprings: AttractionSpring[] = [];
+  const keptSpringKeys = new Set<string>();
 
-  // For each pair of blobs
+  // PHASE 1: Preserve existing springs based on vertex distance only
+  // (Block proximity doesn't matter for existing connections)
+  for (const spring of springs) {
+    const vA = blobs[spring.blobA].vertices[spring.vertA];
+    const vB = blobs[spring.blobB].vertices[spring.vertB];
+
+    const dx = vB.pos.x - vA.pos.x;
+    const dy = vB.pos.y - vA.pos.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < params.breakDistance) {
+      newSprings.push(spring);
+      keptSpringKeys.add(`${spring.blobA}-${spring.vertA}-${spring.blobB}-${spring.vertB}`);
+    }
+  }
+
+  // PHASE 2: Create new springs for nearby blocks
   for (let bi = 0; bi < blobs.length; bi++) {
     for (let bj = bi + 1; bj < blobs.length; bj++) {
       const blobA = blobs[bi];
@@ -343,11 +397,16 @@ function updateAttractionSprings(
           const blockDy = centerB.y - centerA.y;
           const blockDist = Math.sqrt(blockDx * blockDx + blockDy * blockDy);
 
-          // Only create vertex springs if blocks are within attraction radius
-          if (blockDist < params.attractionRadius) {
-            // Now check vertices belonging to these blocks
+          // Only create NEW springs if blocks are reasonably close
+          // Scale with slider (4x to cover sum of two 1.5x outer multipliers plus margin)
+          if (blockDist < params.attractionRadius * 4) {
             for (const vi of blockA.vertexIndices) {
               for (const vj of blockB.vertexIndices) {
+                const springKey = `${bi}-${vi}-${bj}-${vj}`;
+
+                // Skip if already kept from phase 1
+                if (keptSpringKeys.has(springKey)) continue;
+
                 const vA = blobA.vertices[vi];
                 const vB = blobB.vertices[vj];
 
@@ -355,18 +414,14 @@ function updateAttractionSprings(
                 const dy = vB.pos.y - vA.pos.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                // Check if spring already exists
-                const existing = springs.find(
-                  s => s.blobA === bi && s.vertA === vi && s.blobB === bj && s.vertB === vj
-                );
+                // Connection triggers when radius circles TOUCH (edges meet)
+                // Sum both radii: each vertex "reaches" its own radius distance
+                const radiusA = params.attractionRadius * vA.attractionRadius;
+                const radiusB = params.attractionRadius * vB.attractionRadius;
+                const effectiveRadius = radiusA + radiusB;
 
-                if (existing) {
-                  // Keep existing spring if not broken
-                  if (dist < params.breakDistance) {
-                    newSprings.push(existing);
-                  }
-                } else if (dist < params.attractionRadius) {
-                  // Create new spring only if vertices are also close
+                // Create new spring if circles overlap
+                if (dist < effectiveRadius) {
                   newSprings.push({
                     blobA: bi,
                     vertA: vi,
@@ -374,6 +429,7 @@ function updateAttractionSprings(
                     vertB: vj,
                     restLength: params.attractionRestLength,
                   });
+                  keptSpringKeys.add(springKey);
                 }
               }
             }
@@ -391,6 +447,10 @@ function applyAttractionSprings(
   springs: AttractionSpring[],
   params: PhysicsParams
 ): void {
+  // Stiffness range: ramps from min (at max distance) to max (when close)
+  const MIN_STIFFNESS = params.attractionStiffness * 0.1;  // 10% at edge
+  const MAX_STIFFNESS = params.attractionStiffness;        // 100% when close
+
   for (const spring of springs) {
     const vA = blobs[spring.blobA].vertices[spring.vertA];
     const vB = blobs[spring.blobB].vertices[spring.vertB];
@@ -401,8 +461,16 @@ function applyAttractionSprings(
 
     if (dist < 0.0001) continue;
 
+    // Calculate max connection distance for this pair (sum of radii)
+    const maxDist = params.attractionRadius * (vA.attractionRadius + vB.attractionRadius);
+
+    // Interpolate stiffness: far = weak "reaching", close = strong pull
+    // t=0 at maxDist, t=1 at restLength
+    const t = 1 - Math.max(0, Math.min(1, (dist - spring.restLength) / (maxDist - spring.restLength)));
+    const stiffness = MIN_STIFFNESS + t * (MAX_STIFFNESS - MIN_STIFFNESS);
+
     const error = dist - spring.restLength;
-    const correction = error * params.attractionStiffness * 0.5;
+    const correction = error * stiffness * 0.5;
     const cx = (dx / dist) * correction;
     const cy = (dy / dist) * correction;
 
@@ -567,22 +635,23 @@ export function SoftBodyProto4() {
       ctx.fillStyle = '#2c3e50';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw per-block attraction radius guides
+      // Draw per-vertex attraction radius guides
       if (showDebug) {
-        ctx.strokeStyle = 'rgba(243, 156, 18, 0.3)';
         ctx.lineWidth = 1;
         for (const blob of blobs) {
-          for (const block of blob.blocks) {
-            const center = getBlockWorldCenter(blob, block);
-            ctx.beginPath();
-            ctx.arc(center.x, center.y, params.attractionRadius, 0, Math.PI * 2);
-            ctx.stroke();
+          for (const vertex of blob.vertices) {
+            // Calculate actual radius: slider value * vertex multiplier
+            const actualRadius = params.attractionRadius * vertex.attractionRadius;
 
-            // Draw block center dot
-            ctx.fillStyle = 'rgba(243, 156, 18, 0.7)';
+            // Color by multiplier: > 1 = orange (outer), < 1 = blue (inner)
+            const isOuter = vertex.attractionRadius > 1.0;
+            ctx.strokeStyle = isOuter
+              ? 'rgba(243, 156, 18, 0.3)'  // Orange for outer (large multiplier)
+              : 'rgba(52, 152, 219, 0.3)'; // Blue for inner (small multiplier)
+
             ctx.beginPath();
-            ctx.arc(center.x, center.y, 4, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.arc(vertex.pos.x, vertex.pos.y, actualRadius, 0, Math.PI * 2);
+            ctx.stroke();
           }
         }
       }
