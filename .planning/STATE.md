@@ -313,29 +313,45 @@ Last session: 2026-01-31
 
 ### This Session Summary (2026-01-31)
 
-**Proto-5 + 5b Complete — Gooey Filter with Single Perimeter Shapes**
+**Proto-5b COMPLETE — Gold Standard Achieved**
 
-**Proto-5:** Composed blocks with gooey filter
-- Each block is separate soft body blob
-- Problem: blocks fly apart on rotation (not cohesive)
-- Filter settings found: Blur=8, AlphaMult=20, AlphaOffset=-7 (Medium preset)
+Proto-5b is the winner with all features working:
 
-**Proto-5b:** Single perimeter shapes (WINNER)
-- Each shape is ONE continuous soft body (like Proto-4)
-- Gooey filter applied for membrane merge visual
-- Rotation is cohesive - shape deforms as unit
-- **Key insight:** We can make ANY polyomino shape with single perimeter!
-- Works for standard AND corrupted (non-contiguous) pieces
+**Core Features:**
+- Single perimeter shapes (T, U, Corrupted T)
+- Gooey SVG filter for membrane merge
+- Attraction springs between blobs with mozzarella pull
+- Beads-on-string tendrils (solid vector look when stretched)
+- Corrupted shapes work with pressure disabled
 
-**Filter Settings (Medium - Best):**
-- Blur (stdDeviation): 8
-- Alpha Multiplier: 20
-- Alpha Offset: -7
+**Gold Standard Settings:**
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| Blur | 8 | stdDeviation |
+| Alpha Mult | 20 | |
+| Alpha Offset | -12 | Sharper edges |
+| Goopiness | 25px | Break distance |
+| Attraction Radius | 20px | Connection distance |
+| Attraction Strength | 0.005 | Gentle pull |
 
-**Next for 5b:** Add attraction springs + "Goopiness" slider
-- Break distance slider for mozzarella pull effect
-- Variable stiffness for reaching behavior
-- Need to test corrupted (corner-connected) shapes
+**Key Learnings:**
+- Beads-on-string approach for tendrils (not thick lines) - stays solid under filter
+- Corrupted shapes need `usePressure: false` (self-intersecting perimeter breaks area calc)
+- Per-vertex attraction multipliers: outer=1.5x, inner=0.3x
+- Variable stiffness ramp: 10% at max distance → 100% when close
+
+**Remaining Prototypes Before Game Integration:**
+
+1. **Proto-6: Fill/Pour** — Goop "filling" a piece shape (animation when piece spawns?)
+2. **Proto-7: Pop** — What happens visually when goop is cleared/popped
+3. **Proto-8: Loose Goop** — Free-flowing goop when freed from locked state
+4. **Proto-9+: Integration** — Into actual game
+
+**Architecture Insight (from user):**
+- Game piece "home" = current invisible data piece position
+- Soft body rendering replaces current block rendering
+- Landing impact may need extra "squish" force (concern: soft body might not show force)
+- No "line clears" — instead there's LooseGoop system (freed goop flows)
 
 **Previous: Proto-4 Refined — Per-Vertex Attraction + Variable Stiffness**
 
