@@ -12,8 +12,15 @@ import { GameEventType } from './core/events/GameEvents';
 import { audio } from './utils/audio';
 import { useAudioSubscription } from './hooks/useAudioSubscription';
 import { UPGRADES } from './constants';
+import { SoftBodyProto1 } from './prototypes/SoftBodyProto1';
 
 type ViewState = 'GAME' | 'UPGRADES' | 'SETTINGS' | 'HOW_TO_PLAY';
+
+// Check URL for prototype mode: ?proto=1
+const isProtoMode = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('proto') === '1';
+};
 
 const App: React.FC = () => {
   // Start directly in GAME view (which now acts as the Console/Menu)
@@ -179,6 +186,11 @@ const App: React.FC = () => {
       };
     });
   }, []);
+
+  // Render prototype if ?proto=1 in URL
+  if (isProtoMode()) {
+    return <SoftBodyProto1 />;
+  }
 
   return (
     <div className="w-full h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
