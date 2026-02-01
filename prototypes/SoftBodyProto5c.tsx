@@ -48,8 +48,9 @@ interface AttractionSpring {
 interface InnerRegion {
   offsetX: number;  // Offset from blob center
   offsetY: number;
-  points: Vec2[];   // Local home coordinates
-  vertices: InnerVertex[];  // Physics-simulated vertices (like innerVertices)
+  points: Vec2[];   // Local home coordinates (used as fallback)
+  vertices: InnerVertex[];  // Physics-simulated vertices (unused when outerVertexIndices defined)
+  outerVertexIndices?: number[];  // Maps each corner to an outer vertex index (for wobble)
 }
 
 interface Blob {
@@ -290,12 +291,19 @@ function createBlob(centerX: number, centerY: number, shape: ShapeType, color: s
   }
   const restArea = Math.abs(area) / 2;
 
-  // For Corrupt shape, define 3 separate simple inner regions with physics vertices
+  // For Corrupt shape, define 3 separate inner regions that derive from outer vertices
+  // This makes them wobble like T/U shapes (inner follows outer deformation)
   let innerRegions: InnerRegion[] | undefined;
   if (shape === 'Corrupt') {
     const halfU = 0.5 * u;
+    // Map each inner region corner to an outer vertex index
+    // Outer vertex layout for Corrupt (20 vertices):
+    // 0: top-left corner, 1: inner top-left, 2: inner bottom-left corner
+    // 5-8: stem area (5=top-left, 6=bottom-left, 7=bottom-right, 8=top-right)
+    // 11: inner bottom-right corner, 12: inner top-right, 13: top-right corner
+    // 14: bottom-right, 19: bottom-left
     const regionDefs = [
-      // Top-left square (1x1)
+      // Top-left square - maps to outer vertices 0, 1, 2, 19
       {
         offsetX: -u,
         offsetY: -u,
@@ -305,8 +313,9 @@ function createBlob(centerX: number, centerY: number, shape: ShapeType, color: s
           { x: halfU, y: halfU },
           { x: -halfU, y: halfU },
         ],
+        outerVertexIndices: [0, 1, 2, 19],  // corners map to these outer vertices
       },
-      // Top-right square (1x1)
+      // Top-right square - maps to outer vertices 12, 13, 14, 11
       {
         offsetX: u,
         offsetY: -u,
@@ -316,8 +325,9 @@ function createBlob(centerX: number, centerY: number, shape: ShapeType, color: s
           { x: halfU, y: halfU },
           { x: -halfU, y: halfU },
         ],
+        outerVertexIndices: [12, 13, 14, 11],  // corners map to these outer vertices
       },
-      // Stem rectangle (1x2)
+      // Stem rectangle - maps to outer vertices 5, 8, 7, 6
       {
         offsetX: 0,
         offsetY: halfU,
@@ -327,10 +337,11 @@ function createBlob(centerX: number, centerY: number, shape: ShapeType, color: s
           { x: halfU, y: u },
           { x: -halfU, y: u },
         ],
+        outerVertexIndices: [5, 8, 7, 6],  // corners map to these outer vertices
       },
     ];
 
-    // Create physics vertices for each region
+    // Create inner regions (vertices kept for compatibility but not used when outerVertexIndices exists)
     innerRegions = regionDefs.map(def => {
       const regionVertices: InnerVertex[] = def.points.map(p => {
         const worldX = centerX + def.offsetX + p.x;
@@ -338,13 +349,13 @@ function createBlob(centerX: number, centerY: number, shape: ShapeType, color: s
         return {
           pos: { x: worldX, y: worldY },
           oldPos: { x: worldX, y: worldY },
-          // homeOffset is relative to the REGION center (blob center + region offset)
           homeOffset: { x: p.x, y: p.y },
         };
       });
       return {
         ...def,
         vertices: regionVertices,
+        outerVertexIndices: def.outerVertexIndices,
       };
     });
   }
@@ -1182,11 +1193,17 @@ export function SoftBodyProto5c() {
         {/* LAYER 2: Inner cutout - use innerRegions if available, else inset outer */}
         {blobsRef.current.map((blob, i) => {
           if (blob.innerRegions) {
-            // Render separate simple inner regions (for complex shapes like Corrupt)
-            // Use physics-simulated vertices
+            // Render separate inner regions (for complex shapes like Corrupt)
             return blob.innerRegions.map((region, ri) => {
-              const worldPoints = region.vertices.map(v => v.pos);
-              // Apply inset to each region
+              let worldPoints: Vec2[];
+              if (region.outerVertexIndices) {
+                // Use outer vertex positions directly - this makes inner wobble with outer!
+                worldPoints = region.outerVertexIndices.map(idx => blob.vertices[idx].pos);
+              } else {
+                // Fallback: use physics-simulated inner vertices
+                worldPoints = region.vertices.map(v => v.pos);
+              }
+              // Apply inset to the region
               const insetPoints = getInsetPath(worldPoints, physics.wallThickness);
               return (
                 <path

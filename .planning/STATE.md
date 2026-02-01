@@ -20,11 +20,11 @@ updated: 2026-01-31
 ## Next Steps
 
 **Current:** Proto-5c Cell Wall Rendering
-**Status:** IN PROGRESS — Inner regions not responding to physics correctly
+**Status:** COMPLETE — Inner regions now wobble like T/U shapes
 **Branch:** `soft-body-experiment`
 **Server:** `localhost:5201/GOOPS/?proto=5c`
 
-### CRITICAL RESUME CONTEXT — Proto-5c Cell Wall Experiment
+### Proto-5c Cell Wall Experiment — SOLVED
 
 **The Goal:**
 Render goop with a "cell wall" effect:
@@ -38,80 +38,34 @@ Render goop with a "cell wall" effect:
 2. Layer 2: Render inner shape on top with background color (cuts out the middle)
 3. Result: visible cell wall ring
 
-**Current Problem (UNSOLVED):**
-For the Corrupt shape, the inner cutouts don't respond to physics like T and U do. They just rotate/translate but don't wobble or rebound when dragged.
+**The Problem (SOLVED):**
+Corrupt shape inner cutouts weren't wobbling like T/U shapes because they had separate physics vertices instead of deriving from the outer vertices.
 
-**What's Been Tried:**
+**The Fix:**
+Added `outerVertexIndices` to `InnerRegion` interface. Each inner region corner maps to a specific outer vertex. At render time, inner positions are derived directly from outer vertex positions (not simulated separately).
 
-1. **Simple inset toward center** — Failed for complex shapes (T-shape notches didn't work)
+Mappings for Corrupt shape:
+- Top-left square → outer vertices [0, 1, 2, 19]
+- Top-right square → outer vertices [12, 13, 14, 11]
+- Stem rectangle → outer vertices [5, 8, 7, 6]
 
-2. **Proper path offset with vertex normals** — Works for T and U, but Corrupt shape has self-intersecting perimeter that breaks it
-
-3. **Split Corrupt into 3 separate blobs** — Works but then they're not connected (no single outer gooey shell)
-
-4. **Hybrid approach (CURRENT):**
-   - Outer: Single complex Corrupt perimeter (for gooey merging)
-   - Inner: 3 separate simple `InnerRegion` shapes with their own physics vertices
-   - Added `innerRegions?: InnerRegion[]` to Blob interface
-   - Added physics simulation (integrate + applyHomeForce) for innerRegion vertices
-   - **STILL NOT WORKING** — inner regions don't wobble like T/U do
-
-**The Difference:**
-- T and U: `getInsetPath(blob.vertices.map(v => v.pos))` — uses OUTER vertices which ARE physics-simulated
-- Corrupt: `region.vertices.map(v => v.pos)` — uses separate innerRegion vertices
-
-The T/U inner cutouts follow the OUTER vertices' deformation. The Corrupt inner regions have their OWN vertices that aren't getting the same physics wobble.
-
-**Possible Fixes to Try:**
-1. Make innerRegion vertices follow/interpolate from nearest outer vertices
-2. Apply same physics forces to innerRegion vertices that outer vertices get
-3. Different architecture — maybe inner should track outer, not simulate independently
-
-**Key Files:**
-- `prototypes/SoftBodyProto5c.tsx` — Main prototype file (~1200 lines)
-
-**Key Code Sections:**
-
+**Key Code:**
 ```typescript
-// InnerRegion interface (line ~47)
 interface InnerRegion {
-  offsetX: number;
-  offsetY: number;
-  points: Vec2[];           // Local home coordinates
-  vertices: InnerVertex[];  // Physics-simulated vertices
-}
-
-// Blob interface includes optional innerRegions
-interface Blob {
-  vertices: Vertex[];           // Outer (gooey)
-  innerVertices: InnerVertex[]; // Inner (for simple shapes)
-  innerRegions?: InnerRegion[]; // For complex shapes like Corrupt
+  outerVertexIndices?: number[];  // Maps corners to outer vertices (for wobble)
   // ... other fields
 }
 
-// Physics simulation for innerRegions (in integrate and applyHomeForce functions)
-if (blob.innerRegions) {
-  for (const region of blob.innerRegions) {
-    // Vertices get damping, gravity, and strong home force
-    // But they're NOT deforming like outer vertices do
-  }
-}
-
-// Rendering (LAYER 2, around line 1150)
-if (blob.innerRegions) {
-  // Uses region.vertices.map(v => v.pos) — the physics-simulated positions
-  // Then applies getInsetPath for wall thickness
+// Rendering: use outer vertex positions when available
+if (region.outerVertexIndices) {
+  worldPoints = region.outerVertexIndices.map(idx => blob.vertices[idx].pos);
+} else {
+  worldPoints = region.vertices.map(v => v.pos);  // fallback
 }
 ```
 
-**The T/U approach that WORKS:**
-Their inner cutout is computed from `blob.vertices` (the OUTER gooey vertices). As the outer vertices deform from physics, the inner cutout follows because it's computed FROM those outer positions.
-
-**The Corrupt approach that DOESN'T WORK:**
-The inner regions have their OWN separate vertices. These vertices get physics simulation (integrate + home force), but they don't "feel" the same deformations that the outer vertices experience from the springs and pressure.
-
-**Possible Solution Direction:**
-Instead of giving innerRegions their own physics vertices, compute their positions as an OFFSET from nearby outer vertices. This way when the outer wobbles, the inner wobbles too (because it's derived from outer).
+**Key Files:**
+- `prototypes/SoftBodyProto5c.tsx` — Main prototype file
 
 ### Proto-5c Parameters
 
@@ -177,21 +131,19 @@ How does freed goop behave when disconnected?
 Last session: 2026-01-31
 **Version:** 1.1.13
 **Branch:** soft-body-experiment
-**Build:** 107
+**Build:** 108
 
 ### Resume Command
 ```
-Continue Proto-5c cell wall experiment. Branch: soft-body-experiment
+Proto-5c cell wall experiment COMPLETE. Branch: soft-body-experiment
 Server: localhost:5201/GOOPS/?proto=5c
 
-PROBLEM: Corrupt shape inner cutouts don't wobble/rebound like T and U.
-- T/U inner cutouts derive from OUTER vertices (which have physics)
-- Corrupt inner regions have SEPARATE vertices that don't feel same deformation
+SOLVED: Corrupt inner regions now wobble like T/U shapes.
+Fix: Added outerVertexIndices to InnerRegion — maps each inner corner to outer vertex.
+At render time, inner positions derive from outer vertices (not simulated separately).
 
-SOLUTION DIRECTION: Inner should be computed FROM outer, not simulated independently.
-
+Next: Move to Proto-6 (Fill/Pour) or integrate cell wall into main game.
 File: prototypes/SoftBodyProto5c.tsx
-Key sections: InnerRegion interface, integrate(), applyHomeForce(), LAYER 2 rendering
 ```
 
 ---
