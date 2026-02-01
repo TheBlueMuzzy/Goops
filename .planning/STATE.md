@@ -15,13 +15,47 @@ updated: 2026-01-31
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- `soft-body-experiment` — Soft Body Goop (SBG) visual overhaul (Proto-7 IN PROGRESS)
+- `soft-body-experiment` — Soft Body Goop (SBG) visual overhaul (Proto-8 IN PROGRESS)
 
 ## Next Steps
 
 **Current:** Proto-8 Pop
-**Status:** READY TO START
+**Status:** IN PROGRESS - Dev menu added, pressure system rebuilt
 **Branch:** `soft-body-experiment`
+
+### Proto-8 Pop — IN PROGRESS
+
+**The Goal:**
+Test what happens when goop is cleared — pop effect with droplet residue.
+
+**What Works:**
+- Pop effect: click filled blobs to spawn droplets that scatter and fade
+- Droplets bounce off floor, exit through sides (matches real game - no side walls)
+- Blob-to-blob collision for different colors (push apart, don't overlap)
+- Dev menu toggles with ` key
+- Save/Load settings to localStorage
+- Debug vertex visualization for merged blobs (yellow numbered dots)
+
+**Pressure System Rebuilt:**
+Old area-based pressure had bugs with complex merged shapes (inverted blobs). New approach:
+- Radial spring model: each vertex wants to maintain its rest distance from center
+- Compressed → pushes out, Stretched → pulls in
+- No pressure on falling pieces (only locked blobs)
+- Still being tuned - may need adjustment
+
+**Key Technical Findings:**
+- Perimeter winding order matters for pressure normals (CCW = outward)
+- Added winding detection and auto-reversal if clockwise
+- Momentum transfer during merge was causing instability (needs review)
+
+**Key Files:**
+- `prototypes/SoftBodyProto8.tsx` — Pop mechanics prototype
+- Access via: `?proto=8`
+
+**Next:**
+- Tune pressure system for good bounciness without instability
+- Test pop effect feel
+- Proto-9 (Loose Goop) — how freed goop behaves
 
 ### Proto-7 Merge — COMPLETE ✅
 

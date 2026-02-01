@@ -1100,6 +1100,66 @@ export function SoftBodyProto8() {
   const [dropletLifetime, setDropletLifetime] = useState(1.0); // Seconds to fade out
   const [dropletSize, setDropletSize] = useState(8);         // Base radius
 
+  // Dev menu state
+  const [showDevMenu, setShowDevMenu] = useState(false);
+  const DEV_SETTINGS_KEY = 'proto8-dev-settings';
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(DEV_SETTINGS_KEY);
+    if (saved) {
+      try {
+        const settings = JSON.parse(saved);
+        if (settings.physics) setPhysics(settings.physics);
+        if (settings.fillParams) setFillParams(settings.fillParams);
+        if (settings.filterParams) {
+          setFilterParams(settings.filterParams);
+          setActivePreset('custom');
+        }
+        if (settings.fallSpeed) setFallSpeed(settings.fallSpeed);
+        if (settings.impactStrength) setImpactStrength(settings.impactStrength);
+        if (settings.impactRadius) setImpactRadius(settings.impactRadius);
+        if (settings.dropletCount) setDropletCount(settings.dropletCount);
+        if (settings.dropletSpeed) setDropletSpeed(settings.dropletSpeed);
+        if (settings.dropletLifetime) setDropletLifetime(settings.dropletLifetime);
+        if (settings.dropletSize) setDropletSize(settings.dropletSize);
+        console.log('Loaded dev settings from localStorage');
+      } catch (e) {
+        console.warn('Failed to load dev settings:', e);
+      }
+    }
+  }, []);
+
+  // Toggle dev menu with ` key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '`') {
+        e.preventDefault();
+        setShowDevMenu(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Save all dev settings to localStorage
+  const saveDevSettings = useCallback(() => {
+    const settings = {
+      physics,
+      fillParams,
+      filterParams,
+      fallSpeed,
+      impactStrength,
+      impactRadius,
+      dropletCount,
+      dropletSpeed,
+      dropletLifetime,
+      dropletSize,
+    };
+    localStorage.setItem(DEV_SETTINGS_KEY, JSON.stringify(settings));
+    console.log('Saved dev settings to localStorage');
+  }, [physics, fillParams, filterParams, fallSpeed, impactStrength, impactRadius, dropletCount, dropletSpeed, dropletLifetime, dropletSize]);
+
   // Helper to initialize grid with starting pieces
   const initializeGrid = useCallback(() => {
     // Clear and create fresh grid
@@ -1814,7 +1874,51 @@ export function SoftBodyProto8() {
           />
           <span>Show Grid</span>
         </label>
+        <span style={{ opacity: 0.5, fontSize: 12 }}>Press ` for dev menu</span>
       </div>
+
+      {/* DEV MENU - Toggle with ` key */}
+      {showDevMenu && (
+      <div style={{
+        background: 'rgba(0,0,0,0.8)',
+        border: '2px solid #3498db',
+        borderRadius: 8,
+        padding: 15,
+        marginBottom: 15,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+          <h3 style={{ margin: 0, color: '#3498db' }}>Dev Menu</h3>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={saveDevSettings}
+              style={{
+                padding: '8px 16px',
+                background: '#27ae60',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Save Settings
+            </button>
+            <button
+              onClick={() => setShowDevMenu(false)}
+              style={{
+                padding: '8px 16px',
+                background: '#e74c3c',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
 
       {/* Filter presets */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
@@ -2108,6 +2212,10 @@ export function SoftBodyProto8() {
           />
         </label>
       </div>
+
+      </div>
+      )}
+      {/* END DEV MENU */}
 
       {/* SVG Canvas */}
       <svg
