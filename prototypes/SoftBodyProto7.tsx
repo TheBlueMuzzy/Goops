@@ -80,6 +80,8 @@ interface PhysicsParams {
   iterations: number;
   homeStiffness: number;
   innerHomeStiffness: number;
+  returnSpeed: number;  // How fast blobs return to shape (0.01 = slow, 1.0 = snappy)
+  viscosity: number;    // Resistance to return motion (0 = off, 1 = honey-like)
   attractionRadius: number;
   attractionRestLength: number;
   attractionStiffness: number;
@@ -112,12 +114,14 @@ const CANVAS_WIDTH = GRID_COLS * CELL_SIZE + GRID_OFFSET_X * 2;
 const CANVAS_HEIGHT = GRID_ROWS * CELL_SIZE + GRID_OFFSET_Y * 2;
 
 const DEFAULT_PHYSICS: PhysicsParams = {
-  damping: 0.94,
-  stiffness: 15,
-  pressure: 2.5,
+  damping: 0.97,
+  stiffness: 1,
+  pressure: 5,
   iterations: 3,
-  homeStiffness: 0.08,
-  innerHomeStiffness: 0.5,
+  homeStiffness: 0.01,
+  innerHomeStiffness: 0.1,
+  returnSpeed: 0.5,  // 1.0 = instant, lower = slower return
+  viscosity: 2.5,    // 0 = off, higher = more honey-like resistance
   attractionRadius: 20,
   attractionRestLength: 0,
   attractionStiffness: 0.005,
@@ -143,7 +147,7 @@ const BOOP_SCALE = 1.15;
 const BOOP_RETURN_DURATION = 200;
 
 // Fall speed in pixels per second
-const FALL_SPEED = 80;  // Adjust for desired fall rate
+const FALL_SPEED = 200;  // Adjust for desired fall rate
 
 const COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
 
@@ -326,30 +330,35 @@ function createBlobFromCells(cells: Vec2[], color: string, isLocked: boolean): B
     });
   }
 
-  // Create cross springs (connect opposite-ish vertices for stability)
+  // Create cross springs - DISTANCE BASED for floppy arms
+  // Only connect vertices that are physically close (within ~1.5 cells)
+  // This allows arms of T/L shapes to swing independently
   const crossSprings: Spring[] = [];
+  const MAX_CROSS_DISTANCE = CELL_SIZE * 1.5;  // ~75px - only local connections
+  const addedPairs = new Set<string>();
+
   for (let i = 0; i < n; i++) {
-    // Connect to vertex roughly opposite
-    const opposite = (i + Math.floor(n / 2)) % n;
-    if (opposite !== i) {
-      const dx = vertices[opposite].homeOffset.x - vertices[i].homeOffset.x;
-      const dy = vertices[opposite].homeOffset.y - vertices[i].homeOffset.y;
-      crossSprings.push({
-        a: i,
-        b: opposite,
-        restLength: Math.sqrt(dx * dx + dy * dy),
-      });
-    }
-    // Also connect to quarter points for more stability
-    const quarter = (i + Math.floor(n / 4)) % n;
-    if (quarter !== i && quarter !== opposite) {
-      const dx = vertices[quarter].homeOffset.x - vertices[i].homeOffset.x;
-      const dy = vertices[quarter].homeOffset.y - vertices[i].homeOffset.y;
-      crossSprings.push({
-        a: i,
-        b: quarter,
-        restLength: Math.sqrt(dx * dx + dy * dy),
-      });
+    // Skip immediate neighbors (already connected by ring springs)
+    for (let j = i + 2; j < n; j++) {
+      // Also skip the wrap-around neighbor
+      if (j === n - 1 && i === 0) continue;
+
+      const dx = vertices[j].homeOffset.x - vertices[i].homeOffset.x;
+      const dy = vertices[j].homeOffset.y - vertices[i].homeOffset.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Only create spring if vertices are close enough
+      if (dist < MAX_CROSS_DISTANCE) {
+        const pairKey = `${Math.min(i, j)}-${Math.max(i, j)}`;
+        if (!addedPairs.has(pairKey)) {
+          addedPairs.add(pairKey);
+          crossSprings.push({
+            a: i,
+            b: j,
+            restLength: dist,
+          });
+        }
+      }
     }
   }
 
@@ -495,14 +504,42 @@ function integrate(blob: Blob, params: PhysicsParams, dt: number): void {
 }
 
 function applyHomeForce(blob: Blob, params: PhysicsParams): void {
+  // returnSpeed controls how fast the blob returns to shape
+  // Power curve gives finer control at low values (0.1 → 0.01 effective)
+  // NOTE: Falling pieces use full speed (1.0) to keep up with grid position
+  const speedMult = blob.isLocked
+    ? params.returnSpeed * params.returnSpeed  // squared for finer low-end control
+    : 1.0;  // Falling pieces stay snappy
+
+  // Viscosity: converts instant position correction into gradual velocity-based movement
+  // 0 = normal (position-based, snappy)
+  // 1+ = full viscosity (velocity-based, honey-like slow return)
+  // NOTE: Falling pieces (not locked) skip viscosity to avoid lagging behind
+  const viscosity = blob.isLocked ? params.viscosity : 0;
+  // At viscosity >= 1, position correction is fully off, only velocity-based
+  const positionFactor = Math.max(0, 1 - viscosity);
+  // Higher viscosity = even slower velocity application
+  const velocityFactor = viscosity > 0 ? 0.03 / Math.max(1, viscosity) : 0;
+
   for (const v of blob.vertices) {
     const rotatedHome = rotatePoint(v.homeOffset.x, v.homeOffset.y, blob.rotation);
     const targetX = blob.targetX + rotatedHome.x;
     const targetY = blob.targetY + rotatedHome.y;
     const dx = targetX - v.pos.x;
     const dy = targetY - v.pos.y;
-    v.pos.x += dx * params.homeStiffness;
-    v.pos.y += dy * params.homeStiffness;
+
+    const forceX = dx * params.homeStiffness * speedMult;
+    const forceY = dy * params.homeStiffness * speedMult;
+
+    // Position correction (instant, jello-like)
+    v.pos.x += forceX * positionFactor;
+    v.pos.y += forceY * positionFactor;
+
+    // Velocity correction (gradual, honey-like) - adjusting oldPos adds velocity
+    if (viscosity > 0) {
+      v.oldPos.x -= forceX * velocityFactor;
+      v.oldPos.y -= forceY * velocityFactor;
+    }
   }
 
   for (const v of blob.innerVertices) {
@@ -511,8 +548,17 @@ function applyHomeForce(blob: Blob, params: PhysicsParams): void {
     const targetY = blob.targetY + rotatedHome.y;
     const dx = targetX - v.pos.x;
     const dy = targetY - v.pos.y;
-    v.pos.x += dx * params.innerHomeStiffness;
-    v.pos.y += dy * params.innerHomeStiffness;
+
+    const forceX = dx * params.innerHomeStiffness * speedMult;
+    const forceY = dy * params.innerHomeStiffness * speedMult;
+
+    v.pos.x += forceX * positionFactor;
+    v.pos.y += forceY * positionFactor;
+
+    if (viscosity > 0) {
+      v.oldPos.x -= forceX * velocityFactor;
+      v.oldPos.y -= forceY * velocityFactor;
+    }
   }
 }
 
@@ -571,6 +617,74 @@ function applyPressure(blob: Blob, params: PhysicsParams): void {
     if (len > 0.0001) {
       blob.vertices[i].pos.x += (nx / len) * pressureForce;
       blob.vertices[i].pos.y += (ny / len) * pressureForce;
+    }
+  }
+}
+
+// Solid container - keeps vertices inside the grid boundaries
+// Blobs squish against floor/walls instead of passing through
+function applyBoundaryConstraints(blob: Blob): void {
+  // Container bounds (the grid area)
+  const LEFT = GRID_OFFSET_X;
+  const RIGHT = GRID_OFFSET_X + GRID_COLS * CELL_SIZE;
+  const TOP = GRID_OFFSET_Y;
+  const BOTTOM = GRID_OFFSET_Y + GRID_ROWS * CELL_SIZE;
+
+  // Small margin so vertices don't sit exactly on the edge
+  const MARGIN = 2;
+  // How much to dampen velocity on boundary contact (0 = full stop, 1 = no damping)
+  const BOUNDARY_DAMPING = 0.3;
+
+  for (const v of blob.vertices) {
+    // Left wall
+    if (v.pos.x < LEFT + MARGIN) {
+      v.pos.x = LEFT + MARGIN;
+      // Dampen horizontal velocity instead of killing it completely
+      const vx = v.pos.x - v.oldPos.x;
+      v.oldPos.x = v.pos.x - vx * BOUNDARY_DAMPING;
+    }
+    // Right wall
+    if (v.pos.x > RIGHT - MARGIN) {
+      v.pos.x = RIGHT - MARGIN;
+      const vx = v.pos.x - v.oldPos.x;
+      v.oldPos.x = v.pos.x - vx * BOUNDARY_DAMPING;
+    }
+    // Top wall (rarely needed but good to have)
+    if (v.pos.y < TOP + MARGIN) {
+      v.pos.y = TOP + MARGIN;
+      const vy = v.pos.y - v.oldPos.y;
+      v.oldPos.y = v.pos.y - vy * BOUNDARY_DAMPING;
+    }
+    // Floor - the main one for squishing
+    if (v.pos.y > BOTTOM - MARGIN) {
+      v.pos.y = BOTTOM - MARGIN;
+      // Dampen vertical velocity - softer landing, less bounce
+      const vy = v.pos.y - v.oldPos.y;
+      v.oldPos.y = v.pos.y - vy * BOUNDARY_DAMPING;
+    }
+  }
+
+  // Also constrain inner vertices
+  for (const v of blob.innerVertices) {
+    if (v.pos.x < LEFT + MARGIN) {
+      v.pos.x = LEFT + MARGIN;
+      const vx = v.pos.x - v.oldPos.x;
+      v.oldPos.x = v.pos.x - vx * BOUNDARY_DAMPING;
+    }
+    if (v.pos.x > RIGHT - MARGIN) {
+      v.pos.x = RIGHT - MARGIN;
+      const vx = v.pos.x - v.oldPos.x;
+      v.oldPos.x = v.pos.x - vx * BOUNDARY_DAMPING;
+    }
+    if (v.pos.y < TOP + MARGIN) {
+      v.pos.y = TOP + MARGIN;
+      const vy = v.pos.y - v.oldPos.y;
+      v.oldPos.y = v.pos.y - vy * BOUNDARY_DAMPING;
+    }
+    if (v.pos.y > BOTTOM - MARGIN) {
+      v.pos.y = BOTTOM - MARGIN;
+      const vy = v.pos.y - v.oldPos.y;
+      v.oldPos.y = v.pos.y - vy * BOUNDARY_DAMPING;
     }
   }
 }
@@ -837,8 +951,14 @@ export function SoftBodyProto7() {
   const [, forceUpdate] = useState({});
 
   // Impact parameters (tweakable)
-  const [impactStrength, setImpactStrength] = useState(8);
+  const [impactStrength, setImpactStrength] = useState(5);
   const [impactRadius, setImpactRadius] = useState(1.5);  // In cell units
+
+  // Refs to keep current values accessible in animation loop callbacks
+  const impactStrengthRef = useRef(impactStrength);
+  const impactRadiusRef = useRef(impactRadius);
+  impactStrengthRef.current = impactStrength;
+  impactRadiusRef.current = impactRadius;
 
   // Initialize empty grid
   useEffect(() => {
@@ -907,6 +1027,8 @@ export function SoftBodyProto7() {
         if (blob.usePressure) {
           applyPressure(blob, physics);
         }
+        // Keep vertices inside the container (floor/walls)
+        applyBoundaryConstraints(blob);
 
         // Fill update only for locked blobs
         if (blob.isLocked && fillParams.autoFill && blob.fillAmount < 1) {
@@ -1069,6 +1191,9 @@ export function SoftBodyProto7() {
 
   // Apply impact impulse to nearby blobs - LOCALIZED to contact points
   const applyImpactToNearbyBlobs = useCallback((impactBlob: Blob) => {
+    // Use refs to get current slider values (avoids stale closure)
+    const impactStrength = impactStrengthRef.current;
+    const impactRadius = impactRadiusRef.current;
     // Find contact points - where falling blob cells are adjacent to grid cells
     const contactPoints: Vec2[] = [];
     for (const cell of impactBlob.gridCells) {
@@ -1115,34 +1240,42 @@ export function SoftBodyProto7() {
           const falloff = 1 - (minDist / vertexImpactRadius);
           const strength = impactStrength * falloff * falloff;  // Quadratic falloff for sharper localization
 
-          // Push vertex away from contact point (downward and slightly outward)
+          // Push vertex away from contact point (outward, not downward - floor kills downward velocity)
           const dirX = (v.pos.x - nearestContact.x) / (minDist + 0.1);
           const dirY = (v.pos.y - nearestContact.y) / (minDist + 0.1);
 
           // Impulse is applied by adjusting oldPos (Verlet integration)
-          v.oldPos.x -= dirX * strength * 0.3;
-          v.oldPos.y -= dirY * strength + strength * 0.5;  // Bias downward
+          // Strong lateral push, weak vertical (outward from contact)
+          v.oldPos.x -= dirX * strength;
+          v.oldPos.y -= dirY * strength * 0.5;
         }
       }
 
       // Same for inner vertices but weaker effect
       for (const v of blob.innerVertices) {
         let minDist = Infinity;
+        let nearestContact: Vec2 | null = null;
         for (const contact of contactPoints) {
           const dx = v.pos.x - contact.x;
           const dy = v.pos.y - contact.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < minDist) minDist = dist;
+          if (dist < minDist) {
+            minDist = dist;
+            nearestContact = contact;
+          }
         }
 
-        if (minDist < vertexImpactRadius) {
+        if (minDist < vertexImpactRadius && nearestContact) {
           const falloff = 1 - (minDist / vertexImpactRadius);
           const strength = impactStrength * falloff * falloff * 0.3;  // Inner is more stable
-          v.oldPos.y -= strength;
+          const dirX = (v.pos.x - nearestContact.x) / (minDist + 0.1);
+          const dirY = (v.pos.y - nearestContact.y) / (minDist + 0.1);
+          v.oldPos.x -= dirX * strength;
+          v.oldPos.y -= dirY * strength * 0.5;
         }
       }
     }
-  }, [impactStrength, impactRadius]);
+  }, []);  // Uses refs, no dependencies needed
 
   // Perform the actual lock (called from animation loop or drop)
   const performLock = useCallback(() => {
@@ -1576,6 +1709,24 @@ export function SoftBodyProto7() {
             type="range" min="0.1" max="0.9" step="0.05"
             value={physics.innerHomeStiffness}
             onChange={e => setPhysics(p => ({ ...p, innerHomeStiffness: Number(e.target.value) }))}
+            style={{ width: 80 }}
+          />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column' }}>
+          <span>Return Speed: {physics.returnSpeed.toFixed(2)}</span>
+          <input
+            type="range" min="0.1" max="1.0" step="0.05"
+            value={physics.returnSpeed}
+            onChange={e => setPhysics(p => ({ ...p, returnSpeed: Number(e.target.value) }))}
+            style={{ width: 80 }}
+          />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column' }}>
+          <span>Viscosity: {physics.viscosity.toFixed(2)}</span>
+          <input
+            type="range" min="0" max="3.0" step="0.1"
+            value={physics.viscosity}
+            onChange={e => setPhysics(p => ({ ...p, viscosity: Number(e.target.value) }))}
             style={{ width: 80 }}
           />
         </label>
