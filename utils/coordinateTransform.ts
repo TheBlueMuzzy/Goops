@@ -1,13 +1,17 @@
 
 /**
- * Coordinate transformation utilities for the cylindrical game board.
+ * Coordinate transformation utilities for the game board.
  *
- * The game displays a cylindrical tank that wraps horizontally. These utilities
+ * The game displays a tank that wraps horizontally. These utilities
  * handle conversions between:
  * - Screen coordinates (browser/touch events)
  * - SVG coordinates (viewBox space)
  * - Grid coordinates (game logic: column/row)
- * - Visual coordinates (visible portion of the cylinder)
+ * - Visual coordinates (visible portion of the viewport)
+ *
+ * NOTE: As of Phase 26.1, cylindrical projection has been removed.
+ * All coordinates now use simple flat 2D mapping for consistency with
+ * soft-body physics.
  */
 
 import { TANK_WIDTH, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT } from '../constants';
@@ -15,38 +19,32 @@ import { TANK_WIDTH, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT } 
 // Block size in SVG units (exported for components that need it)
 export const BLOCK_SIZE = 30;
 
-// Cylindrical projection constants (derived from module constants)
-// Exported for components that need direct access to projection math
-export const ANGLE_PER_COL = (2 * Math.PI) / TANK_WIDTH;
-export const CYL_RADIUS = BLOCK_SIZE / ANGLE_PER_COL;
+// Legacy cylindrical projection constants - DEPRECATED
+// Kept commented for historical reference only
+// export const ANGLE_PER_COL = (2 * Math.PI) / TANK_WIDTH;
+// export const CYL_RADIUS = BLOCK_SIZE / ANGLE_PER_COL;
 
 /**
  * ViewBox dimensions for the game SVG.
- * These are constant and derived from the cylindrical projection.
+ * Simple rectangular bounds: 12 columns * 30px = 360 width, 16 rows * 30px = 480 height.
  */
-export const VIEWBOX = (() => {
-  const maxAngle = (TANK_VIEWPORT_WIDTH / 2) * ANGLE_PER_COL;
-  const projectedHalfWidth = CYL_RADIUS * Math.sin(maxAngle);
-  return {
-    x: -projectedHalfWidth,
-    y: 0,
-    w: projectedHalfWidth * 2,
-    h: TANK_VIEWPORT_HEIGHT * BLOCK_SIZE,
-  };
-})();
+export const VIEWBOX = {
+  x: -(TANK_VIEWPORT_WIDTH / 2) * BLOCK_SIZE,  // -180
+  y: 0,
+  w: TANK_VIEWPORT_WIDTH * BLOCK_SIZE,          // 360
+  h: TANK_VIEWPORT_HEIGHT * BLOCK_SIZE,         // 480
+};
 
 /**
  * Convert a visual X position (column in visible area) to screen X coordinate.
- * Uses cylindrical projection: columns near edges appear narrower.
+ * Simple linear mapping: each column is BLOCK_SIZE wide, centered at 0.
  *
  * @param visX - Visual column position (0 = left edge of tankViewport)
  * @returns SVG X coordinate
  */
 export function visXToScreenX(visX: number): number {
-  const centerCol = TANK_VIEWPORT_WIDTH / 2;
-  const offsetFromCenter = visX - centerCol;
-  const angle = offsetFromCenter * ANGLE_PER_COL;
-  return CYL_RADIUS * Math.sin(angle);
+  // Flat 2D: center at 0, each column is BLOCK_SIZE wide
+  return (visX - TANK_VIEWPORT_WIDTH / 2) * BLOCK_SIZE;
 }
 
 /**
@@ -57,10 +55,7 @@ export function visXToScreenX(visX: number): number {
  * @returns Visual column position (may be fractional)
  */
 export function screenXToVisX(screenX: number): number {
-  const sinVal = Math.max(-1, Math.min(1, screenX / CYL_RADIUS));
-  const angle = Math.asin(sinVal);
-  const offsetFromCenter = angle / ANGLE_PER_COL;
-  return (TANK_VIEWPORT_WIDTH / 2) + offsetFromCenter;
+  return (screenX / BLOCK_SIZE) + (TANK_VIEWPORT_WIDTH / 2);
 }
 
 /**
