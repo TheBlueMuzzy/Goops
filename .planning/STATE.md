@@ -15,15 +15,45 @@ updated: 2026-02-03
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- `soft-body-experiment` — Soft Body Goop (SBG) visual overhaul (Proto-8 IN PROGRESS)
+- `soft-body-experiment` — Soft Body Goop (SBG) visual overhaul (Proto-9 IN PROGRESS)
 
 ## Next Steps
 
-**Current:** Proto-8 Pop
-**Status:** IN PROGRESS - Dev menu added, pressure system rebuilt
+**Current:** Proto-9 complete, ready for main game integration planning
+**Status:** All prototypes (5b-9) COMPLETE
 **Branch:** `soft-body-experiment`
 
-### Proto-8 Pop — IN PROGRESS
+### Proto-9 Loose Goop — COMPLETE ✅
+
+**The Goal:**
+Test what happens when goop loses support after a pop — soft-body falling and remerging.
+
+**What Works:**
+- Support detection: after pop, checks all blobs for support (floor or supported blob below)
+- `isLoose` state: blobs that lost support become loose and fall
+- Falls at game speed: 0.02 grid units/ms (matches real game loose goop)
+- Soft-body wobble during fall (no viscosity = snappy like active piece)
+- Same-color merge on landing with fill reset to 0%
+- Different-color stacking (no merge)
+- Cascade detection: landing may create new loose goop
+- **Corrupted shape splitting:** disconnected cells split into separate falling pieces
+- **Blob collision fix:** only applies when at least one blob is moving (locked blobs stay grid-aligned)
+- **Momentum dampening:** 30% transfer on merge prevents implosion
+
+**Test Modes:**
+- **Test A: Stack Pop Cascade** — Multi-cell pieces (4x1, T, J), pop T, J falls and merges
+- **Test B: Corrupted Spawner** — Spawn corrupted pieces with rotation to build complex scenarios
+- **Default** — Original Proto-8 setup
+
+**Key Files:**
+- `prototypes/SoftBodyProto9.tsx` — Loose goop prototype
+- Access via: `?proto=9`
+
+**Next Steps:**
+- Plan integration of soft-body visuals into main game
+- Determine which prototype features to port vs. rebuild
+
+### Proto-8 Pop — COMPLETE ✅
 
 **The Goal:**
 Test what happens when goop is cleared — pop effect with droplet residue.
@@ -212,7 +242,8 @@ if (region.outerVertexIndices) {
 | 5c | `?proto=5c` | COMPLETE — Cell wall rendering |
 | 6 | `?proto=6` | COMPLETE — Fill/Pour mechanics (trim approach) |
 | 7 | `?proto=7` | COMPLETE — Merge mechanics + viscosity tuning |
-| 8 | `?proto=8` | NEXT — Pop (clear) effects |
+| 8 | `?proto=8` | COMPLETE — Pop effects + radial pressure + physics impulse |
+| 9 | `?proto=9` | COMPLETE — Loose goop, splitting, cascade, momentum dampening |
 
 ---
 
@@ -264,19 +295,22 @@ How does freed goop behave when disconnected?
 Last session: 2026-02-03
 **Version:** 1.1.13
 **Branch:** soft-body-experiment
-**Build:** 114
+**Build:** 117
 
 ### Resume Command
 ```
-Proto-8 Pop IN PROGRESS. Branch: soft-body-experiment
-Server: localhost:5174/GOOPS/?proto=8
+Proto-9 Loose Goop COMPLETE. Branch: soft-body-experiment
+Server: localhost:5177/GOOPS/?proto=9
 
 COMPLETED THIS SESSION:
-- Ready-to-pop indicator: replaced scale-based boop with physics impulse
-- One-time outward push when blob fills to 100%
-- Springs/damping naturally settle the blob back (organic wobble)
+- Proto-9 loose goop with support detection and cascade
+- Corrupted shape splitting into disconnected falling pieces
+- Blob collision fix (only applies when blobs are moving)
+- Momentum dampening (30%) to prevent implosion on merge
+- Test A setup with multi-cell pieces (4x1, T, J)
 
-NEXT: Continue Proto-8 tuning, then Proto-9 (Loose Goop)
+ALL PROTOTYPES COMPLETE (5b through 9)
+NEXT: Plan integration into main game
 ```
 
 ---
