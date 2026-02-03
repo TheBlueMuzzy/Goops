@@ -10,11 +10,11 @@ updated: 2026-02-03
 ## Current Position
 
 Phase: 25 of 30 (Physics Foundation)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-03 - Milestone v1.5 Soft-Body Integration created
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-03 - Completed 25-01-PLAN.md (Physics types and Verlet engine)
 
-Progress: ░░░░░░░░░░ 0%
+Progress: █░░░░░░░░░ ~3%
 
 ## Branch Workflow (SOP)
 
@@ -102,15 +102,14 @@ Last session: 2026-02-03
 
 ### Resume Command
 ```
-Milestone v1.5 created. Branch: soft-body-experiment
+Plan 25-01 complete. Physics foundation ready.
 
 COMPLETED THIS SESSION:
-- Audited main game rendering architecture
-- Audited all prototype code (5b-9)
-- Created v1.5 Soft-Body Integration milestone (6 phases)
-- Phase directories created (25-30)
+- Created soft-body types (Vec2, Vertex, Spring, SoftBlob, PhysicsParams)
+- Ported Verlet physics engine (6 core functions)
+- 19 new tests, 180 total passing
 
-NEXT: /gsd:plan-phase 25 (Physics Foundation)
+NEXT: /gsd:execute-plan .planning/phases/25-physics-foundation/25-02-PLAN.md
 ```
 
 ---
