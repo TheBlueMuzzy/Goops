@@ -20,21 +20,17 @@ import './GameBoard.css';
 // --- Soft-Body Blob Helpers ---
 /**
  * Generate SVG path string from soft-body blob vertices.
- * Creates a closed polygon from the vertex positions.
+ * Coordinates now match directly - no transform needed (Phase 26.1).
  */
 function getBlobVertexPath(blob: SoftBlob): string {
   const verts = blob.vertices;
   if (verts.length < 3) return '';
 
-  // Start at first vertex
+  // Coordinates now match directly - no transform needed
   let path = `M ${verts[0].pos.x} ${verts[0].pos.y}`;
-
-  // Line to each subsequent vertex
   for (let i = 1; i < verts.length; i++) {
     path += ` L ${verts[i].pos.x} ${verts[i].pos.y}`;
   }
-
-  // Close the path
   path += ' Z';
   return path;
 }
@@ -114,6 +110,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   // --- KEYBOARD SWAP HOLD (via EventBus) ---
   // Keyboard R key hold emits events from Game.tsx, we show the visual here
   const [keyboardSwapProgress, setKeyboardSwapProgress] = useState(-1);
+
+  // --- Soft-Body Blob Render Trigger ---
+  // The physics hook uses refs, so we need state to trigger re-renders when blobs change
+  const [blobRenderKey, setBlobRenderKey] = useState(0);
   useEffect(() => {
       const unsub = gameEventBus.on<SwapHoldPayload>(GameEventType.INPUT_SWAP_HOLD, (p) => {
           setKeyboardSwapProgress(p?.progress ?? -1);
@@ -144,9 +144,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
       // Create blobs for new groups
       const existingIds = new Set(softBodyPhysics.blobs.map(b => b.id));
+      let changed = false;
       for (const [groupId, data] of groups) {
           if (!existingIds.has(groupId)) {
               softBodyPhysics.createBlob(data.cells, data.color, groupId, true);
+              changed = true;
           }
       }
 
@@ -155,7 +157,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       for (const blob of softBodyPhysics.blobs) {
           if (!currentIds.has(blob.id)) {
               softBodyPhysics.removeBlob(blob.id);
+              changed = true;
           }
+      }
+
+      // Trigger re-render if blobs changed (since physics uses refs, not state)
+      if (changed) {
+          setBlobRenderKey(k => k + 1);
       }
   }, [grid, tankRotation, softBodyPhysics]);
 
