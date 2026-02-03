@@ -10,12 +10,17 @@ import { SoftBlob, Vertex, Spring, Vec2, vecDistance } from './types';
 // Constants
 // =============================================================================
 
-// Cell size in pixels (based on game constants)
-// The game uses a 12x16 viewport, and typical SVG renders at ~30px per cell
+// Cell size in pixels (matches BLOCK_SIZE from coordinateTransform.ts)
+// The game uses a 12x16 viewport at 30px per cell
 export const PHYSICS_CELL_SIZE = 30;
 
 // Grid offset for physics space (pixels from SVG origin)
-export const PHYSICS_GRID_OFFSET = { x: 50, y: 50 };
+// Game VIEWBOX starts at x = -180, y = 0
+// Visual grid (0,0) should map to SVG (-180, 0)
+export const PHYSICS_GRID_OFFSET = {
+  x: -(TANK_VIEWPORT_WIDTH / 2) * PHYSICS_CELL_SIZE,  // -180
+  y: 0
+};
 
 // =============================================================================
 // Edge Types
