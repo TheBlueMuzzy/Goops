@@ -5,6 +5,8 @@ import { GameBoard } from './components/GameBoard';
 import { Controls } from './components/Controls';
 import { ConsoleView } from './components/ConsoleView';
 import { useGameEngine } from './hooks/useGameEngine';
+import { useSoftBodyPhysics } from './hooks/useSoftBodyPhysics';
+import { isMobile } from './utils/device';
 import { Play, Home } from 'lucide-react';
 import { gameEventBus } from './core/events/EventBus';
 import { GameEventType, RotatePayload, DragPayload, FastDropPayload, BlockTapPayload, SwapHoldPayload } from './core/events/GameEvents';
@@ -39,7 +41,19 @@ interface GameProps {
 }
 
 const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, powerUps = {}, scraps, settings, onOpenSettings, onOpenHelp, onOpenUpgrades, onSetRank, onPurchaseUpgrade, onRefundUpgrade, equippedActives = [], onToggleEquip }) => {
-  const { engine, gameState } = useGameEngine(initialTotalScore, powerUps, onRunComplete, equippedActives);
+  // Soft-body physics for goop rendering (Phase 26)
+  // Desktop only for now - mobile uses simplified rendering
+  const softBodyPhysics = useSoftBodyPhysics({
+    enabled: !isMobile,
+  });
+
+  const { engine, gameState } = useGameEngine(
+    initialTotalScore,
+    powerUps,
+    onRunComplete,
+    equippedActives,
+    softBodyPhysics.step
+  );
 
   // Handle active ability activation
   const handleActivateAbility = useCallback((upgradeId: string) => {

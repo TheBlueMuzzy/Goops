@@ -6,11 +6,21 @@ import { isMobile } from '../utils/device';
 // Mobile renders at 40fps for smoother feel, desktop at 60fps
 const TARGET_FRAME_TIME = isMobile ? 25 : 16; // ms per frame
 
+export interface UseGameEngineOptions {
+    initialTotalScore: number;
+    powerUps: Record<string, number>;
+    onRunComplete: (score: number) => void;
+    equippedActives?: string[];
+    /** Optional callback for physics step (soft-body integration, Phase 26) */
+    onPhysicsStep?: (dt: number) => void;
+}
+
 export const useGameEngine = (
     initialTotalScore: number,
     powerUps: Record<string, number>,
     onRunComplete: (score: number) => void,
-    equippedActives: string[] = []
+    equippedActives: string[] = [],
+    onPhysicsStep?: (dt: number) => void
 ) => {
     // Engine persistence
     const engineRef = useRef<GameEngine | null>(null);
@@ -86,6 +96,12 @@ export const useGameEngine = (
 
             lastTimeRef.current = time;
             engine.tick(dt);
+
+            // Soft-body physics step (Phase 26)
+            if (onPhysicsStep) {
+                onPhysicsStep(dt / 1000); // Convert ms to seconds
+            }
+
             requestRef.current = requestAnimationFrame(loop);
         };
         requestRef.current = requestAnimationFrame(loop);

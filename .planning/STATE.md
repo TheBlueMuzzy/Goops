@@ -9,12 +9,12 @@ updated: 2026-02-03
 
 ## Current Position
 
-Phase: 25 of 30 (Physics Foundation)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-03 - Completed 25-02-PLAN.md (Blob factory & integration hook)
+Phase: 26 of 30 (Perimeter & Blob System)
+Plan: 1 of 3 in current phase
+Status: Plan 26-01 complete
+Last activity: 2026-02-03 - Completed 26-01-PLAN.md (Goo filter & physics integration)
 
-Progress: █░░░░░░░░░ ~7%
+Progress: █░░░░░░░░░ ~10%
 
 ## Branch Workflow (SOP)
 
@@ -28,8 +28,8 @@ Progress: █░░░░░░░░░ ~7%
 
 ## Next Steps
 
-**Current:** Phase 25 - Physics Foundation
-**Status:** Ready to plan
+**Current:** Phase 26 - Perimeter & Blob System
+**Status:** Plan 26-01 complete, ready to execute 26-02
 **Branch:** `soft-body-experiment`
 
 ### v1.5 Soft-Body Integration Overview
@@ -98,18 +98,19 @@ All prototypes (5b-9) are complete and documented. Key findings preserved in ROA
 Last session: 2026-02-03
 **Version:** 1.1.13
 **Branch:** soft-body-experiment
-**Build:** 117
+**Build:** 120
 
 ### Resume Command
 ```
-Phase 25 (Physics Foundation) COMPLETE.
+Phase 26-01 (Goo Filter & Physics Integration) COMPLETE.
 
 COMPLETED THIS SESSION:
-- Plan 25-01: Physics types and Verlet engine (19 tests)
-- Plan 25-02: Blob factory and integration hook (14 tests)
-- 33 soft-body tests total, 194 passing overall
+- Added SVG goo filter to GameBoard defs
+- Modified useGameEngine to accept onPhysicsStep callback
+- Integrated useSoftBodyPhysics in Game.tsx (desktop-only)
+- 194 tests passing
 
-NEXT: /gsd:plan-phase 26 (Perimeter & Blob System)
+NEXT: /gsd:execute-plan .planning/phases/26-perimeter-blob/26-02-PLAN.md
 ```
 
 ---

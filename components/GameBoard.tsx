@@ -218,6 +218,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         >
             {maskDefinitions}
 
+            {/* Soft-body goo filter - creates blobby merge effect (Phase 26) */}
+            <defs>
+              <filter id="goo-filter" colorInterpolationFilters="sRGB">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                <feColorMatrix
+                  in="blur"
+                  mode="matrix"
+                  values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -12"
+                  result="goo"
+                />
+                <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+              </filter>
+            </defs>
+
             {/* Background Layers */}
             <rect x={vbX} y={waterTopY} width={vbW} height={waterHeightPx} fill={pressureColor} />
             <line x1={vbX} y1={waterTopY} x2={vbX + vbW} y2={waterTopY} stroke={pressureColor.replace('0.15', '0.6')} strokeWidth="2" strokeDasharray="4 4" />

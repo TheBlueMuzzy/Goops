@@ -94,7 +94,7 @@ Plans:
 **Plans**: 3
 
 Plans:
-- [ ] 26-01: Goo filter & physics integration
+- [x] 26-01: Goo filter & physics integration (completed 2026-02-03)
 - [ ] 26-02: Soft-body blob rendering
 - [ ] 26-03: Fill animation & rendering cutover
 
