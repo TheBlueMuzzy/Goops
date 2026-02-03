@@ -17,6 +17,28 @@ import { UseSoftBodyPhysicsReturn } from '../hooks/useSoftBodyPhysics';
 import { Vec2, SoftBlob } from '../core/softBody/types';
 import './GameBoard.css';
 
+// --- Soft-Body Blob Helpers ---
+/**
+ * Generate SVG path string from soft-body blob vertices.
+ * Creates a closed polygon from the vertex positions.
+ */
+function getBlobVertexPath(blob: SoftBlob): string {
+  const verts = blob.vertices;
+  if (verts.length < 3) return '';
+
+  // Start at first vertex
+  let path = `M ${verts[0].pos.x} ${verts[0].pos.y}`;
+
+  // Line to each subsequent vertex
+  for (let i = 1; i < verts.length; i++) {
+    path += ` L ${verts[i].pos.x} ${verts[i].pos.y}`;
+  }
+
+  // Close the path
+  path += ' Z';
+  return path;
+}
+
 // --- Props Interface ---
 // Input callbacks removed - now handled via EventBus (see Game.tsx subscriptions)
 interface GameBoardProps {
@@ -535,6 +557,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     </g>
                 );
             })}
+
+            {/* Soft-Body Blob Rendering (Phase 26 - Desktop only) */}
+            {/* Renders soft-body blobs with goo filter on top of existing goop for comparison */}
+            {!isMobile && softBodyPhysics && softBodyPhysics.blobs.length > 0 && (
+              <g filter="url(#goo-filter)">
+                {softBodyPhysics.blobs.map(blob => (
+                  <path
+                    key={`soft-${blob.id}`}
+                    d={getBlobVertexPath(blob)}
+                    fill={blob.color}
+                    fillOpacity={0.8}
+                    stroke={blob.color}
+                    strokeWidth="2"
+                  />
+                ))}
+              </g>
+            )}
 
             {/* Ghost Piece */}
             {activeGoop && activeGoop.state === GoopState.FALLING && (() => {
