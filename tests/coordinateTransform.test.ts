@@ -31,6 +31,14 @@ describe('coordinateTransform', () => {
     it('y starts at 0', () => {
       expect(VIEWBOX.y).toBe(0);
     });
+
+    // Phase 26.1: Explicit flat rectangle tests
+    it('has exact flat 2D dimensions', () => {
+      // VIEWBOX should be 360x480 centered at x=-180
+      expect(VIEWBOX.x).toBe(-180);  // -(12/2)*30
+      expect(VIEWBOX.w).toBe(360);   // 12*30
+      expect(VIEWBOX.h).toBe(480);   // 16*30
+    });
   });
 
   describe('visXToScreenX and screenXToVisX', () => {
@@ -57,6 +65,28 @@ describe('coordinateTransform', () => {
     it('right edge maps to positive screen x', () => {
       const screenX = visXToScreenX(TANK_VIEWPORT_WIDTH - 1);
       expect(screenX).toBeGreaterThan(0);
+    });
+
+    // Phase 26.1: Explicit linear coordinate tests
+    it('visXToScreenX returns exact linear values', () => {
+      // Center (col 6) should map to 0
+      expect(visXToScreenX(6)).toBe(0);
+      // Left edge (col 0) should map to -180 (-(12/2)*30)
+      expect(visXToScreenX(0)).toBe(-180);
+      // Right edge (col 12) should map to 180 ((12-12/2)*30)
+      expect(visXToScreenX(12)).toBe(180);
+      // Each column is BLOCK_SIZE (30) wide
+      expect(visXToScreenX(7)).toBe(30);
+      expect(visXToScreenX(5)).toBe(-30);
+    });
+
+    it('screenXToVisX returns exact linear values', () => {
+      // 0 should map to center (col 6)
+      expect(screenXToVisX(0)).toBe(6);
+      // -180 should map to left edge (col 0)
+      expect(screenXToVisX(-180)).toBe(0);
+      // 180 should map to right edge (col 12)
+      expect(screenXToVisX(180)).toBe(12);
     });
   });
 
