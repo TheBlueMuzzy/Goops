@@ -344,6 +344,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             powerUps={powerUps}
             storedGoop={engine.state.storedGoop}
             nextGoop={engine.state.nextGoop}
+            softBodyPhysics={softBodyPhysics}
          />
          {/* Lights brightness is now controlled by state.lightsBrightness (player-controlled via fast drop) */}
       </div>

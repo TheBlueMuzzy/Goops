@@ -13,6 +13,8 @@ import { GameEventType, SwapHoldPayload } from '../core/events/GameEvents';
 import { ActiveAbilityCircle } from './ActiveAbilityCircle';
 import { PiecePreview } from './PiecePreview';
 import { UPGRADES } from '../constants';
+import { UseSoftBodyPhysicsReturn } from '../hooks/useSoftBodyPhysics';
+import { Vec2, SoftBlob } from '../core/softBody/types';
 import './GameBoard.css';
 
 // --- Props Interface ---
@@ -31,6 +33,7 @@ interface GameBoardProps {
   powerUps?: Record<string, number>;  // Upgrade levels for GOOP_SWAP effect
   storedGoop?: GoopTemplate | null;  // Held goop for preview
   nextGoop?: GoopTemplate | null;    // Next goop for preview
+  softBodyPhysics?: UseSoftBodyPhysicsReturn;  // Soft-body physics for blob rendering (Phase 26)
 }
 
 // --- Component ---
@@ -38,7 +41,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, lightsBrightness = 100,
     laserCharge = 100, controlsHeat = 0, complicationCooldowns,
     equippedActives = [], activeCharges = {}, onActivateAbility,
-    powerUps, storedGoop, nextGoop
+    powerUps, storedGoop, nextGoop, softBodyPhysics
 }) => {
   const { grid, tankRotation, activeGoop, looseGoop, floatingTexts, shiftTime, goalMarks, crackCells, dumpPieces } = state;
 
@@ -95,6 +98,44 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       });
       return unsub;
   }, []);
+
+  // --- Soft-Body Blob Sync (Phase 26) ---
+  // Sync soft-body blobs with current grid state when goopGroupIds change
+  useEffect(() => {
+      if (!softBodyPhysics || isMobile) return;
+
+      // Collect current goopGroupIds from grid
+      const groups = new Map<string, { cells: Vec2[]; color: string }>();
+      for (let y = 0; y < TANK_VIEWPORT_HEIGHT; y++) {
+          for (let visX = 0; visX < TANK_VIEWPORT_WIDTH; visX++) {
+              const x = (tankRotation + visX) % TANK_WIDTH;
+              const cell = grid[x]?.[y + BUFFER_HEIGHT];
+              if (cell?.goopGroupId) {
+                  const groupId = cell.goopGroupId;
+                  if (!groups.has(groupId)) {
+                      groups.set(groupId, { cells: [], color: cell.color });
+                  }
+                  groups.get(groupId)!.cells.push({ x: visX, y });
+              }
+          }
+      }
+
+      // Create blobs for new groups
+      const existingIds = new Set(softBodyPhysics.blobs.map(b => b.id));
+      for (const [groupId, data] of groups) {
+          if (!existingIds.has(groupId)) {
+              softBodyPhysics.createBlob(data.cells, data.color, groupId, true);
+          }
+      }
+
+      // Remove blobs for groups that no longer exist
+      const currentIds = new Set(groups.keys());
+      for (const blob of softBodyPhysics.blobs) {
+          if (!currentIds.has(blob.id)) {
+              softBodyPhysics.removeBlob(blob.id);
+          }
+      }
+  }, [grid, tankRotation, softBodyPhysics]);
 
   const now = Date.now();
 
