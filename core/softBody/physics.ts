@@ -135,8 +135,9 @@ export function applyHomeForce(
       const targetX = blob.targetX + rotatedHome.x;
       const targetY = blob.targetY + rotatedHome.y;
 
-      // Use cylindrical distance for X (shortest path around cylinder)
-      const dx = cylindricalDistanceX(v.pos.x, targetX);
+      // Use direct distance like Proto-9 (not cylindrical)
+      // Cylindrical wrapping is handled elsewhere in position updates
+      const dx = targetX - v.pos.x;
       const dy = targetY - v.pos.y;
 
       const forceX = dx * params.homeStiffness * speedMult;
@@ -159,8 +160,8 @@ export function applyHomeForce(
       const targetX = blob.targetX + rotatedHome.x;
       const targetY = blob.targetY + rotatedHome.y;
 
-      // Use cylindrical distance for X
-      const dx = cylindricalDistanceX(v.pos.x, targetX);
+      // Use direct distance like Proto-9 (not cylindrical)
+      const dx = targetX - v.pos.x;
       const dy = targetY - v.pos.y;
 
       const forceX = dx * params.innerHomeStiffness * speedMult;
