@@ -32,17 +32,48 @@ import './GameBoard.css';
 // =============================================================================
 
 /**
- * Check if a blob straddles the wrap boundary (vertices span > 300px on X axis).
- * Returns true if the blob needs to be rendered twice (once on each side).
+ * Calculate render offsets for a blob to make it visible in the viewport.
+ * Returns array of X offsets to apply when rendering.
+ *
+ * Since physics doesn't wrap, blobs can exist at any X position.
+ * We check if the blob (or shifted copies) would overlap the viewport.
+ * ClipPath handles masking - we just need to render at positions that overlap.
  */
-function blobStraddlesBoundary(blob: SoftBlob): boolean {
-  if (blob.vertices.length < 3) return false;
+function getBlobRenderOffsets(blob: SoftBlob): number[] {
+  if (blob.vertices.length < 3) return [0];
+
+  // Get blob's X extent
   const xs = blob.vertices.map(v => v.pos.x);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const span = maxX - minX;
-  // If the span is larger than 300px (viewport is 360px), blob straddles
-  return span > 300;
+  const blobMinX = Math.min(...xs);
+  const blobMaxX = Math.max(...xs);
+
+  // Viewport bounds (from VIEWBOX)
+  const viewportMinX = -180;
+  const viewportMaxX = 180;
+
+  // Check which render positions would overlap the viewport
+  const offsets: number[] = [];
+  const cylinderWidth = CYLINDER_WIDTH_PIXELS; // 900
+
+  // Check original position and ±1 cylinder width
+  for (const offset of [0, cylinderWidth, -cylinderWidth]) {
+    const shiftedMinX = blobMinX + offset;
+    const shiftedMaxX = blobMaxX + offset;
+
+    // Does this shifted position overlap the viewport?
+    if (shiftedMaxX >= viewportMinX && shiftedMinX <= viewportMaxX) {
+      offsets.push(offset);
+    }
+  }
+
+  // Debug: Log when blob straddles seam (needs multiple render positions)
+  if (offsets.length > 1) {
+    console.log(`Blob ${blob.id} straddles seam, rendering at offsets:`, offsets,
+      `(X range: ${blobMinX.toFixed(0)} to ${blobMaxX.toFixed(0)})`);
+  }
+
+  // If no overlap at all (shouldn't happen normally), return original
+  return offsets.length > 0 ? offsets : [0];
 }
 
 // --- Props Interface ---
@@ -324,17 +355,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             {maskDefinitions}
 
             {/* Soft-body goo filter - creates blobby merge effect (Phase 26) */}
+            {/* stdDeviation 12 helps merge seam-straddling blob copies */}
             <defs>
               <filter id="goo-filter" colorInterpolationFilters="sRGB">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
                 <feColorMatrix
                   in="blur"
                   mode="matrix"
-                  values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -12"
+                  values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -15"
                   result="goo"
                 />
                 <feComposite in="SourceGraphic" in2="goo" operator="atop" />
               </filter>
+              {/* Tank viewport clipPath - masks soft-body blobs to visible area */}
+              <clipPath id="tank-viewport-clip">
+                <rect x={VIEWBOX.x} y={VIEWBOX.y} width={VIEWBOX.w} height={VIEWBOX.h} />
+              </clipPath>
             </defs>
 
             {/* Background Layers */}
@@ -602,21 +638,30 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             })}
             </g>
 
+            {/* Debug: Seam boundary markers (Task 1 - temporary) */}
+            {!isMobile && (
+              <>
+                <line x1={-180} y1={-100} x2={-180} y2={200} stroke="red" strokeWidth="2" opacity="0.5" />
+                <line x1={180} y1={-100} x2={180} y2={200} stroke="red" strokeWidth="2" opacity="0.5" />
+              </>
+            )}
+
             {/* Soft-Body Blob Rendering (Phase 26 - Desktop only) */}
             {/* Renders soft-body blobs with goo filter using Catmull-Rom curves */}
             {/* Edge-straddling blobs are rendered twice (once shifted) for seamless wrap */}
+            {/* clipPath masks blobs to tank viewport - prevents rendering past edges */}
             {!isMobile && softBodyPhysics && softBodyPhysics.blobs.length > 0 && (
-              <g filter="url(#goo-filter)">
+              <g filter="url(#goo-filter)" clipPath="url(#tank-viewport-clip)">
                 {softBodyPhysics.blobs.map(blob => {
                   const outerPath = getSoftBlobPath(blob);
                   const outerPoints = blob.vertices.map(v => v.pos);
-                  const straddles = blobStraddlesBoundary(blob);
 
-                  // If blob straddles the wrap boundary, render it twice
-                  // (once at current position, once shifted by cylinder width)
-                  const transforms = straddles
-                    ? ['', `translate(${CYLINDER_WIDTH_PIXELS}, 0)`, `translate(${-CYLINDER_WIDTH_PIXELS}, 0)`]
-                    : [''];
+                  // Calculate which positions to render blob at (handles cylindrical wrap)
+                  // Physics doesn't wrap, so we render at all positions that overlap viewport
+                  const renderOffsets = getBlobRenderOffsets(blob);
+                  const transforms = renderOffsets.map(offset =>
+                    offset === 0 ? '' : `translate(${offset}, 0)`
+                  );
 
                   // Only show fill animation for locked blobs that aren't full
                   const showFillAnimation = blob.isLocked && blob.fillAmount < 1;
@@ -698,24 +743,36 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       stroke="black"
                       strokeWidth={1}
                     />
-                    {/* Numbered vertices */}
+                    {/* Edge trace lines (Proto-9 style) */}
+                    {blob.vertices.map((v, i) => {
+                      const next = blob.vertices[(i + 1) % blob.vertices.length];
+                      return (
+                        <line
+                          key={`edge-${blob.id}-${i}`}
+                          x1={v.pos.x} y1={v.pos.y}
+                          x2={next.pos.x} y2={next.pos.y}
+                          stroke="lime" strokeWidth={1} opacity={0.5}
+                        />
+                      );
+                    })}
+                    {/* Numbered vertices (Proto-9 style) */}
                     {blob.vertices.map((v, i) => (
                       <g key={`v-${blob.id}-${i}`}>
                         <circle
                           cx={v.pos.x}
                           cy={v.pos.y}
-                          r={6}
-                          fill="white"
+                          r={4}
+                          fill="yellow"
                           stroke="black"
                           strokeWidth={1}
                         />
                         <text
-                          x={v.pos.x}
+                          x={v.pos.x + 6}
                           y={v.pos.y + 3}
-                          textAnchor="middle"
                           fontSize={8}
-                          fontWeight="bold"
-                          fill="black"
+                          fill="yellow"
+                          stroke="black"
+                          strokeWidth={0.3}
                         >
                           {i}
                         </text>
@@ -733,6 +790,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                         strokeWidth={1}
                       />
                     ))}
+                    {/* Blob state info (Proto-9 style) */}
+                    <text
+                      x={blob.targetX}
+                      y={blob.targetY - 30}
+                      fill="#fff"
+                      fontSize={10}
+                      textAnchor="middle"
+                      opacity={0.7}
+                    >
+                      {blob.isLocked ? `${Math.round(blob.fillAmount * 100)}%` : 'falling'}
+                    </text>
                   </g>
                 ))}
               </g>
