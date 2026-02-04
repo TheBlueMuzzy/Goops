@@ -73,10 +73,9 @@ export function integrate(
   const cappedDt = Math.min(dt, 0.033);
 
   for (const blob of blobs) {
-    // Locked blobs are more viscous (slower, honey-like)
-    const effectiveDamping = blob.isLocked
-      ? params.damping / params.viscosity
-      : params.damping;
+    // Proto-9 uses damping directly for all blobs
+    // Viscosity affects home force, not damping
+    const effectiveDamping = params.damping;
 
     // Update outer vertices
     for (const v of blob.vertices) {
