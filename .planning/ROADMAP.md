@@ -95,8 +95,27 @@ Plans:
 
 Plans:
 - [x] 26-01: Goo filter & physics integration (completed 2026-02-03)
-- [ ] 26-02: Soft-body blob rendering
+- [ ] 26-02: Soft-body blob rendering (PAUSED - blocked by coordinate mismatch)
 - [ ] 26-03: Fill animation & rendering cutover
+
+#### Phase 26.1: Flatten Coordinate System (INSERTED)
+
+**Goal**: Remove cylindrical projection, use flat 2D coordinates for all rendering
+**Depends on**: Phase 26-01 complete
+**Research**: No
+**Rationale**: Cylindrical projection (`visXToScreenX`) causes constant coordinate mismatches between game rendering and soft-body physics. Removing it simplifies integration significantly. The curved visual effect can be re-added later via WebGL shader if desired.
+**Plans**: 1
+
+Plans:
+- [x] 26.1-01: Remove cylindrical projection, flatten coordinate system (completed 2026-02-03)
+- [x] 26.1-02: Add cylindrical wrapping to SBG physics (completed 2026-02-04)
+- [x] 26.1-03: Seam wrapping visual merge (completed 2026-02-04)
+
+**Context from implementation session:**
+- Physics runs in flat pixel space (PHYSICS_GRID_OFFSET + PHYSICS_CELL_SIZE)
+- Game SVG uses cylindrical projection (VIEWBOX centered at 0, sin() transform for X)
+- Blobs created at x=200+ are outside viewBox range (-115 to +115)
+- Every rendering path requires coordinate transforms, causing ongoing integration friction
 
 #### Phase 27: Active Piece Physics
 

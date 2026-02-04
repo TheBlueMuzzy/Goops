@@ -2,7 +2,7 @@
 title: Project State
 type: session
 tags: [active, continuity, status]
-updated: 2026-02-03
+updated: 2026-02-04
 ---
 
 # Project State
@@ -10,11 +10,11 @@ updated: 2026-02-03
 ## Current Position
 
 Phase: 26.1 (Flatten Coordinate System) + SBG Integration
-Plan: Phase 26.1-01 executed, SBG rendering ported from Proto 9
-Status: SBG rendering works but has edge-of-screen clumping issue
-Last activity: 2026-02-03 - Major SBG port from Proto 9
+Plan: 3/3 complete - PHASE COMPLETE
+Status: Seam wrapping works! Ready for visual tuning
+Last activity: 2026-02-04 - Completed 26.1-03 seam wrapping
 
-Progress: ██████░░░░ ~60%
+Progress: ███████░░░ ~70%
 
 ## Branch Workflow (SOP)
 
@@ -28,32 +28,52 @@ Progress: ██████░░░░ ~60%
 
 ## Next Steps
 
-**Current:** Debug SBG edge-of-screen clumping issue
-**Status:** Vertex debug added, need to diagnose why blobs collapse at edges
+**Current:** Finetune goo filter visuals (user feedback: "messed up this round")
+**Status:** Seam wrapping works, visuals need tuning
 **Branch:** `soft-body-experiment`
 
-### Immediate Issue
+### Seam Wrapping: SOLVED (2026-02-04)
 
-When SBG blobs approach the edge of the viewport (left or right), they "clump" or collapse into a small portion of their original shape. This is likely related to:
-1. Cylindrical wrapping - cells may wrap around but centroid calculation doesn't handle this
-2. Visual coordinates vs physics coordinates mismatch at edges
+**Design document:** `.planning/phases/26.1-flatten-coordinate-system/SEAM-WRAPPING-DESIGN.md`
+**Visual reference:** `/art/wrap_example.png`
 
-**Debug tools added:**
+**Solution:** Goo filter merges duplicate blob renders at seam boundaries. No complex path clipping needed!
+
+**How it works:**
+1. `getBlobRenderOffsets()` detects when blob straddles viewport edge
+2. Blob rendered at multiple X offsets (original + shifted by ±900px)
+3. ClipPath masks each copy to viewport
+4. Goo filter (stdDeviation=12, matrix 25/-15) visually merges the copies
+
+**Debug tools:**
 - Press backtick (`) for debug panel
-- Enable "Show Vertices" checkbox to see numbered vertices and target marker
+- Enable "Show Vertices" for Proto-9 style vertex display
+- Console logs when blob straddles seam
 
 ### What's Working
 - SBG appears on lock
 - Fill animation with inset path
 - Fill pulse (ready-to-pop impulse)
 - Same-color blob merging with attraction springs
-- Position stays aligned when rotating (fixed!)
+- Position stays aligned when rotating
 - Catmull-Rom smooth curves (not jagged polygons)
+- ClipPath masks blobs to viewport (no rendering past edges)
+- Physics no longer wraps individual vertices (prevents explosion)
+- Debug vertices updated to Proto-9 style
+- **Seam crossing WORKS** - goo filter merges duplicate renders at seam boundaries
 
 ### What's NOT Working
-- Edge-of-screen clumping/collapse
+- **Goo filter visuals need tuning** - user reports visuals "messed up" after parameter changes
 - Pop particles (droplets) - not implemented yet
 - Some sliders may not be connected
+
+### Changes Made This Session (2026-02-04)
+- Added `tank-viewport-clip` clipPath to mask SBG rendering
+- Removed X wrapping from `applyBoundaryConstraints()` - physics drifts freely
+- Removed X wrapping from `shiftBlobsForRotation()` - prevents vertex explosion
+- Updated `getBlobRenderOffsets()` to calculate which positions overlap viewport
+- Updated debug vertices to Proto-9 style (yellow r=4 circles, lime edges, fill % label)
+- Updated test for new no-wrap behavior
 
 ### v1.5 Soft-Body Integration Overview
 
@@ -95,37 +115,34 @@ These are the FINAL tweaked values from Proto 9:
 
 ## Session Continuity
 
-Last session: 2026-02-03
+Last session: 2026-02-04
 **Version:** 1.1.13
 **Branch:** soft-body-experiment
-**Build:** 147
+**Build:** 168
 
-### Files Modified This Session
+### Files Modified This Session (2026-02-04)
 
 **New files:**
-- `core/softBody/rendering.ts` - Catmull-Rom curves, inset path, filter matrix
+- `.planning/phases/26.1-flatten-coordinate-system/SEAM-WRAPPING-DESIGN.md` - Full design document
+- `.planning/phases/26.1-flatten-coordinate-system/26.1-03-SUMMARY.md` - Plan completion
 
 **Modified:**
-- `core/softBody/types.ts` - Added wasFullLastFrame, all Proto 9 params
-- `core/softBody/physics.ts` - Added applyOutwardImpulse, attraction springs
-- `core/softBody/blobFactory.ts` - Initialize wasFullLastFrame
-- `hooks/useSoftBodyPhysics.ts` - Fill animation, impulse, attraction springs
-- `components/GameBoard.tsx` - Smooth curve rendering, fill animation, vertex debug
-- `Game.tsx` - All Proto 9 sliders, vertex debug toggle
-- `tests/softBody.test.ts` - Updated for new default values
+- `core/softBody/physics.ts` - Removed X wrapping from boundary constraints
+- `hooks/useSoftBodyPhysics.ts` - Removed wrapPixelX from rotation shift
+- `components/GameBoard.tsx` - Goo filter tuning (stdDeviation 8→12, matrix 25/-15), seam debug logging
+- `tests/softBody.test.ts` - Updated test for no-wrap behavior
 
 ### Resume Command
 ```
-SBG rendering ported from Proto 9. Main features working but edge clumping bug exists.
+SEAM WRAPPING WORKS! Phase 26.1 complete.
 
-NEXT: Debug edge-of-screen clumping
-1. Enable vertex debug (backtick → Show Vertices)
-2. Lock a piece near edge of screen
-3. Rotate to push it to the edge
-4. Watch what happens to vertices - they should stay evenly distributed
+Goo filter successfully merges duplicate blob renders at seam.
+Parameters: stdDeviation=12, feColorMatrix values="... 25 -15"
 
-HYPOTHESIS: Centroid calculation breaks when cells wrap around the cylindrical tank
-(some cells at visX=0, others at visX=11 → average is visX=5.5 which is wrong)
+User feedback: Visuals "messed up" - need to finetune goo filter appearance.
+The seam crossing works, but overall blob look may need adjustment.
+
+NEXT: Finetune goo filter visuals based on user feedback.
 ```
 
 ---
