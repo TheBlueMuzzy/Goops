@@ -403,6 +403,13 @@ export class PopGoopCommand implements Command {
                 engine.emitChange();
             }, 1000);
 
+            // Track this group as explicitly popped (for soft-body droplet spawning)
+            // Droplets should only appear on pop, not on merge/consolidation
+            const goopGroupId = cell.goopGroupId;
+            if (goopGroupId) {
+                engine.state.poppedGoopGroupIds.add(goopGroupId);
+            }
+
             // Modify Grid
             let tempGrid = engine.state.grid.map(row => [...row]);
             const poppedCells: { x: number; y: number }[] = [];

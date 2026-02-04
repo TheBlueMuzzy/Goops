@@ -223,8 +223,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       const looseGoopIds = new Set(looseGoop.map(lg => lg.data.goopGroupId));
       for (const blob of softBodyPhysics.blobs) {
           if (!allGroupIds.has(blob.id) && !looseGoopIds.has(blob.id)) {
-              // Create droplets before removing (pop effect)
-              softBodyPhysics.createDropletsForPop(blob);
+              // Only create droplets if this was an explicit pop (not merge/consolidation)
+              // Merge removes the blob but shouldn't spawn droplets
+              if (state.poppedGoopGroupIds.has(blob.id)) {
+                  softBodyPhysics.createDropletsForPop(blob);
+                  // Remove from set to prevent duplicate droplets and memory buildup
+                  state.poppedGoopGroupIds.delete(blob.id);
+              }
               softBodyPhysics.removeBlob(blob.id);
               changed = true;
           }

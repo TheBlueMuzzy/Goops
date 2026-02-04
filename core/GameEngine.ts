@@ -138,6 +138,7 @@ export class GameEngine {
                 laser: this.randomThreshold()
             },
             prePoppedGoopGroups: new Set(),
+            poppedGoopGroupIds: new Set(),  // Track explicitly popped groups for droplet spawning
             laserCharge: 100,  // Starts full
             controlsHeat: 0,      // Starts cool
             lightsBrightness: 100,     // Starts at full brightness
@@ -293,6 +294,7 @@ export class GameEngine {
                 laser: this.randomThreshold()
             },
             prePoppedGoopGroups: new Set(),
+            poppedGoopGroupIds: new Set(),  // Track explicitly popped groups for droplet spawning
             laserCharge: 100,  // Starts full
             controlsHeat: 0,      // Starts cool
             lightsBrightness: 100,     // Starts at full brightness

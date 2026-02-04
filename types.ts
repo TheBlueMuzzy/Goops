@@ -255,6 +255,10 @@ export interface GameState {
   // LASER system: tracks groups that have been pre-popped (first tap)
   prePoppedGoopGroups: Set<string>;
 
+  // Track which goopGroupIds were explicitly popped (vs merged/absorbed)
+  // Used by soft-body system to only create droplets on actual pop events
+  poppedGoopGroupIds: Set<string>;
+
   // HUD meters for TankSystem feedback
   laserCharge: number;  // 0-100 (100 = full, 0 = empty/triggers LASER)
   controlsHeat: number;    // 0-100 (0 = cool, 100 = overheated/triggers CONTROLS)
