@@ -353,7 +353,8 @@ export function createBlobFromCells(
     ringsprings,
     crossSprings,
     restArea,
-    gridCells: cells,
+    gridCells: cells.map(c => ({ x: c.x, y: c.y })),  // Copy so physics can mutate
+    isColliding: false,            // Physics sets true when can't fall more
     isLocked,
     isFalling: !isLocked,          // If not locked, it's falling
     isLoose: false,                // Only set true when blob loses support
