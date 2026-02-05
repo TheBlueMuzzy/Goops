@@ -120,12 +120,13 @@ Plans:
 #### Phase 27: Active Piece Physics
 
 **Goal**: Falling pieces use soft-body physics (snappy, no viscosity)
-**Depends on**: Phase 26
-**Research**: Unlikely (Proto-7 solved falling piece physics)
-**Plans**: TBD
+**Depends on**: Phase 26.1
+**Research**: No (Proto-7 solved falling piece physics)
+**Plans**: 2
 
 Plans:
-- [ ] 27-01: TBD
+- [x] 27-01: Active piece blob lifecycle (completed 2026-02-05)
+- [ ] 27-02: Rendering switch
 
 #### Phase 28: Locked Goop Behavior
 
@@ -293,7 +294,7 @@ See [[v1.4-ROADMAP]] for full details.
 | 24. UI & Documentation | v1.4 | 1/1 | Shipped | 2026-01-27 |
 | 25. Physics Foundation | v1.5 | 2/2 | Complete | 2026-02-03 |
 | 26. Perimeter & Blob System | v1.5 | 0/? | Not started | - |
-| 27. Active Piece Physics | v1.5 | 0/? | Not started | - |
+| 27. Active Piece Physics | v1.5 | 1/2 | In progress | - |
 | 28. Locked Goop Behavior | v1.5 | 0/? | Not started | - |
 | 29. Pop & Cascade | v1.5 | 0/? | Not started | - |
 | 30. Polish & Performance | v1.5 | 0/? | Not started | - |

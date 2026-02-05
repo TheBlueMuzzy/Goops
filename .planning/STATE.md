@@ -9,12 +9,12 @@ updated: 2026-02-04
 
 ## Current Position
 
-Phase: 26.1 Flatten Coordinate System
-Plan: FIX complete (4 commits)
-Status: Proto-9 parity fixes done, some stiffness issues remain for Phase 27
-Last activity: 2026-02-04 - Completed 26.1-FIX plan
+Phase: 27 Active Piece Physics
+Plan: 1 of 2 complete
+Status: Active piece blob lifecycle wired up, rendering switch next
+Last activity: 2026-02-05 - Completed 27-01-PLAN.md
 
-Progress: ███████░░░ ~75%
+Progress: ███████░░░ ~77%
 
 ## Branch Workflow (SOP)
 
@@ -28,68 +28,52 @@ Progress: ███████░░░ ~75%
 
 ## Next Steps
 
-**Completed:** 26.1-FIX plan (Proto-9 parity fixes)
+**Completed:** 27-01-PLAN.md (Active Piece Physics Integration)
 **Branch:** `soft-body-experiment`
 
-### 26.1-FIX Completed (2026-02-04)
+### 27-01 Completed (2026-02-05)
 
-| Fix | Commit | Description |
-|-----|--------|-------------|
-| Damping formula | 3ea119c | Use params.damping directly (not /viscosity) |
-| Home force | 7a18181 | Direct distance (not cylindricalDistanceX) |
-| Droplets on pop | 2d1a499 | Only spawn on actual pop, not merge |
-| Audit fixes | 0b56b56 | Slider deps, stiffness formula, loose goop fall |
+| Task | Commit | Description |
+|------|--------|-------------|
+| Blob lifecycle | 6ab8e31 | Create/sync/cleanup blobs for active falling piece |
 
-### What's Working
-- SBG appears on lock with fill animation
-- Fill pulse (ready-to-pop impulse)
-- Same-color blob merging with attraction springs
-- Position stays aligned when rotating
-- Seam crossing via goo filter merge
-- Blob collision - different colors push apart
-- Droplet system - particles on pop only
-- All debug sliders connected and working
-- **Smooth loose goop fall animation**
+**What's working:**
+- Active piece creates soft-body blob on spawn
+- Blob position syncs with piece movement every frame
+- Falling blob removed on lock (standard sync handles locked state)
+- No duplicate blobs between active and locked states
 
-### What's Still Open (26.1-ISSUES.md)
-- UAT-001: Goop still feels too stiff (needs Phase 27 active piece SBG to test)
-- UAT-002: Blob collision hard to observe (depends on stiffness)
-- UAT-004: Sliders don't fully match Proto-9 (most work, stiffness issue remains)
+### What's Still Open
+- UAT-001: Goop stiffness feel - needs 27-02 rendering to be visible
+- UAT-002: Blob collision visibility - needs 27-02 rendering
 
-### Key Insight: Active Piece SBG Needed
+### Next: 27-02 Rendering Switch
 
-The remaining stiffness issues can't be fully tested until the active falling piece uses soft-body physics (Phase 27). Currently:
-- Locked goop = SBG
-- Falling piece = basic rendering
-
-Without SBG on the falling piece, there's no impact force transmitted to locked goop on landing, making it hard to see the "jiggly" behavior.
+Now that active pieces create blobs, we need to render them visually. Plan 02 will switch the active piece rendering from rect-based to soft-body blob path.
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-02-04
+Last session: 2026-02-05
 **Version:** 1.1.13
 **Branch:** soft-body-experiment
-**Build:** 181
+**Build:** 184
 
 ### Resume Command
 ```
-26.1-FIX plan complete.
+27-01 plan complete.
 
 DONE:
-- Damping: params.damping (not /viscosity)
-- Home force: direct distance (not cylindrical)
-- Droplets: only on pop (not merge)
-- Sliders: all droplet params connected
-- Attraction stiffness: formula fixed
-- Loose goop: smooth fall animation
+- Active piece blob creation on spawn
+- Blob position sync during fall
+- Clean transition from falling to locked state
+- Blob ID convention: active-{timestamp}
 
-REMAINING ISSUES (for later phases):
-- Stiffness feel - needs active piece SBG (Phase 27)
-- Blob collision visibility - depends on stiffness
+READY FOR:
+- 27-02: Rendering switch (make the blobs visible)
 
-Next: /gsd:progress to see options
+Next: /gsd:execute-plan .planning/phases/27-active-piece-physics/27-02-PLAN.md
 ```
 
 ---
