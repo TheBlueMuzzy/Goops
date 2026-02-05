@@ -782,9 +782,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             {/* clipPath masks blobs to tank viewport - prevents rendering past edges */}
             {/* Each color gets its own goo filter group so unlike colors don't visually merge */}
             {!isMobile && softBodyPhysics && softBodyPhysics.blobs.length > 0 && (() => {
-              // Group blobs by color so each color gets its own goo filter
+              // Group LOCKED blobs by color so each color gets its own goo filter
+              // (falling blobs are rendered separately below with different styling)
               const blobsByColor = new Map<string, typeof softBodyPhysics.blobs>();
               for (const blob of softBodyPhysics.blobs) {
+                if (blob.isFalling) continue; // Skip falling blobs - rendered separately
                 const existing = blobsByColor.get(blob.color) || [];
                 existing.push(blob);
                 blobsByColor.set(blob.color, existing);
@@ -868,6 +870,49 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   })}
                 </g>
               ));
+            })()}
+
+            {/* Soft-body falling pieces (desktop only) */}
+            {/* Falling blobs render with higher opacity, white stroke, no fill animation */}
+            {!isMobile && softBodyPhysics && (() => {
+              // Find all falling blobs
+              const fallingBlobs = softBodyPhysics.blobs.filter(b => b.isFalling && !b.isLocked);
+              if (fallingBlobs.length === 0) return null;
+
+              // TODO Phase 28+: Multi-color pieces render as single-color blob using first cell color.
+              // True multi-color rendering would require splitting into separate blobs per color.
+
+              return (
+                <g filter="url(#goo-filter)" clipPath="url(#tank-viewport-clip)">
+                  {fallingBlobs.map(blob => {
+                    // Get render offsets for cylindrical wrapping
+                    const offsets = getBlobRenderOffsets(blob);
+
+                    return offsets.map((offset, idx) => {
+                      const path = getSoftBlobPath(blob);
+                      if (!path) return null;
+
+                      const transform = offset === 0 ? undefined : `translate(${offset}, 0)`;
+                      // Use blob's target position for wild color calculation
+                      const isWild = activeGoop?.definition.isWild;
+                      const fillColor = isWild ? getWildColorAtX(blob.targetX) : blob.color;
+
+                      return (
+                        <path
+                          key={`falling-${blob.id}-${idx}`}
+                          d={path}
+                          fill={fillColor}
+                          fillOpacity={0.8}
+                          stroke="white"
+                          strokeWidth="2"
+                          transform={transform}
+                          className={isWild ? "wild-stroke" : undefined}
+                        />
+                      );
+                    });
+                  })}
+                </g>
+              );
             })()}
 
             {/* Droplets from popped blobs (NO goo filter - simple circles) */}
@@ -1068,8 +1113,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 );
             })}
 
-            {/* Active Piece */}
-            {activeGoop && activeGoop.state === GoopState.FALLING && (() => {
+            {/* Active Piece - Grid cells (mobile fallback only) */}
+            {/* Desktop uses soft-body blob rendering above; mobile uses simple rects */}
+            {isMobile && activeGoop && activeGoop.state === GoopState.FALLING && (() => {
                 const isWild = activeGoop.definition.isWild;
                 const apCells = activeGoop.cells.map((cell, idx) => {
                     const color = activeGoop.definition.cellColors?.[idx] ?? activeGoop.definition.color;
