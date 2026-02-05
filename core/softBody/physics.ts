@@ -17,7 +17,9 @@ import {
   CYLINDER_WIDTH_PIXELS,
   VIEWPORT_WIDTH_PIXELS,
   PHYSICS_GRID_OFFSET,
+  PHYSICS_CELL_SIZE,
 } from './blobFactory';
+import { TankCell } from '../../types';
 
 // =============================================================================
 // Cylindrical Wrapping Helpers
@@ -627,4 +629,81 @@ export function applyBlobCollisions(
       }
     }
   }
+}
+
+// =============================================================================
+// Active Piece Falling (Physics-Controlled)
+// =============================================================================
+
+/**
+ * Steps the falling motion for an active piece blob.
+ * Ported from Proto-9 lines 1598-1635.
+ *
+ * Physics owns the falling motion:
+ * - Accumulates visualOffsetY based on fallSpeed
+ * - Moves gridCells down when offset exceeds CELL_SIZE
+ * - Sets isColliding when piece can't fall further
+ * - Updates targetX/targetY for soft-body rendering
+ *
+ * @param blob - The active piece blob to update
+ * @param dt - Delta time in seconds
+ * @param fallSpeed - Pixels per second (GameEngine controls fast-fall)
+ * @param grid - The game grid for collision detection
+ * @param gridRows - Number of rows in the grid
+ */
+export function stepActivePieceFalling(
+  blob: SoftBlob,
+  dt: number,
+  fallSpeed: number,
+  grid: TankCell[][],
+  gridRows: number
+): void {
+  // Skip if not a falling blob
+  if (blob.isLocked || blob.isLoose) return;
+
+  // Check collision BEFORE moving
+  let canFallMore = true;
+  for (const cell of blob.gridCells) {
+    const nextY = cell.y + 1;
+    if (nextY >= gridRows) {
+      canFallMore = false;
+      break;
+    }
+    // Check if cell below is occupied (by different blob)
+    const targetCell = grid[nextY]?.[cell.x];
+    if (targetCell && targetCell.goopGroupId !== undefined) {
+      canFallMore = false;
+      break;
+    }
+  }
+
+  blob.isColliding = !canFallMore;
+
+  if (canFallMore) {
+    // Accumulate visual offset
+    const fallAmount = fallSpeed * dt;
+    blob.visualOffsetY += fallAmount;
+
+    // Move grid cells when offset exceeds cell size
+    while (blob.visualOffsetY >= PHYSICS_CELL_SIZE) {
+      for (const cell of blob.gridCells) {
+        cell.y += 1;
+      }
+      blob.visualOffsetY -= PHYSICS_CELL_SIZE;
+    }
+  }
+
+  // Update physics target position from grid cells + offset
+  // Centroid calculation
+  let sumX = 0, sumY = 0;
+  for (const cell of blob.gridCells) {
+    sumX += cell.x;
+    sumY += cell.y;
+  }
+  const centroidX = sumX / blob.gridCells.length;
+  const centroidY = sumY / blob.gridCells.length;
+
+  // Convert to pixels (using same transform as blobFactory)
+  blob.targetX = PHYSICS_GRID_OFFSET.x + (centroidX + 0.5) * PHYSICS_CELL_SIZE;
+  blob.targetY = PHYSICS_GRID_OFFSET.y + (centroidY + 0.5) * PHYSICS_CELL_SIZE + blob.visualOffsetY;
 }
