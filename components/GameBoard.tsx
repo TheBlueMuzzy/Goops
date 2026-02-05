@@ -24,7 +24,7 @@ import {
   DEFAULT_FILTER,
   getFilterMatrix,
 } from '../core/softBody/rendering';
-import { CYLINDER_WIDTH_PIXELS } from '../core/softBody/blobFactory';
+import { CYLINDER_WIDTH_PIXELS, PHYSICS_CELL_SIZE } from '../core/softBody/blobFactory';
 import './GameBoard.css';
 
 // =============================================================================
@@ -217,7 +217,43 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       // This replaces the old approach of recalculating from visible cells
       softBodyPhysics.shiftBlobsForRotation(tankRotation);
 
-      // 5. Remove blobs ONLY when the goopGroupId no longer exists in the FULL grid
+      // 5. Sync loose goop positions - blobs falling after pop need animated targetY
+      // Build map of goopGroupId -> average Y position from looseGoop array
+      const looseGoopMap = new Map<string, { avgY: number; cells: { x: number; y: number }[] }>();
+      for (const lg of looseGoop) {
+          const gid = lg.data.goopGroupId;
+          if (!looseGoopMap.has(gid)) {
+              looseGoopMap.set(gid, { avgY: 0, cells: [] });
+          }
+          looseGoopMap.get(gid)!.cells.push({ x: lg.x, y: lg.y });
+      }
+      // Calculate average Y for each loose goopGroup
+      for (const [gid, data] of looseGoopMap) {
+          const avgY = data.cells.reduce((sum, c) => sum + c.y, 0) / data.cells.length;
+          data.avgY = avgY;
+      }
+
+      // Update blobs that are loose - set isLoose flag and update targetY
+      for (const blob of softBodyPhysics.blobs) {
+          const looseData = looseGoopMap.get(blob.id);
+          if (looseData) {
+              // This blob is loose goop - update its target position
+              blob.isLoose = true;
+              blob.isLocked = false;
+              // Convert looseGoop's Y (grid units) to pixel position
+              // looseGoop.y is in grid coordinates (with BUFFER_HEIGHT included)
+              // We need to convert to physics pixel space
+              const physicsY = (looseData.avgY - BUFFER_HEIGHT) * PHYSICS_CELL_SIZE;
+              blob.targetY = physicsY;
+          } else if (blob.isLoose) {
+              // Was loose but no longer in looseGoop array - must have landed
+              blob.isLoose = false;
+              blob.isLocked = true;
+              blob.fillAmount = 0; // Start fill animation again
+          }
+      }
+
+      // 6. Remove blobs ONLY when the goopGroupId no longer exists in the FULL grid
       // AND is not currently falling as loose goop (i.e., truly popped)
       // Loose goop keeps its goopGroupId but is removed from grid temporarily
       const looseGoopIds = new Set(looseGoop.map(lg => lg.data.goopGroupId));

@@ -540,7 +540,9 @@ export const updateLooseGoop = (
 
     const active: LooseGoop[] = [];
     const landed: LooseGoop[] = [];
-    const FALL_SPEED = 0.02 * dt;
+    // Fall speed in cells per millisecond
+    // 0.012 = ~83ms/cell, slightly faster than fast-drop (97.5ms/cell)
+    const FALL_SPEED = 0.012 * dt;
 
     const sortedGoop = [...looseGoop].sort((a, b) => b.y - a.y);
 

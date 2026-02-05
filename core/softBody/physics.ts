@@ -519,8 +519,9 @@ export function applyAttractionSprings(
   springs: AttractionSpring[],
   params: PhysicsParams
 ): void {
-  const MIN_STIFFNESS = 0.1;
-  const MAX_STIFFNESS = 1.0;
+  // Use params.attractionStiffness as base, scaled for min/max (matches Proto-9)
+  const MIN_STIFFNESS = params.attractionStiffness * 0.1;
+  const MAX_STIFFNESS = params.attractionStiffness;
 
   for (const spring of springs) {
     const blobA = blobs[spring.blobA];
@@ -537,12 +538,13 @@ export function applyAttractionSprings(
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 0.0001) continue;
 
-    // Variable stiffness: stronger when closer
+    // Variable stiffness: stronger when closer (matches Proto-9 lines 1136-1141)
     const t = Math.max(0, Math.min(1, 1 - dist / params.goopiness));
-    const stiffnessMult = MIN_STIFFNESS + t * (MAX_STIFFNESS - MIN_STIFFNESS);
+    const stiffness = MIN_STIFFNESS + t * (MAX_STIFFNESS - MIN_STIFFNESS);
 
     const error = dist - spring.restLength;
-    const force = error * params.attractionStiffness * stiffnessMult;
+    // Note: stiffness already incorporates attractionStiffness via MIN/MAX
+    const force = error * stiffness;
 
     // Move both vertices toward each other
     const fx = (dx / dist) * force;

@@ -171,6 +171,11 @@ export function useSoftBodyPhysics(
     paramOverrides?.tendrilEndRadius,
     paramOverrides?.tendrilSkinniness,
     paramOverrides?.wallThickness,
+    // Droplet params (were missing - caused sliders to not work)
+    paramOverrides?.dropletCount,
+    paramOverrides?.dropletSpeed,
+    paramOverrides?.dropletLifetime,
+    paramOverrides?.dropletSize,
   ]);
 
   // Update bounds if they change
