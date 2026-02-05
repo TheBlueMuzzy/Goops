@@ -128,10 +128,31 @@ Plans:
 - [x] 27-01: Active piece blob lifecycle (completed 2026-02-05)
 - [ ] 27-02: Rendering switch
 
+#### Phase 27.1: Physics-Controlled Active Piece (INSERTED)
+
+**Goal**: Transfer falling/spinning/fast-fall motion from GameEngine to SoftBodyPhysics
+**Depends on**: Phase 27-01 complete
+**Research**: Yes (need to map all player inputs to physics, explore control feel)
+**Rationale**: Current approach syncs blob position TO game state, causing timing issues and flickering. Proto-9 pattern has physics OWN the falling motion directly, which is cleaner and guaranteed to look right.
+**Plans**: TBD (run /gsd:plan-phase 27.1 to break down)
+
+**Scope:**
+- Smooth falling via `visualOffsetY` (like Proto-9)
+- Piece rotation/spinning physics
+- Fast-fall: gravity boost or velocity injection?
+- Lock detection via collision (not timer)
+- Player input → physics forces translation
+- What stays in GameEngine vs moves to Physics?
+
+Plans:
+- [x] 27.1-01: Physics falling foundation (completed 2026-02-05)
+- [ ] 27.1-02: Wire up falling physics
+- [ ] 27.1-03: Add spinning/rotation physics
+
 #### Phase 28: Locked Goop Behavior
 
 **Goal**: Viscosity, fill animation, ready-to-pop impulse, attraction springs
-**Depends on**: Phase 27
+**Depends on**: Phase 27.1
 **Research**: Unlikely (Protos 6-8 have all mechanics)
 **Plans**: TBD
 

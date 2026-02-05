@@ -9,12 +9,12 @@ updated: 2026-02-04
 
 ## Current Position
 
-Phase: 27 Active Piece Physics
-Plan: 1 of 2 complete
-Status: Active piece blob lifecycle wired up, rendering switch next
-Last activity: 2026-02-05 - Completed 27-01-PLAN.md
+Phase: 27.1 Physics-Controlled Active Piece
+Plan: 1 of 3 complete
+Status: Falling physics foundation ready, wire-up next
+Last activity: 2026-02-05 - Completed 27.1-01-PLAN.md
 
-Progress: ███████░░░ ~77%
+Progress: ███████░░░ ~78%
 
 ## Branch Workflow (SOP)
 
@@ -28,28 +28,30 @@ Progress: ███████░░░ ~77%
 
 ## Next Steps
 
-**Completed:** 27-01-PLAN.md (Active Piece Physics Integration)
+**Completed:** 27.1-01-PLAN.md (Physics falling foundation)
 **Branch:** `soft-body-experiment`
 
-### 27-01 Completed (2026-02-05)
+### 27.1-01 Completed (2026-02-05)
 
 | Task | Commit | Description |
 |------|--------|-------------|
-| Blob lifecycle | 6ab8e31 | Create/sync/cleanup blobs for active falling piece |
+| SoftBlob type | b6cdd66 | Add isColliding property |
+| Blob factory | 1655ea8 | Initialize isColliding, copy gridCells |
+| Falling physics | da47d81 | Implement stepActivePieceFalling function |
 
-**What's working:**
-- Active piece creates soft-body blob on spawn
-- Blob position syncs with piece movement every frame
-- Falling blob removed on lock (standard sync handles locked state)
-- No duplicate blobs between active and locked states
+**What's ready:**
+- SoftBlob has `gridCells`, `visualOffsetY`, `isColliding` properties
+- `stepActivePieceFalling` implements Proto-9's smooth falling pattern
+- Grid collision detection (O(1) cell lookup)
+- GameEngine can read `blob.isColliding` to trigger lock timer
 
 ### What's Still Open
-- UAT-001: Goop stiffness feel - needs 27-02 rendering to be visible
-- UAT-002: Blob collision visibility - needs 27-02 rendering
+- 27.1-02: Wire up stepActivePieceFalling to useSoftBodyPhysics hook
+- 27.1-03: Add spinning/rotation physics
 
-### Next: 27-02 Rendering Switch
+### Next: 27.1-02 Plan
 
-Now that active pieces create blobs, we need to render them visually. Plan 02 will switch the active piece rendering from rect-based to soft-body blob path.
+Wire up the falling physics to the game loop so active pieces use physics-owned motion instead of sync-to-game-state.
 
 ---
 
@@ -62,18 +64,17 @@ Last session: 2026-02-05
 
 ### Resume Command
 ```
-27-01 plan complete.
+27.1-01 plan complete.
 
 DONE:
-- Active piece blob creation on spawn
-- Blob position sync during fall
-- Clean transition from falling to locked state
-- Blob ID convention: active-{timestamp}
+- SoftBlob.isColliding property for lock signaling
+- stepActivePieceFalling with Proto-9 visualOffsetY pattern
+- Grid collision detection via gridCells lookup
 
 READY FOR:
-- 27-02: Rendering switch (make the blobs visible)
+- 27.1-02: Wire up falling physics to useSoftBodyPhysics
 
-Next: /gsd:execute-plan .planning/phases/27-active-piece-physics/27-02-PLAN.md
+Next: /gsd:execute-plan .planning/phases/27.1-physics-controlled-active-piece/27.1-02-PLAN.md
 ```
 
 ---
