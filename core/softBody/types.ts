@@ -134,6 +134,7 @@ export interface SoftBlob {
   crossSprings: Spring[];    // Structural support springs
   restArea: number;          // Target area (Shoelace formula)
   gridCells: Vec2[];         // Which grid cells this blob occupies
+  isColliding: boolean;      // True when blob can't fall more (for GameEngine lock timer)
   isLocked: boolean;         // Locked = viscous, Falling = snappy
   isFalling: boolean;        // Active falling piece (not yet locked)
   isLoose: boolean;          // Falling after losing support (was locked)
