@@ -5,7 +5,8 @@ import { GameBoard } from './components/GameBoard';
 import { Controls } from './components/Controls';
 import { ConsoleView } from './components/ConsoleView';
 import { useGameEngine } from './hooks/useGameEngine';
-import { useSoftBodyPhysics } from './hooks/useSoftBodyPhysics';
+import { useSoftBodyPhysics, PhysicsStepContext } from './hooks/useSoftBodyPhysics';
+import { GameEngine } from './core/GameEngine';
 import { DEFAULT_PHYSICS, PhysicsParams } from './core/softBody/types';
 import { isMobile } from './utils/device';
 import { Play, Home } from 'lucide-react';
@@ -55,13 +56,38 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
     params: physicsParams,
   });
 
+  // Physics step callback: builds context, runs physics, syncs state back to engine
+  const handlePhysicsStep = useCallback((dt: number, engine: GameEngine) => {
+    // Build context for falling piece physics
+    const context: PhysicsStepContext = {
+      grid: engine.state.grid,
+      tankRotation: engine.state.tankRotation,
+      fallSpeed: engine.getFallSpeed()
+    };
+
+    // Run physics with context (steps falling blobs + core physics)
+    softBodyPhysics.step(dt, context);
+
+    // Get physics output and sync back to engine
+    const physicsState = softBodyPhysics.getActivePieceState();
+    if (physicsState) {
+      engine.syncActivePieceFromPhysics(physicsState.isColliding, physicsState.gridY);
+    }
+  }, [softBodyPhysics]);
+
   const { engine, gameState } = useGameEngine(
     initialTotalScore,
     powerUps,
     onRunComplete,
     equippedActives,
-    softBodyPhysics.step
+    handlePhysicsStep
   );
+
+  // Tell engine that physics controls falling on desktop
+  // This prevents double-movement from the old tickActivePiece(dt)
+  useEffect(() => {
+    engine.usePhysicsForFalling = !isMobile;
+  }, [engine]);
 
   // Handle active ability activation
   const handleActivateAbility = useCallback((upgradeId: string) => {

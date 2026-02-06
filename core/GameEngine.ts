@@ -45,6 +45,7 @@ export class GameEngine {
     public maxTime: number = SHIFT_DURATION;
     public lockStartTime: number | null = null;
     public lockResetCount: number = 0;  // Move reset counter (max 10 resets before force lock)
+    public usePhysicsForFalling: boolean = false;  // Set true when soft-body physics controls falling (desktop)
     public lastGoalSpawnTime: number = 0;
     public lastComplicationCheckTime: number = 0;
     public isFastDropping: boolean = false;
@@ -1182,9 +1183,14 @@ export class GameEngine {
 
     /**
      * Handle active piece gravity, locking, and LIGHTS complication trigger.
+     * Only used when physics is NOT controlling falling (mobile).
+     * On desktop, syncActivePieceFromPhysics handles this instead.
      */
     private tickActivePiece(dt: number): void {
         if (!this.state.activeGoop) return;
+
+        // Skip if physics is controlling falling (handled by syncActivePieceFromPhysics)
+        if (this.usePhysicsForFalling) return;
 
         // DENSE_GOOP: +12.5% fall speed per level (reduces interval between drops)
         const denseLevel = this.powerUps['DENSE_GOOP'] || 0;
@@ -1296,6 +1302,67 @@ export class GameEngine {
                 this.state.activeCharges[id] = newCharge;
             }
         });
+    }
+
+    // =============================================================================
+    // Physics Integration (Phase 27.1)
+    // =============================================================================
+
+    /**
+     * Get the current fall speed in pixels per second.
+     * Used by soft-body physics to control falling piece motion.
+     * Accounts for DENSE_GOOP upgrade and fast-drop state.
+     */
+    public getFallSpeed(): number {
+        // Base speed: ACTIVE_GOOP_SPEED is ms per block, we need px/sec
+        // PHYSICS_CELL_SIZE = 30px, so 1 block = 30px
+        // 780ms per block = 30px / 0.78s = ~38.5 px/sec base
+
+        // DENSE_GOOP: +12.5% fall speed per level
+        const denseLevel = this.powerUps['DENSE_GOOP'] || 0;
+        const speedMultiplier = 1 + (denseLevel * 0.125);
+
+        // Base fall speed in px/sec (30px per 780ms = 38.46 px/sec)
+        const basePxPerSec = (30 / ACTIVE_GOOP_SPEED) * 1000 * speedMultiplier;
+
+        // Apply fast-drop multiplier
+        return this.isFastDropping
+            ? basePxPerSec * FAST_DROP_FACTOR
+            : basePxPerSec;
+    }
+
+    /**
+     * Sync active piece state from physics.
+     * Called by physics system after stepping falling piece.
+     * Physics owns the Y position; GameEngine manages lock timer.
+     *
+     * @param physicsIsColliding - True when piece can't fall further
+     * @param physicsGridY - The Y position from physics (in full grid coordinates with BUFFER)
+     */
+    public syncActivePieceFromPhysics(physicsIsColliding: boolean, physicsGridY: number): void {
+        if (!this.state.activeGoop) return;
+
+        // Sync Y position from physics (physics is source of truth for falling)
+        this.state.activeGoop.y = physicsGridY;
+
+        // Manage lock timer based on collision state
+        if (physicsIsColliding) {
+            // Start lock timer when physics reports collision
+            if (this.lockStartTime === null) {
+                this.lockStartTime = Date.now();
+            }
+
+            const lockedTime = Date.now() - this.lockStartTime;
+            const effectiveLockDelay = this.isFastDropping ? 50 : LOCK_DELAY_MS;
+
+            // Lock if: timer expired OR hit 10-reset limit
+            if (lockedTime > effectiveLockDelay || this.lockResetCount >= 10) {
+                this.lockActivePiece();
+            }
+        } else {
+            // Not colliding - reset lock timer
+            this.lockStartTime = null;
+        }
     }
 
     public tick(dt: number) {

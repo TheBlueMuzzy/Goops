@@ -11,8 +11,10 @@ export interface UseGameEngineOptions {
     powerUps: Record<string, number>;
     onRunComplete: (score: number) => void;
     equippedActives?: string[];
-    /** Optional callback for physics step (soft-body integration, Phase 26) */
-    onPhysicsStep?: (dt: number) => void;
+    /** Optional callback for physics step (soft-body integration, Phase 26)
+     *  Receives dt in seconds and the GameEngine instance for state access.
+     */
+    onPhysicsStep?: (dt: number, engine: GameEngine) => void;
 }
 
 export const useGameEngine = (
@@ -20,7 +22,7 @@ export const useGameEngine = (
     powerUps: Record<string, number>,
     onRunComplete: (score: number) => void,
     equippedActives: string[] = [],
-    onPhysicsStep?: (dt: number) => void
+    onPhysicsStep?: (dt: number, engine: GameEngine) => void
 ) => {
     // Engine persistence
     const engineRef = useRef<GameEngine | null>(null);
@@ -97,9 +99,10 @@ export const useGameEngine = (
             lastTimeRef.current = time;
             engine.tick(dt);
 
-            // Soft-body physics step (Phase 26)
+            // Soft-body physics step (Phase 26/27)
+            // Pass engine so callback can access state and call tickActivePiece
             if (onPhysicsStep) {
-                onPhysicsStep(dt / 1000); // Convert ms to seconds
+                onPhysicsStep(dt / 1000, engine); // Convert ms to seconds
             }
 
             requestRef.current = requestAnimationFrame(loop);
