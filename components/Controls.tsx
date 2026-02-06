@@ -29,7 +29,8 @@ export const Controls: React.FC<ControlsProps> = ({
       )}
 
       {/* HUD Layer */}
-      <div className="absolute top-0 left-0 right-0 p-4 pointer-events-none z-50 flex justify-between items-start">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 px-1 pt-4 pointer-events-none z-50 flex justify-between items-start"
+           style={{ width: 'min(100%, 100dvh * 0.75)' }}>
           
           {/* LEFT: Pressure */}
           <div className="flex flex-col items-start drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
