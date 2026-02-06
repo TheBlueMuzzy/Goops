@@ -340,6 +340,7 @@ export class GameEngine {
         this.isSessionActive = false;
         this.state.phase = ScreenType.ConsoleScreen;
         this.state.shiftScore = 0; // Reset run score
+        this.state.activeGoop = null; // Clear stale piece to prevent physics re-triggering game over
         
         // Apply any pending total score update from the previous run
         if (this.pendingTotalScore !== null) {
@@ -757,6 +758,7 @@ export class GameEngine {
         // Check immediate collision on spawn (Game Over condition)
         if (checkCollision(currentGrid, piece, currentOffset)) {
              this.finalizeGame();
+             return;
         }
 
         this.state.activeGoop = piece;
@@ -1230,7 +1232,7 @@ export class GameEngine {
      * Lock the active piece, handle goals, check LIGHTS trigger, spawn new piece.
      */
     private lockActivePiece(): void {
-        if (!this.state.activeGoop) return;
+        if (!this.state.activeGoop || this.state.gameOver) return;
 
         const y = getGhostY(this.state.grid, this.state.activeGoop, this.state.tankRotation);
         const finalPiece = { ...this.state.activeGoop, y };
@@ -1340,7 +1342,7 @@ export class GameEngine {
      * @param physicsGridY - The Y position from physics (in full grid coordinates with BUFFER)
      */
     public syncActivePieceFromPhysics(physicsIsColliding: boolean, physicsGridY: number): void {
-        if (!this.state.activeGoop) return;
+        if (!this.state.activeGoop || this.state.gameOver) return;
 
         // Sync Y position from physics (physics is source of truth for falling)
         this.state.activeGoop.y = physicsGridY;

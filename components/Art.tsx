@@ -479,7 +479,8 @@ export const ConsoleLayoutSVG: React.FC<ConsoleLayoutProps> = ({
                 style={{
                     ...transitionStyle,
                     cursor: isGameOver ? 'grab' : 'default',
-                    pointerEvents: isGameOver ? 'auto' : 'none'
+                    pointerEvents: isGameOver ? 'auto' : 'none',
+                    touchAction: isGameOver ? 'none' : 'auto'
                 }}
                 {...(isGameOver && isMonitorDragging !== undefined ? monitorDragHandlers : {})}
             >

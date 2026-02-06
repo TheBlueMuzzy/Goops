@@ -11,8 +11,8 @@ updated: 2026-02-06
 
 Phase: 27.1 Physics-Controlled Active Piece
 Plan: MASTER-PLAN complete (9/9 tasks) — ALL BUGS FIXED
-Status: Physics-controlled falling piece fully working
-Last activity: 2026-02-06 - Fixed all 4 critical bugs
+Status: Physics-controlled falling piece fully working + goo filter tuned + overflow bug fixed
+Last activity: 2026-02-06 - Goo filter tuning, overflow game-over bug fix
 
 Progress: ████████░░ ~80% (core physics working, needs polish)
 
@@ -58,11 +58,16 @@ None critical. Minor polish items:
 - Physics "looseness" could be tuned (blobs are a bit wobbly)
 - Could optimize by reducing debug variable declarations
 
+### Decisions Made This Session
+- **Goo filter defaults:** stdDeviation=8, alphaMul=24, alphaOff=-13 (user-tuned via live sliders)
+- **No stroke on blob SVG paths** — goo filter handles edge definition alone
+- **Goo filter sliders** added to backtick debug panel (Goo Filter section)
+
 ### Next Steps
 
 1. Test edge cases (fast fall, rotation near floor, tank rotation during collision)
 2. Consider physics parameter tuning for tighter feel
-3. Move to next phase or polish current implementation
+3. Move to next phase (Phase 28: Locked Goop Behavior)
 
 ---
 
@@ -71,32 +76,33 @@ None critical. Minor polish items:
 Last session: 2026-02-06
 **Version:** 1.1.13
 **Branch:** soft-body-experiment
-**Build:** 205
+**Build:** 206
 
 ### Resume Command
 ```
-27.1 PHYSICS-CONTROLLED ACTIVE PIECE WORKING.
+27.1 COMPLETE — Goo filter tuned + overflow bug fixed.
 
 SESSION ACCOMPLISHMENTS:
-- Fixed all 4 critical bugs from previous session
-- Fixed additional displacement bug (X coordinate conversion)
-- Cleaned up all debug logging (~15 console.log statements removed)
-- Tank rotation wobble fixed (instant vertex movement)
-
-WORKING FEATURES:
-- Pieces fall with physics simulation
-- Pieces stack correctly on each other
-- Rotation updates blob shape and vertices
-- Tank rotation moves piece instantly (no wobble)
-- New pieces spawn correctly after lock
+- Tuned goo filter defaults (8/24/-13) with live debug sliders
+- Removed blob strokes (goo filter handles edges)
+- Added goo filter sliders to backtick debug panel
+- Fixed P0 overflow game-over bug (3 root causes):
+  1. lockActivePiece() had no gameOver guard → lock loop
+  2. spawnNewPiece() continued after finalizeGame() → set stale activeGoop
+  3. resetSession() didn't clear activeGoop → physics re-triggered game over on dismiss
+- Added gameOver/isSessionActive guards to physics callback
+- Added touch-action: none to monitor drag element
+- Updated PRD with goo filter reference docs
 
 FILES MODIFIED:
-- core/softBody/physics.ts (collision detection with tankRotation)
-- hooks/useSoftBodyPhysics.ts (pass tankRotation to physics)
-- components/GameBoard.tsx (instant vertex shift on tank rotation)
-- core/GameEngine.ts (removed debug logs)
+- Game.tsx (goo filter state, physics guards, debug sliders)
+- components/GameBoard.tsx (dynamic filter values, removed blob strokes)
+- components/Art.tsx (touch-action: none on monitor)
+- core/GameEngine.ts (overflow guards in lockActivePiece, spawnNewPiece, syncActivePieceFromPhysics, resetSession)
+- core/softBody/rendering.ts (updated filter defaults/presets)
+- .planning/PRD.md (goo filter reference docs)
 
-Next: Test edge cases, consider physics tuning, or move to next phase
+Next: Test edge cases, physics tuning, or move to Phase 28
 ```
 
 ---

@@ -199,6 +199,35 @@ After placement or merge, goop "fills" before it can be popped.
 
 Fill animation progresses row-by-row from bottom to top of the group.
 
+### Goo Filter (SVG Visual Effect)
+
+Soft-body blobs use an SVG goo filter to create the blobby merge effect. The filter pipeline:
+
+1. **Gaussian Blur** (`stdDeviation`) — Blurs all blob shapes. Nearby blobs blur into each other.
+2. **Alpha Threshold** — A color matrix sharpens the blurred alpha back to solid edges. Formula: `output = (blurred_alpha × AlphaMul) + AlphaOff`
+3. **Composite** — Original sharp color composited back onto the thresholded shape.
+
+**Tuned Defaults (v1.5):**
+
+| Parameter | Value | Range | Effect |
+|-----------|-------|-------|--------|
+| Blur (stdDeviation) | **8** | 1–25 | Merge radius. Higher = fluffier, more merging between nearby blobs |
+| Alpha Multiplier | **24** | 1–50 | Edge steepness. Higher = harder/crisper cutoff |
+| Alpha Offset | **-13** | -30–0 | Edge position. More negative = blobs shrink inward, gaps widen |
+
+**Reference Presets:**
+
+| Preset | Blur | Mul | Off | Notes |
+|--------|------|-----|-----|-------|
+| Subtle | 5 | 15 | -6 | Minimal merge, soft edges |
+| Medium | 8 | 24 | -13 | **Current default** — balanced merge + crisp edges |
+| Aggressive | 12 | 25 | -9 | Maximum fluffiness, heavy merge |
+
+**Key notes:**
+- Alpha Mul and Alpha Off both affect the edge but from different angles: Mul adjusts contrast (steepness), Off adjusts position (where the cutoff sits)
+- No stroke on blob SVG paths — the filter handles edge definition on its own
+- Debug sliders available via backtick (`` ` ``) panel under "Goo Filter" section
+
 ### Popping (Laser)
 
 Tapping filled goop destroys it.

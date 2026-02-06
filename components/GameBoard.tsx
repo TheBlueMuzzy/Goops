@@ -95,6 +95,9 @@ interface GameBoardProps {
   softBodyPhysics?: UseSoftBodyPhysicsReturn;  // Soft-body physics for blob rendering (Phase 26)
   normalGoopOpacity?: number;  // 0-1, for fading normal goop to see SBGs (debug)
   showVertexDebug?: boolean;   // Show numbered vertices on SBGs (debug)
+  gooStdDev?: number;          // SVG goo filter blur radius (debug)
+  gooAlphaMul?: number;        // SVG goo filter alpha multiplier (debug)
+  gooAlphaOff?: number;        // SVG goo filter alpha offset (debug)
 }
 
 // --- Component ---
@@ -102,7 +105,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     state, rank, maxTime, lightsBrightness = 100,
     laserCharge = 100, controlsHeat = 0, complicationCooldowns,
     equippedActives = [], activeCharges = {}, onActivateAbility,
-    powerUps, storedGoop, nextGoop, softBodyPhysics, normalGoopOpacity = 1, showVertexDebug = false
+    powerUps, storedGoop, nextGoop, softBodyPhysics, normalGoopOpacity = 1, showVertexDebug = false,
+    gooStdDev = 8, gooAlphaMul = 24, gooAlphaOff = -13
 }) => {
   const { grid, tankRotation, activeGoop, looseGoop, floatingTexts, shiftTime, goalMarks, crackCells, dumpPieces } = state;
 
@@ -559,14 +563,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             {maskDefinitions}
 
             {/* Soft-body goo filter - creates blobby merge effect (Phase 26) */}
-            {/* stdDeviation 12 helps merge seam-straddling blob copies */}
             <defs>
               <filter id="goo-filter" colorInterpolationFilters="sRGB">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+                <feGaussianBlur in="SourceGraphic" stdDeviation={gooStdDev} result="blur" />
                 <feColorMatrix
                   in="blur"
                   mode="matrix"
-                  values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -15"
+                  values={`1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${gooAlphaMul} ${gooAlphaOff}`}
                   result="goo"
                 />
                 <feComposite in="SourceGraphic" in2="goo" operator="atop" />
@@ -893,8 +896,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                             <path
                               d={outerPath}
                               fill={blob.color}
-                              stroke={blob.color}
-                              strokeWidth="2"
                             />
                             {/* Inner cutout (unfilled region) */}
                             <defs>
@@ -926,8 +927,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                           key={`soft-${blob.id}-${idx}`}
                           d={outerPath}
                           fill={blob.color}
-                          stroke={blob.color}
-                          strokeWidth="2"
                           transform={transform}
                         />
                       ))}
@@ -969,8 +968,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                           d={path}
                           fill={fillColor}
                           fillOpacity={0.8}
-                          stroke="white"
-                          strokeWidth="2"
                           transform={transform}
                           className={isWild ? "wild-stroke wild-fill" : undefined}
                         />
@@ -1469,6 +1466,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 <PiecePreview piece={nextGoop ?? null} label="NEXT" visible={showNextWindow} rank={rank} />
             </div>
         )}
+
     </div>
   );
 };

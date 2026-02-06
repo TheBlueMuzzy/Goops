@@ -48,6 +48,10 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   const [physicsParams, setPhysicsParams] = useState<PhysicsParams>({ ...DEFAULT_PHYSICS });
   const [normalGoopOpacity, setNormalGoopOpacity] = useState(0.25); // 0-1, for debugging SBGs (default 25%)
   const [showVertexDebug, setShowVertexDebug] = useState(false); // Show numbered vertices on SBGs
+  // Goo filter params (SVG blur/threshold that creates blobby merge effect)
+  const [gooStdDev, setGooStdDev] = useState(8);
+  const [gooAlphaMul, setGooAlphaMul] = useState(24);
+  const [gooAlphaOff, setGooAlphaOff] = useState(-13);
 
   // Soft-body physics for goop rendering (Phase 26)
   // Desktop only for now - mobile uses simplified rendering
@@ -58,6 +62,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
 
   // Physics step callback: builds context, runs physics, syncs state back to engine
   const handlePhysicsStep = useCallback((dt: number, engine: GameEngine) => {
+    if (engine.state.gameOver || !engine.isSessionActive) return;
+
     // Build context for falling piece physics
     const context: PhysicsStepContext = {
       grid: engine.state.grid,
@@ -397,6 +403,9 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             softBodyPhysics={softBodyPhysics}
             normalGoopOpacity={normalGoopOpacity}
             showVertexDebug={showVertexDebug}
+            gooStdDev={gooStdDev}
+            gooAlphaMul={gooAlphaMul}
+            gooAlphaOff={gooAlphaOff}
          />
          {/* Lights brightness is now controlled by state.lightsBrightness (player-controlled via fast drop) */}
       </div>
@@ -569,6 +578,28 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             </div>
 
             <div className="pt-2 border-t border-gray-600">
+              <div className="text-gray-400 mb-1">Goo Filter</div>
+              <label className="block">
+                <span>Blur (stdDev): {gooStdDev}</span>
+                <input type="range" min="1" max="25" step="1" value={gooStdDev}
+                  onChange={e => setGooStdDev(Number(e.target.value))}
+                  className="w-full" />
+              </label>
+              <label className="block">
+                <span>Alpha Mul: {gooAlphaMul}</span>
+                <input type="range" min="1" max="50" step="1" value={gooAlphaMul}
+                  onChange={e => setGooAlphaMul(Number(e.target.value))}
+                  className="w-full" />
+              </label>
+              <label className="block">
+                <span>Alpha Off: {gooAlphaOff}</span>
+                <input type="range" min="-30" max="0" step="1" value={gooAlphaOff}
+                  onChange={e => setGooAlphaOff(Number(e.target.value))}
+                  className="w-full" />
+              </label>
+            </div>
+
+            <div className="pt-2 border-t border-gray-600">
               <div className="text-gray-400 mb-1">Droplets (Pop Effect)</div>
               <label className="block">
                 <span>Count: {physicsParams.dropletCount}</span>
@@ -616,7 +647,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
                 <span>Show Vertices</span>
               </label>
               <button
-                onClick={() => { setPhysicsParams({ ...DEFAULT_PHYSICS }); setNormalGoopOpacity(0.25); setShowVertexDebug(false); }}
+                onClick={() => { setPhysicsParams({ ...DEFAULT_PHYSICS }); setNormalGoopOpacity(0.25); setShowVertexDebug(false); setGooStdDev(8); setGooAlphaMul(24); setGooAlphaOff(-13); }}
                 className="mt-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs"
               >
                 Reset to Defaults

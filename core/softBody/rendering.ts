@@ -193,14 +193,14 @@ export interface FilterParams {
 export const DEFAULT_FILTER: FilterParams = {
   enabled: true,
   stdDeviation: 8,
-  alphaMultiplier: 20,
-  alphaOffset: -12,
+  alphaMultiplier: 24,
+  alphaOffset: -13,
 };
 
 export const FILTER_PRESETS = {
-  none: { enabled: false, stdDeviation: 8, alphaMultiplier: 20, alphaOffset: -12 },
+  none: { enabled: false, stdDeviation: 8, alphaMultiplier: 24, alphaOffset: -13 },
   subtle: { enabled: true, stdDeviation: 5, alphaMultiplier: 15, alphaOffset: -6 },
-  medium: { enabled: true, stdDeviation: 8, alphaMultiplier: 20, alphaOffset: -12 },
+  medium: { enabled: true, stdDeviation: 8, alphaMultiplier: 24, alphaOffset: -13 },
   aggressive: { enabled: true, stdDeviation: 12, alphaMultiplier: 25, alphaOffset: -9 },
 };
 
