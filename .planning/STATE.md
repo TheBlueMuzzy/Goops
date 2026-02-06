@@ -10,11 +10,11 @@ updated: 2026-02-05
 ## Current Position
 
 Phase: 27.1 Physics-Controlled Active Piece
-Plan: REPLANNED - See 27.1-MASTER-PLAN.md
-Status: Previous implementation reverted. Comprehensive audit complete. Ready for clean implementation.
-Last activity: 2026-02-05 - Created 27.1-MASTER-PLAN.md after failed implementation
+Plan: MASTER-PLAN complete (9/9 tasks)
+Status: Implementation complete. Ready for manual testing.
+Last activity: 2026-02-05 - Completed 27.1-MASTER-PLAN.md
 
-Progress: ██████░░░░ ~60% (audit done, implementation pending)
+Progress: ████████░░ ~80% (wiring done, testing pending)
 
 ## Branch Workflow (SOP)
 
@@ -33,32 +33,29 @@ Progress: ██████░░░░ ~60% (audit done, implementation pendin
 
 ### 27.1 Status (2026-02-05)
 
-**Previous plans (01, 02, 03) are SUPERSEDED by 27.1-MASTER-PLAN.md**
+**MASTER-PLAN COMPLETE** — All 9 tasks executed successfully.
 
-A 4-hour implementation session failed due to:
-- Missing scaling (50px proto → 30px live)
-- Coordinate system confusion
-- Data flow going wrong direction (game→physics instead of physics→game)
+**Commits:**
+- `c053204` feat: update scaling parameters for 30px cells
+- `043e8c0` feat: add physics step context and getActivePieceState
+- `74404bb` feat: wire physics to Game.tsx and GameEngine
+- `7cb7839` refactor: remove Y sync from GameBoard to physics
+- `200cc95` feat: sync blob shape on piece rotation
 
-**Comprehensive audit completed covering:**
-- All scaling parameters identified (×0.6 factor)
-- Data flow architecture documented
-- Bug root causes identified
-- Complete implementation plan written
-
-### Key Findings
-
-1. `stepActivePieceFalling()` exists and is COMPLETE but NEVER CALLED
-2. GameEngine.tickActivePiece() expects physics data but never receives it
-3. preStepCallback syncs WRONG direction (game→physics instead of physics→game)
-4. Category 1 parameters all need ×0.6 scaling
-5. Droplet params were scaled BACKWARDS (should be smaller, not larger)
+**Key Implementation:**
+- Physics now OWNS the Y position during falling
+- GameEngine READS position via `syncActivePieceFromPhysics()`
+- Data flow reversed: physics→game (correct direction)
+- All parameters scaled ×0.6 for 30px cells
 
 ### Next Steps
 
-1. Read and approve 27.1-MASTER-PLAN.md
-2. Execute implementation tasks in order
-3. Tune via sliders after implementation
+**Manual Testing Required:**
+1. Piece falls smoothly with soft-body wobble
+2. Fall speed matches expected (2 cells/sec, 8x when fast-dropping)
+3. Piece stops at floor and on top of other goop
+4. Rotation updates blob shape without Y reset
+5. Tank rotation keeps piece visually centered
 
 ---
 
@@ -67,23 +64,24 @@ A 4-hour implementation session failed due to:
 Last session: 2026-02-05
 **Version:** 1.1.13
 **Branch:** soft-body-experiment
-**Build:** 190
+**Build:** 190+
 
 ### Resume Command
 ```
-27.1 REPLANNED after failed implementation.
+27.1 MASTER-PLAN EXECUTED SUCCESSFULLY.
 
 COMPLETED:
-- Deep audit of proto vs live differences
-- Scaling analysis (50px→30px, ×0.6 factor)
-- Data flow architecture documented
-- Bug root causes identified
-- Comprehensive master plan written
+- All 9 implementation tasks
+- Physics step context and getActivePieceState()
+- Game.tsx handlePhysicsStep wiring
+- GameEngine syncActivePieceFromPhysics()
+- Blob shape rotation sync
+- All parameters scaled ×0.6
 
-MASTER PLAN LOCATION:
-.planning/phases/27.1-physics-controlled-active-piece/27.1-MASTER-PLAN.md
+SUMMARY LOCATION:
+.planning/phases/27.1-physics-controlled-active-piece/27.1-MASTER-SUMMARY.md
 
-Next: Review master plan, then implement tasks in order
+Next: Manual testing to verify physics-controlled falling works
 ```
 
 ---

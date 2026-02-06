@@ -146,8 +146,7 @@ Plans:
 
 Plans:
 - [x] 27.1-01: Physics falling foundation (completed 2026-02-05)
-- [ ] 27.1-02: Wire up falling physics
-- [ ] 27.1-03: Add spinning/rotation physics
+- [x] 27.1-MASTER: Wire up physics-controlled falling (completed 2026-02-05)
 
 #### Phase 28: Locked Goop Behavior
 
@@ -315,7 +314,8 @@ See [[v1.4-ROADMAP]] for full details.
 | 24. UI & Documentation | v1.4 | 1/1 | Shipped | 2026-01-27 |
 | 25. Physics Foundation | v1.5 | 2/2 | Complete | 2026-02-03 |
 | 26. Perimeter & Blob System | v1.5 | 0/? | Not started | - |
-| 27. Active Piece Physics | v1.5 | 1/2 | In progress | - |
+| 27. Active Piece Physics | v1.5 | 2/2 | Complete | 2026-02-05 |
+| 27.1 Physics-Controlled Active Piece | v1.5 | 1/1 | Complete | 2026-02-05 |
 | 28. Locked Goop Behavior | v1.5 | 0/? | Not started | - |
 | 29. Pop & Cascade | v1.5 | 0/? | Not started | - |
 | 30. Polish & Performance | v1.5 | 0/? | Not started | - |
