@@ -20,6 +20,7 @@ import {
   PHYSICS_CELL_SIZE,
 } from './blobFactory';
 import { TankCell } from '../../types';
+import { BUFFER_HEIGHT, TANK_WIDTH } from '../../constants';
 
 // =============================================================================
 // Cylindrical Wrapping Helpers
@@ -689,16 +690,31 @@ export function stepActivePieceFalling(
   // Check collision BEFORE moving
   let canFallMore = true;
   for (const cell of blob.gridCells) {
-    const nextY = cell.y + 1;
-    if (nextY >= gridRows) {
-      console.log(`[FLOOR HIT] cell.y=${cell.y.toFixed(2)} nextY=${nextY.toFixed(2)} >= gridRows=${gridRows}`);
+    const nextVisualY = cell.y + 1;
+
+    // Floor check (visual coordinates)
+    if (nextVisualY >= gridRows) {
+      console.log(`[FLOOR HIT] cell.y=${cell.y.toFixed(2)} nextY=${nextVisualY.toFixed(2)} >= gridRows=${gridRows}`);
       canFallMore = false;
       break;
     }
-    // Check if cell below is occupied (by different blob)
-    const targetCell = grid[nextY]?.[cell.x];
+
+    // Check if cell below is occupied (by locked goop in game grid)
+    // IMPORTANT: Convert visual Y to full grid Y by adding BUFFER_HEIGHT
+    // Visual coords: 0-15, Full grid coords: 0-18 (buffer rows 0-2)
+    const fullGridY = Math.floor(nextVisualY) + BUFFER_HEIGHT;
+
+    // Handle cylindrical X wrapping (cell.x might be in visual space -6 to 5 or similar)
+    // Need to convert to grid column (0 to TANK_WIDTH-1)
+    // The visual X is relative to viewport center, game grid X is absolute
+    let gridX = Math.floor(cell.x);
+    // Wrap to valid range (game grid is TANK_WIDTH=30 columns)
+    while (gridX < 0) gridX += TANK_WIDTH;
+    while (gridX >= TANK_WIDTH) gridX -= TANK_WIDTH;
+
+    const targetCell = grid[fullGridY]?.[gridX];
     if (targetCell && targetCell.goopGroupId !== undefined) {
-      console.log(`[GOOP HIT] cell.y=${cell.y.toFixed(2)} hit goopGroupId=${targetCell.goopGroupId}`);
+      console.log(`[GOOP HIT] visualY=${cell.y.toFixed(2)} fullGridY=${fullGridY} gridX=${gridX} goopGroupId=${targetCell.goopGroupId}`);
       canFallMore = false;
       break;
     }

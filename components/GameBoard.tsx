@@ -380,6 +380,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
           console.log(`[ROTATION SYNC] oldMinY=${minOldY.toFixed(2)} newCells.y=[${newCells.map(c => c.y.toFixed(2)).join(',')}]`);
           blob.gridCells = newCells;
+
+          // FIX BUG #1: Update blob rotation so physics rotates vertices correctly
+          // pieceRotation is 0-3, blob.rotation expects degrees (0, 90, 180, 270)
+          blob.rotation = pieceRotation * 90;
+          console.log(`[ROTATION SYNC] Set blob.rotation=${blob.rotation}°`);
       }
 
       // Update X position when tank rotates (don't touch Y)
@@ -416,6 +421,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       if (prevPiece && prevPiece.state === GoopState.FALLING &&
           (!currPiece || currPiece.spawnTimestamp !== prevPiece.spawnTimestamp)) {
           const blobId = `active-${prevPiece.spawnTimestamp}`;
+
+          // DEBUG Bug #3: Log blob removal on lock
+          console.log(`[BLOB REMOVE] Removing falling blob id=${blobId}, newPieceTimestamp=${currPiece?.spawnTimestamp || 'none'}`);
 
           // Remove the falling blob — locked goop sync will create a new blob for locked cells
           softBodyPhysics.removeBlob(blobId);

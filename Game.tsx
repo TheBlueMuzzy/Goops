@@ -69,9 +69,18 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
     softBodyPhysics.step(dt, context);
 
     // Get physics output and sync back to engine
-    const physicsState = softBodyPhysics.getActivePieceState();
-    if (physicsState) {
-      engine.syncActivePieceFromPhysics(physicsState.isColliding, physicsState.gridY);
+    // IMPORTANT: Only sync if the blob matches the current piece's timestamp
+    // This prevents the OLD blob's position from being synced to a NEW piece
+    const activeGoop = engine.state.activeGoop;
+    if (activeGoop) {
+      const expectedBlobId = `active-${activeGoop.spawnTimestamp}`;
+      const matchingBlob = softBodyPhysics.getBlob(expectedBlobId);
+      if (matchingBlob && matchingBlob.isFalling && !matchingBlob.isLocked) {
+        const physicsState = softBodyPhysics.getActivePieceState();
+        if (physicsState) {
+          engine.syncActivePieceFromPhysics(physicsState.isColliding, physicsState.gridY);
+        }
+      }
     }
   }, [softBodyPhysics]);
 

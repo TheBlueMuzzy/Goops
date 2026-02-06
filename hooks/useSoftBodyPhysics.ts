@@ -469,17 +469,26 @@ export function useSoftBodyPhysics(
    */
   const getActivePieceState = useCallback((): { gridY: number; isColliding: boolean } | null => {
     const activeBlob = blobsRef.current.find(b => b.isFalling && !b.isLocked);
-    if (!activeBlob) return null;
-
-    // Calculate grid Y from blob's gridCells (average Y of all cells)
-    let sumY = 0;
-    for (const cell of activeBlob.gridCells) {
-      sumY += cell.y;
+    if (!activeBlob) {
+      // DEBUG Bug #3: Log when no active blob found (possible cause of spawn break)
+      const blobCount = blobsRef.current.length;
+      const blobStates = blobsRef.current.map(b => `${b.id}:falling=${b.isFalling},locked=${b.isLocked}`).join(', ');
+      if (blobCount > 0) {
+        console.log(`[PHYSICS STATE] No active blob. Total=${blobCount} states=[${blobStates}]`);
+      }
+      return null;
     }
-    const avgY = sumY / activeBlob.gridCells.length;
+
+    // Calculate grid Y from blob's gridCells
+    // IMPORTANT: Use MINIMUM Y (piece origin), not average Y (centroid)
+    // The game engine's piece.y represents the top of the piece
+    let minY = activeBlob.gridCells[0]?.y ?? 0;
+    for (const cell of activeBlob.gridCells) {
+      if (cell.y < minY) minY = cell.y;
+    }
 
     // Add BUFFER_HEIGHT to convert visual Y back to full grid Y
-    const gridY = avgY + BUFFER_HEIGHT;
+    const gridY = minY + BUFFER_HEIGHT;
 
     return {
       gridY,
