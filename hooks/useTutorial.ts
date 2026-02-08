@@ -5,6 +5,7 @@ import { SaveData } from '../types';
 import { gameEventBus } from '../core/events/EventBus';
 import { GameEventType } from '../core/events/GameEvents';
 import { TUTORIAL_STEPS } from '../data/tutorialSteps';
+import { isTrainingComplete } from '../data/trainingScenarios';
 
 interface UseTutorialOptions {
   rank: number;
@@ -106,18 +107,25 @@ export const useTutorial = ({
     });
   }, []);
 
+  // Suppress all tutorial triggers during rank 0 training
+  const trainingActive = rank === 0 && !isTrainingComplete(
+    (saveData.tutorialProgress?.completedSteps ?? []) as string[]
+  );
+
   // --- Trigger: rank-based steps when rank changes ---
   useEffect(() => {
+    if (trainingActive) return; // Training handles rank 0 messages
     const rankSteps = TUTORIAL_STEPS.filter(
       s => s.trigger.type === 'ON_RANK_REACH' && s.trigger.rank === rank
     );
     for (const step of rankSteps) {
       tryActivateStep(step);
     }
-  }, [rank, tryActivateStep]);
+  }, [rank, tryActivateStep, trainingActive]);
 
   // --- Trigger: ON_GAME_START steps when a session starts ---
   useEffect(() => {
+    if (trainingActive) return; // Training handles rank 0 messages
     if (!isSessionActive) return;
 
     const gameStartSteps = TUTORIAL_STEPS.filter(
@@ -126,10 +134,11 @@ export const useTutorial = ({
     for (const step of gameStartSteps) {
       tryActivateStep(step);
     }
-  }, [isSessionActive, rank, tryActivateStep]);
+  }, [isSessionActive, rank, tryActivateStep, trainingActive]);
 
   // --- Trigger: ON_EVENT steps via EventBus subscription ---
   useEffect(() => {
+    if (trainingActive) return; // Training handles rank 0 events
     const eventSteps = TUTORIAL_STEPS.filter(
       s => s.trigger.type === 'ON_EVENT'
     );
@@ -144,7 +153,7 @@ export const useTutorial = ({
     return () => {
       unsubs.forEach(unsub => unsub());
     };
-  }, [tryActivateStep]);
+  }, [tryActivateStep, trainingActive]);
 
   return {
     activeStep,

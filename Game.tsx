@@ -410,12 +410,30 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
 
   // Training flow — manages rank 0 scripted training sequence
   // Sets engine.pendingTrainingPalette so enterPeriscope() uses startTraining()
-  const { isInTraining, currentStep: trainingStep, completedStepIds } = useTrainingFlow({
+  const {
+    isInTraining,
+    currentStep: trainingStep,
+    completedStepIds,
+    advanceStep: trainingAdvance,
+    dismissMessage: trainingDismiss,
+    trainingDisplayStep,
+  } = useTrainingFlow({
     saveData,
     setSaveData,
     gameEngine: engine,
     rank: startingRank,
   });
+
+  // During training: show training messages via overlay, with appropriate callbacks
+  // Tap steps: dismiss = advance. Action/event steps: dismiss just hides message.
+  const isTapAdvance = trainingStep?.advance.type === 'tap';
+  const overlayActiveStep = isInTraining ? trainingDisplayStep : activeStep;
+  const overlayOnComplete = isInTraining
+    ? (isTapAdvance ? trainingAdvance : trainingDismiss)
+    : completeStep;
+  const overlayOnDismiss = isInTraining
+    ? (isTapAdvance ? trainingAdvance : trainingDismiss)
+    : dismissStep;
 
   // Lights brightness is now continuous (player-controlled via fast drop)
   // Only apply dimming effect in PERISCOPE phase
@@ -996,7 +1014,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
       })()}
 
       {/* LAYER 5c: TRAINING HUD (z-[85] — below TutorialOverlay, above game) */}
-      {isInTraining && trainingStep && (
+      {isInTraining && trainingStep && gameState.phase === ScreenType.TankScreen && (
         <TrainingHUD
           currentStep={trainingStep}
           completedStepIds={completedStepIds}
@@ -1005,9 +1023,9 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
 
       {/* LAYER 6: TUTORIAL OVERLAY (z-[90] — above TransitionOverlay, non-blocking) */}
       <TutorialOverlay
-        activeStep={activeStep}
-        onComplete={completeStep}
-        onDismiss={dismissStep}
+        activeStep={overlayActiveStep}
+        onComplete={overlayOnComplete}
+        onDismiss={overlayOnDismiss}
         highlightElement={trainingStep?.setup?.highlightElement}
       />
 

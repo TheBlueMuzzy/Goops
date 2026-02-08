@@ -351,6 +351,7 @@ export class GameEngine {
      */
     public startTraining(palette: string[]) {
         this.isTrainingMode = true;
+        this.maxTime = 999999; // Match shiftTime so PSI display calculates correctly (0%)
         this.maxPieceSize = null; // Flow controller sets this per-step via maxPieceSize property
 
         // Clean grid (no junk in training)
@@ -478,6 +479,7 @@ export class GameEngine {
         if (this.state.gameOver) {
             if (this.pendingTrainingPalette) {
                 this.startTraining(this.pendingTrainingPalette);
+                this.state.phase = ScreenType.TankScreen; // Enter tank immediately after training starts
             } else {
                 this.startRun();
             }
@@ -486,6 +488,7 @@ export class GameEngine {
             if (!this.isSessionActive) {
                 if (this.pendingTrainingPalette) {
                     this.startTraining(this.pendingTrainingPalette);
+                    this.state.phase = ScreenType.TankScreen; // Enter tank immediately after training starts
                 } else {
                     this.startRun();
                 }

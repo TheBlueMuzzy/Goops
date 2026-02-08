@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { TutorialStep } from '../types/tutorial';
+import { IntercomMessage } from '../types/tutorial';
 import { IntercomMessageDisplay } from './IntercomMessage';
 
 // --- Highlight Region Definitions ---
@@ -19,8 +19,13 @@ const HIGHLIGHT_REGIONS: Record<string, HighlightRegion> = {
   periscope: { left: 20, top: 30, right: 80, bottom: 60 },
 };
 
+// Accepts any object with a message — compatible with both TutorialStep and training display steps
+interface DisplayableStep {
+  message: IntercomMessage;
+}
+
 interface TutorialOverlayProps {
-  activeStep: TutorialStep | null;
+  activeStep: DisplayableStep | null;
   onComplete: () => void;    // Mark step completed
   onDismiss: () => void;     // Dismiss without completing
   highlightElement?: string; // Element key to highlight (from training step setup)
@@ -44,7 +49,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   highlightElement,
 }) => {
   // Track the step being displayed (for fade-out: keep rendering while fading)
-  const [displayedStep, setDisplayedStep] = useState<TutorialStep | null>(null);
+  const [displayedStep, setDisplayedStep] = useState<DisplayableStep | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

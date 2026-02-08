@@ -2,10 +2,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { SaveData } from '../types';
 import { TrainingStep } from '../types/training';
+import { IntercomMessage } from '../types/tutorial';
 import { GameEngine } from '../core/GameEngine';
 import { gameEventBus } from '../core/events/EventBus';
 import { GameEventType } from '../core/events/GameEvents';
 import { getNextTrainingStep, isTrainingComplete } from '../data/trainingScenarios';
+import { TRAINING_MESSAGES } from '../data/tutorialSteps';
 import { COLORS } from '../constants';
 
 interface UseTrainingFlowOptions {
@@ -15,6 +17,22 @@ interface UseTrainingFlowOptions {
   rank: number;
 }
 
+// Map training advance actions/events to game event types
+const ADVANCE_EVENT_MAP: Record<string, GameEventType[]> = {
+  // Actions
+  'fast-fall': [GameEventType.INPUT_FAST_DROP],
+  'rotate-piece': [GameEventType.PIECE_ROTATED],
+  'pop-goop': [GameEventType.GOOP_POPPED],
+  'rotate-tank': [GameEventType.INPUT_DRAG],
+  // Events
+  'piece-landed': [GameEventType.PIECE_DROPPED],
+  'pop-complete': [GameEventType.GOOP_POPPED],
+  'crack-sealed': [GameEventType.GOAL_CAPTURED],
+};
+
+// Events without direct mappings get auto-advanced after this delay
+const AUTO_ADVANCE_FALLBACK_MS = 4000;
+
 /**
  * Manages the rank 0 training sequence.
  *
@@ -22,8 +40,11 @@ interface UseTrainingFlowOptions {
  * Sets up the GameEngine for training mode when the player is at rank 0
  * and hasn't completed all training steps.
  *
- * Works alongside useTutorial — this hook handles scenario sequencing,
- * useTutorial handles intercom messages and journal unlocks.
+ * Provides:
+ * - trainingDisplayStep: A message object for TutorialOverlay to display
+ * - advanceStep: Advance to next training step (for tap-type advances)
+ * - dismissMessage: Hide current message without advancing (for action/event advances)
+ * - Event listeners that auto-advance on action/event conditions
  */
 export const useTrainingFlow = ({
   saveData,
@@ -38,11 +59,22 @@ export const useTrainingFlow = ({
   const isInTraining = rank === 0 && !trainingDone;
   const currentStep = isInTraining ? getNextTrainingStep(completedSteps) : null;
 
+  // Message visibility — separate from step advancement
+  // For tap steps: dismiss = advance. For action/event: dismiss just hides message.
+  const [messageVisible, setMessageVisible] = useState(true);
+
+  // Show message when step changes
+  useEffect(() => {
+    if (currentStep) {
+      setMessageVisible(true);
+    }
+  }, [currentStep?.id]);
+
   // Track completion ref for event handler (avoid stale closure)
   const completedRef = useRef(completedSteps);
   completedRef.current = completedSteps;
 
-  // Default training palette (2 colors for early training)
+  // Default training palette (4 colors for training)
   const trainingPalette = [COLORS.BLUE, COLORS.YELLOW, COLORS.GREEN, COLORS.RED];
 
   // Set up engine for training mode when applicable
@@ -89,10 +121,19 @@ export const useTrainingFlow = ({
    * Called after the current step's advance condition is met.
    */
   const advanceStep = useCallback(() => {
+    if (!currentStep) return;
+
     completeCurrentStep();
 
+    // Unpause if we had paused
+    if (gameEngine && gameEngine.isSessionActive && gameEngine.state.isPaused) {
+      gameEngine.state.isPaused = false;
+      gameEngine.emitChange();
+    }
+
     // Check if training is now complete
-    const updatedCompleted = [...completedRef.current, currentStep?.id ?? ''];
+    const updatedCompleted = [...completedRef.current, currentStep.id];
+    if (currentStep.markComplete) updatedCompleted.push(currentStep.markComplete);
     if (isTrainingComplete(updatedCompleted)) {
       // Training complete — emit event and clear engine training flag
       gameEventBus.emit(GameEventType.TRAINING_SCENARIO_COMPLETE);
@@ -101,6 +142,86 @@ export const useTrainingFlow = ({
       }
     }
   }, [completeCurrentStep, currentStep, gameEngine]);
+
+  // Ref for advanceStep so event listeners always call the latest version
+  const advanceStepRef = useRef(advanceStep);
+  advanceStepRef.current = advanceStep;
+
+  /**
+   * Dismiss the current message without advancing.
+   * Used for action/event steps — hides message, unpauses game, player performs action.
+   */
+  const dismissMessage = useCallback(() => {
+    setMessageVisible(false);
+
+    // Unpause if this step had paused the game
+    if (gameEngine && currentStep?.pauseGame && gameEngine.isSessionActive) {
+      gameEngine.state.isPaused = false;
+      gameEngine.emitChange();
+    }
+  }, [gameEngine, currentStep]);
+
+  // --- Pause game when training step has pauseGame: true ---
+  useEffect(() => {
+    if (!gameEngine || !currentStep || !isInTraining) return;
+    if (!gameEngine.isSessionActive) return;
+
+    if (currentStep.pauseGame && messageVisible) {
+      gameEngine.state.isPaused = true;
+      gameEngine.emitChange();
+    }
+
+    return () => {
+      // Unpause on cleanup (step change)
+      if (gameEngine.isSessionActive && gameEngine.state.isPaused) {
+        gameEngine.state.isPaused = false;
+        gameEngine.emitChange();
+      }
+    };
+  }, [currentStep?.id, messageVisible, gameEngine, isInTraining]);
+
+  // --- Event/action advance listeners ---
+  useEffect(() => {
+    if (!currentStep || !isInTraining) return;
+
+    const { advance } = currentStep;
+
+    // Tap advances are handled by overlay buttons, not event listeners
+    if (advance.type === 'tap') return;
+
+    // Determine which game events to listen for
+    let eventKey: string | undefined;
+    if (advance.type === 'action') {
+      // Special case: drag-periscope is handled by GAME_START event
+      if (advance.action === 'drag-periscope') {
+        const unsub = gameEventBus.on(GameEventType.GAME_START, () => {
+          advanceStepRef.current();
+        });
+        return unsub;
+      }
+      eventKey = advance.action;
+    } else if (advance.type === 'event') {
+      eventKey = advance.event;
+    }
+
+    const gameEvents = eventKey ? ADVANCE_EVENT_MAP[eventKey] : undefined;
+
+    if (gameEvents && gameEvents.length > 0) {
+      // Listen for mapped game events
+      const unsubs = gameEvents.map(event =>
+        gameEventBus.on(event, () => {
+          advanceStepRef.current();
+        })
+      );
+      return () => unsubs.forEach(unsub => unsub());
+    } else {
+      // Unmapped event/action — auto-advance after timeout as fallback
+      const timer = setTimeout(() => {
+        advanceStepRef.current();
+      }, AUTO_ADVANCE_FALLBACK_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep?.id, isInTraining]);
 
   // Subscribe to TRAINING_SCENARIO_COMPLETE event for cleanup
   useEffect(() => {
@@ -113,12 +234,20 @@ export const useTrainingFlow = ({
     return unsub;
   }, [gameEngine]);
 
+  // --- Build display step for TutorialOverlay ---
+  // Returns a message-compatible object when there's a training message to show
+  const trainingDisplayStep: { message: IntercomMessage } | null =
+    currentStep && messageVisible
+      ? { message: TRAINING_MESSAGES[currentStep.id] ?? { keywords: [], fullText: currentStep.name } }
+      : null;
+
   return {
     currentStep,
     isInTraining,
     isTrainingDone: trainingDone,
     completedStepIds: completedSteps,
     advanceStep,
-    completeCurrentStep,
+    dismissMessage,
+    trainingDisplayStep,
   };
 };
