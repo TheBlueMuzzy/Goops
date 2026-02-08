@@ -10,11 +10,11 @@ updated: 2026-02-08
 ## Current Position
 
 Phase: 31 of 38 (Tutorial Infrastructure)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-08 - Completed 31-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-08 - Completed 31-03-PLAN.md
 
-Progress: ██░░░░░░░░ 20%
+Progress: ███░░░░░░░ 25%
 
 ## Branch Workflow (SOP)
 
@@ -24,7 +24,7 @@ Progress: ██░░░░░░░░ 20%
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- None (v1.5 shipped to master)
+- `feature/tutorial-infrastructure` (Phase 31, complete)
 
 ## Next Steps
 
@@ -35,8 +35,12 @@ Progress: ██░░░░░░░░ 20%
    - IntercomText.tsx: garble renderer with seeded PRNG, keyword highlighting
    - IntercomMessage.tsx: typewriter reveal, maintenance-order styling, 48x48 action buttons
    - IntercomMessage.css: blink + fade-in animations
-   - Game.tsx: dev-only test trigger
    - Sizes tuned live: 36px body, 18px header, 48x48 buttons
+3. **31-03 complete** — TutorialOverlay & full integration
+   - TutorialOverlay.tsx: z-[90], non-blocking, fade transitions, highlight infrastructure
+   - Game.tsx: useTutorial hook wired, TutorialOverlay rendered as Layer 6
+   - App.tsx: saveData/setSaveData passed to Game
+   - Human verification passed: end-to-end pipeline working
 
 ### Key Design Decisions (v1.6):
 
@@ -61,6 +65,7 @@ Progress: ██░░░░░░░░ 20%
 - Story theme: modern indentured servitude, employer appears benign but is exploitative
 - The veteran character provides upgrades (radio hijack system, content TBD)
 - Full story arc is PRD-documented but most content is future milestone scope
+- TutorialOverlay at z-[90] (highest game layer), non-blocking pointer events
 
 ### Roadmap Evolution
 
@@ -74,14 +79,14 @@ Progress: ██░░░░░░░░ 20%
 Last session: 2026-02-08
 **Version:** 1.1.13
 **Branch:** feature/tutorial-infrastructure
-**Build:** 234
+**Build:** 235
 
 ### Resume Command
 ```
-31-02 COMPLETE — Intercom text rendering system (garble + typewriter + mobile-sized buttons)
+Phase 31 COMPLETE — Tutorial Infrastructure (state machine + intercom + overlay integration)
 
-NEXT: /gsd:execute-plan .planning/phases/31-tutorial-infrastructure/31-03-PLAN.md
-- TutorialOverlay component (integrates intercom with state machine)
+NEXT: /gsd:plan-phase 32
+- Journal System (? button becomes living reference)
 
 /clear first → fresh context window
 ```
