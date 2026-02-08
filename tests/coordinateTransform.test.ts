@@ -34,10 +34,10 @@ describe('coordinateTransform', () => {
 
     // Phase 26.1: Explicit flat rectangle tests
     it('has exact flat 2D dimensions', () => {
-      // VIEWBOX should be 360x480 centered at x=-180
+      // VIEWBOX should be 360x630 centered at x=-180
       expect(VIEWBOX.x).toBe(-180);  // -(12/2)*30
       expect(VIEWBOX.w).toBe(360);   // 12*30
-      expect(VIEWBOX.h).toBe(480);   // 16*30
+      expect(VIEWBOX.h).toBe(630);   // 21*30
     });
   });
 

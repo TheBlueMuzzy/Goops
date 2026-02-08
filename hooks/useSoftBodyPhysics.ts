@@ -27,7 +27,7 @@ import {
   PHYSICS_GRID_OFFSET,
   PHYSICS_CELL_SIZE,
 } from '../core/softBody/blobFactory';
-import { TANK_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
+import { TANK_WIDTH, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION } from '../constants';
 
 /** Impulse strength when blob fills to 100% (scaled x0.6 from Proto 4) */
 const PULSE_AMPLITUDE = 2.4;
@@ -98,14 +98,13 @@ export interface UseSoftBodyPhysicsReturn {
 
 /**
  * Default physics bounds based on game grid dimensions.
- * Viewport is 12 columns x 16 rows.
  */
 function getDefaultBounds(): Bounds {
   return {
     minX: PHYSICS_GRID_OFFSET.x,
-    maxX: PHYSICS_GRID_OFFSET.x + 12 * PHYSICS_CELL_SIZE,
+    maxX: PHYSICS_GRID_OFFSET.x + TANK_VIEWPORT_WIDTH * PHYSICS_CELL_SIZE,
     minY: PHYSICS_GRID_OFFSET.y,
-    maxY: PHYSICS_GRID_OFFSET.y + 16 * PHYSICS_CELL_SIZE,
+    maxY: PHYSICS_GRID_OFFSET.y + TANK_VIEWPORT_HEIGHT * PHYSICS_CELL_SIZE,
   };
 }
 
