@@ -97,7 +97,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 32-01: TBD
+- [x] 32-01: Journal data layer & OperatorJournal component
 
 #### Phase 33: Rank 0 Training Sequence
 
@@ -322,7 +322,7 @@ See [[v1.4-ROADMAP]] for full details.
 | 27.1 Physics-Controlled Active Piece | v1.5 | 2/2 | Complete | 2026-02-05 |
 | 28-30. Locked Goop / Pop / Polish | v1.5 | — | Deferred | - |
 | 31. Tutorial Infrastructure | v1.6 | 3/3 | Complete | 2026-02-08 |
-| 32. Journal System | v1.6 | 0/? | Not started | - |
+| 32. Journal System | v1.6 | 1/1 | Complete | 2026-02-08 |
 | 33. Rank 0 Training Sequence | v1.6 | 0/? | Not started | - |
 | 34. Rank-Gated UI | v1.6 | 0/? | Not started | - |
 | 35. Complication Introductions | v1.6 | 0/? | Not started | - |
