@@ -48,8 +48,7 @@ Progress: █████████░ ~92% (core physics working, holes suppo
 
 ### Known Issues
 
-- Physics "looseness" could be tuned further (blobs are a bit wobbly)
-- Falling blob tendrils render but could be improved
+- None currently
 
 ### Decisions Made
 

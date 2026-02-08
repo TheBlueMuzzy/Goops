@@ -304,10 +304,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       const blobId = `active-${activeGoop.spawnTimestamp}`;
       const existingBlob = softBodyPhysics.getBlob(blobId);
 
-      // Create blob if it doesn't exist
-      // Safeguard: Don't create falling blob if piece is already near floor (y > 5)
-      // This prevents recreation bugs when tank rotation triggers effect during lock
-      if (!existingBlob && activeGoop.y <= 5) {
+      // Create blob if it doesn't exist (existingBlob check prevents recreation on tank rotation)
+      if (!existingBlob) {
           // Convert piece cells to absolute grid coordinates (in visual space)
           const cells = activeGoop.cells.map(cell => ({
               x: cell.x,  // Relative to piece origin, converted to visual space below

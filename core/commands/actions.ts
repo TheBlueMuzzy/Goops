@@ -205,16 +205,15 @@ export class SwapPieceCommand implements Command {
 
         const currentPiece = engine.state.activeGoop;
         const currentDef = currentPiece.definition;
-        const nextDef = engine.state.storedGoop;
+        const storedDef = engine.state.storedGoop;
 
-        if (nextDef) {
+        if (storedDef) {
             // Check if stored piece can fit at current position BEFORE committing
-            // Calculate fixed integer rotation center for the swapped-in piece
-            const rcx = Math.round(nextDef.cells.reduce((sum, c) => sum + c.x, 0) / nextDef.cells.length);
-            const rcy = Math.round(nextDef.cells.reduce((sum, c) => sum + c.y, 0) / nextDef.cells.length);
-            const testPiece: ActivePiece = {
-                definition: nextDef,
-                cells: [...nextDef.cells],
+            const rcx = Math.round(storedDef.cells.reduce((sum, c) => sum + c.x, 0) / storedDef.cells.length);
+            const rcy = Math.round(storedDef.cells.reduce((sum, c) => sum + c.y, 0) / storedDef.cells.length);
+            const swappedPiece: ActivePiece = {
+                definition: storedDef,
+                cells: [...storedDef.cells],
                 rotation: 0,
                 rotationCenter: { x: rcx, y: rcy },
                 spawnTimestamp: Date.now(),
@@ -225,19 +224,20 @@ export class SwapPieceCommand implements Command {
                 state: GoopState.FALLING
             };
 
-            if (checkCollision(engine.state.grid, testPiece, engine.state.tankRotation)) {
-                // Stored piece won't fit at current position - reject swap
+            if (checkCollision(engine.state.grid, swappedPiece, engine.state.tankRotation)) {
                 gameEventBus.emit(GameEventType.ACTION_REJECTED);
                 return;
             }
 
-            // Swap succeeds - stored piece fits at current position
+            // Swap succeeds - stored piece takes current piece's position
             gameEventBus.emit(GameEventType.PIECE_ROTATED);
             engine.state.storedGoop = currentDef;
+            engine.state.activeGoop = swappedPiece;
             engine.lockStartTime = null;
-            engine.state.activeGoop = testPiece;
+            engine.lockResetCount = 0;
+            engine.state.canSwap = true;
         } else {
-            // No stored piece - store current and spawn new
+            // No stored piece - store current and spawn new from top
             gameEventBus.emit(GameEventType.PIECE_ROTATED);
             engine.state.storedGoop = currentDef;
             engine.lockStartTime = null;
