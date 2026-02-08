@@ -19,6 +19,7 @@ import { SpinTankCommand, RotateGoopCommand, SetFastDropCommand, SwapPieceComman
 import { IntercomMessageDisplay } from './components/IntercomMessage';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { useTutorial } from './hooks/useTutorial';
+import { useTrainingFlow } from './hooks/useTrainingFlow';
 
 // STATE ARCHITECTURE:
 // - Game state flows down: useGameEngine → state prop → child components
@@ -404,6 +405,15 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
     isSessionActive: engine.isSessionActive,
     saveData,
     setSaveData,
+  });
+
+  // Training flow — manages rank 0 scripted training sequence
+  // Sets engine.pendingTrainingPalette so enterPeriscope() uses startTraining()
+  const { isInTraining, currentStep: trainingStep } = useTrainingFlow({
+    saveData,
+    setSaveData,
+    gameEngine: engine,
+    rank: startingRank,
   });
 
   // Lights brightness is now continuous (player-controlled via fast drop)

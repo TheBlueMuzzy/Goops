@@ -64,6 +64,7 @@ export class GameEngine {
     public isSessionActive: boolean = false;
     public isTrainingMode: boolean = false;
     public maxPieceSize: number | null = null;  // Training: limit piece cell count (null = no limit)
+    public pendingTrainingPalette: string[] | null = null; // Set by useTrainingFlow to intercept next session start
     public equippedActives: string[] = [];
     private crackManager: CrackManager;
 
@@ -475,11 +476,19 @@ export class GameEngine {
 
     public enterPeriscope() {
         if (this.state.gameOver) {
-            this.startRun();
+            if (this.pendingTrainingPalette) {
+                this.startTraining(this.pendingTrainingPalette);
+            } else {
+                this.startRun();
+            }
         } else {
             this.state.phase = ScreenType.TankScreen;
             if (!this.isSessionActive) {
-                 this.startRun();
+                if (this.pendingTrainingPalette) {
+                    this.startTraining(this.pendingTrainingPalette);
+                } else {
+                    this.startRun();
+                }
             }
         }
         this.emitChange();
