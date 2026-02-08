@@ -48,3 +48,34 @@ export interface TutorialState {
   completedSteps: TutorialStepId[];
   dismissed: boolean;
 }
+
+// --- Journal System Types ---
+
+// Journal page identifiers — broader categories than TutorialStepId
+export type JournalPageId =
+  | 'BASICS'
+  | 'CONTROLS'
+  | 'POPPING'
+  | 'SCORING'
+  | 'CRACKS'
+  | 'WRAPPING'
+  | 'COMPLICATIONS_LIGHTS'
+  | 'COMPLICATIONS_LASER'
+  | 'COMPLICATIONS_CONTROLS'
+  | 'UPGRADES'
+  | 'ABILITIES';
+
+// A section within a journal page
+export interface JournalSection {
+  heading: string;
+  body: string;
+}
+
+// A full journal page definition
+export interface JournalPage {
+  id: JournalPageId;
+  title: string;
+  icon: string;          // lucide-react icon name (mapped to component in OperatorJournal)
+  unlockedBy: TutorialStepId | 'ALWAYS';
+  sections: JournalSection[];
+}
