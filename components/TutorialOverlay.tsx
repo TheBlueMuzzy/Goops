@@ -16,7 +16,9 @@ interface HighlightRegion {
 }
 
 const HIGHLIGHT_REGIONS: Record<string, HighlightRegion> = {
-  periscope: { left: 20, top: 30, right: 80, bottom: 60 },
+  // Periscope drag handle — centered in the console view, lower-middle area
+  // Tight framing with ~3% padding around the handle element
+  periscope: { left: 33, top: 52, right: 67, bottom: 72 },
 };
 
 // Accepts any object with a message — compatible with both TutorialStep and training display steps
