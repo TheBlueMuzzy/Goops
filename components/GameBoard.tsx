@@ -25,6 +25,7 @@ import {
   getFilterMatrix,
 } from '../core/softBody/rendering';
 import { CYLINDER_WIDTH_PIXELS, PHYSICS_CELL_SIZE, PHYSICS_GRID_OFFSET } from '../core/softBody/blobFactory';
+import { cylindricalDistanceX } from '../core/softBody/physics';
 import './GameBoard.css';
 
 // =============================================================================
@@ -896,7 +897,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     const vB = blobB.vertices[spring.vertexB];
                     if (!vA || !vB) return null;
 
-                    const dx = vB.pos.x - vA.pos.x;
+                    const dx = cylindricalDistanceX(vA.pos.x, vB.pos.x);
                     const dy = vB.pos.y - vA.pos.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     const stretchRatio = Math.min(1, dist / sbParams.goopiness);
@@ -1026,7 +1027,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     const vB = blobB.vertices[spring.vertexB];
                     if (!vA || !vB) return null;
 
-                    const dx = vB.pos.x - vA.pos.x;
+                    const dx = cylindricalDistanceX(vA.pos.x, vB.pos.x);
                     const dy = vB.pos.y - vA.pos.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     const stretchRatio = Math.min(1, dist / sbParams.fallingGoopiness);
