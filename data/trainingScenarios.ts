@@ -38,6 +38,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       view: 'console',
       pressureRate: 0,
+      messagePosition: 'top',
       // Hide mini-games, show rank/XP bar only
       // Text renders on the top screen
     },
@@ -54,6 +55,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       view: 'console',
       highlightElement: 'periscope',
+      messagePosition: 'top',
     },
     pauseGame: true,
     advance: { type: 'action', action: 'drag-periscope' },

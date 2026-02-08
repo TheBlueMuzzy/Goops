@@ -58,6 +58,7 @@ export interface StepSetup {
   view?: 'console' | 'tank';   // Which view to be in
   highlightElement?: string;    // UI element to glow/highlight
   allowedControls?: AllowedControls;  // Progressive control gating (undefined = all allowed)
+  messagePosition?: 'top' | 'center' | 'bottom';  // Where to show intercom message (default: 'center')
 }
 
 // How the player advances past this step

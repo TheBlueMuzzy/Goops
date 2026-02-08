@@ -417,6 +417,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
     advanceStep: trainingAdvance,
     dismissMessage: trainingDismiss,
     trainingDisplayStep,
+    messagePosition: trainingMessagePosition,
   } = useTrainingFlow({
     saveData,
     setSaveData,
@@ -1027,6 +1028,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
         onComplete={overlayOnComplete}
         onDismiss={overlayOnDismiss}
         highlightElement={trainingStep?.setup?.highlightElement}
+        messagePosition={isInTraining ? trainingMessagePosition : undefined}
       />
 
     </div>

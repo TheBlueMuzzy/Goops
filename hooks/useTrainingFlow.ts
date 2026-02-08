@@ -278,6 +278,9 @@ export const useTrainingFlow = ({
       ? { message: TRAINING_MESSAGES[currentStep.id] ?? { keywords: [], fullText: currentStep.name } }
       : null;
 
+  // Message position for the current training step (default: 'center')
+  const messagePosition = currentStep?.setup?.messagePosition ?? 'center';
+
   return {
     currentStep,
     isInTraining,
@@ -286,5 +289,6 @@ export const useTrainingFlow = ({
     advanceStep,
     dismissMessage,
     trainingDisplayStep,
+    messagePosition,
   };
 };

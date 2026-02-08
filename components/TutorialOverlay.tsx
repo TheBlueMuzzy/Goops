@@ -29,6 +29,7 @@ interface TutorialOverlayProps {
   onComplete: () => void;    // Mark step completed
   onDismiss: () => void;     // Dismiss without completing
   highlightElement?: string; // Element key to highlight (from training step setup)
+  messagePosition?: 'top' | 'center' | 'bottom'; // Contextual position for intercom window
 }
 
 /**
@@ -47,6 +48,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   onComplete,
   onDismiss,
   highlightElement,
+  messagePosition = 'center',
 }) => {
   // Track the step being displayed (for fade-out: keep rendering while fading)
   const [displayedStep, setDisplayedStep] = useState<DisplayableStep | null>(null);
@@ -132,7 +134,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
           message={displayedStep.message}
           onDismiss={onDismiss}
           onComplete={onComplete}
-          position="top"
+          position={messagePosition}
         />
       </div>
     </div>

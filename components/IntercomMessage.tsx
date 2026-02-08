@@ -74,7 +74,7 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
   return (
     <div
       className={`absolute ${positionClasses[position]} z-[90] intercom-enter ${className}`}
-      style={{ maxWidth: 280, width: '85%' }}
+      style={{ maxWidth: 420, width: '90%' }}
       onClick={handleSkip}
       onTouchStart={handleSkip}
     >
