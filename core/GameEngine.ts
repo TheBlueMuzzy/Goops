@@ -1,6 +1,6 @@
 
 import { GameState, TankCell, ActivePiece, GoopTemplate, LooseGoop, ScoreBreakdown, GameStats, FloatingText, GoalMark, Crack, ScreenType, GoopState, GoopShape, Complication, TankSystem, DumpPiece } from '../types';
-import { TrainingStep } from '../types/training';
+import { TrainingStep, AllowedControls } from '../types/training';
 import {
     TANK_WIDTH, TANK_HEIGHT, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, SHIFT_DURATION,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS,
@@ -65,6 +65,7 @@ export class GameEngine {
     public isTrainingMode: boolean = false;
     public maxPieceSize: number | null = null;  // Training: limit piece cell count (null = no limit)
     public pendingTrainingPalette: string[] | null = null; // Set by useTrainingFlow to intercept next session start
+    public trainingAllowedControls: AllowedControls | null = null; // Set by useTrainingFlow per step
     public equippedActives: string[] = [];
     private crackManager: CrackManager;
 

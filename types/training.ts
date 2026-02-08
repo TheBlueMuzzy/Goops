@@ -42,6 +42,13 @@ export interface CrackSpawn {
   placement: 'near-stack' | 'away-from-stack' | 'offscreen' | 'high-offscreen';
 }
 
+// Which controls the player is allowed to use during this training step
+export interface AllowedControls {
+  fastDrop?: boolean;
+  rotate?: boolean;
+  tankRotate?: boolean;
+}
+
 // What to set up before this step activates
 export interface StepSetup {
   spawnPiece?: PieceSpawn;
@@ -50,6 +57,7 @@ export interface StepSetup {
   showPressureLine?: boolean;   // Reveal the pressure indicator
   view?: 'console' | 'tank';   // Which view to be in
   highlightElement?: string;    // UI element to glow/highlight
+  allowedControls?: AllowedControls;  // Progressive control gating (undefined = all allowed)
 }
 
 // How the player advances past this step

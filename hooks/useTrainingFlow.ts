@@ -223,12 +223,24 @@ export const useTrainingFlow = ({
     }
   }, [currentStep?.id, isInTraining]);
 
+  // --- Sync allowed controls to engine on step change ---
+  useEffect(() => {
+    if (!gameEngine) return;
+
+    if (isInTraining && currentStep?.setup?.allowedControls) {
+      gameEngine.trainingAllowedControls = currentStep.setup.allowedControls;
+    } else {
+      gameEngine.trainingAllowedControls = null; // All controls allowed
+    }
+  }, [gameEngine, currentStep?.id, isInTraining]);
+
   // Subscribe to TRAINING_SCENARIO_COMPLETE event for cleanup
   useEffect(() => {
     const unsub = gameEventBus.on(GameEventType.TRAINING_SCENARIO_COMPLETE, () => {
       if (gameEngine) {
         gameEngine.isTrainingMode = false;
         gameEngine.pendingTrainingPalette = null;
+        gameEngine.trainingAllowedControls = null;
       }
     });
     return unsub;

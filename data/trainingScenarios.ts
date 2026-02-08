@@ -73,6 +73,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       view: 'tank',
       spawnPiece: { color: COLORS.BLUE, size: 1, autoFall: true },
       pressureRate: 0,
+      allowedControls: { fastDrop: false, rotate: false, tankRotate: false },
     },
     pauseGame: false, // Game runs — player watches blue mono fall and land
     advance: { type: 'event', event: 'piece-landed' },
@@ -86,10 +87,11 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'fast-fall-input',
     setup: {
       spawnPiece: { color: COLORS.BLUE, size: 1, slowFall: true },
+      allowedControls: { fastDrop: true, rotate: false, tankRotate: false },
     },
     pauseGame: true, // Pause at halfway to explain, then unpause for player to try
     advance: { type: 'action', action: 'fast-fall' },
-    // "Hold down to speed up the drop"
+    // "Swipe down or press S to fast-drop"
   },
 
   {
@@ -99,6 +101,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'piece-rotation-input',
     setup: {
       spawnPiece: { color: COLORS.YELLOW, size: 3 }, // Tri piece — needs rotation
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
     },
     pauseGame: true,
     advance: { type: 'action', action: 'rotate-piece' },
@@ -122,6 +125,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       spawnPiece: { color: COLORS.BLUE, size: 2 },
       pressureRate: 0.2, // Slow pressure buildup begins
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
     },
     pauseGame: true,
     advance: { type: 'action', action: 'pop-goop' },
@@ -136,6 +140,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'same-color-merge',
     setup: {
       // Blue from C1 falls into blue stack from B1+B2 — automatic merge
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
     },
     pauseGame: false, // Let merge happen visually
     advance: { type: 'event', event: 'goop-merged' },
@@ -149,6 +154,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'fill-delay-mechanic',
     setup: {
       showPressureLine: true, // Reveal pressure line (not yet above blue stack)
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
     },
     pauseGame: true,
     advance: { type: 'tap' },
@@ -172,6 +178,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       spawnCrack: { color: COLORS.GREEN, placement: 'near-stack' },
       // Crack is beside the stack — next piece would land on stack, not crack
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
     },
     pauseGame: true,
     advance: { type: 'tap' },
@@ -187,6 +194,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       spawnPiece: { color: COLORS.GREEN, size: 1 }, // Mono — no piece rotation needed
       // Ghost starts over stack. Player rotates tank to align with crack.
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: true,
     advance: { type: 'action', action: 'rotate-tank' },
@@ -210,6 +218,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'pressure-awareness',
     setup: {
       pressureRate: 0.3,
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: true,
     advance: { type: 'tap' },
@@ -224,6 +233,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       // Pressure line is NOT yet above the blue stack
       // Player will try to pop and fail
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: true,
     advance: { type: 'tap' },
@@ -238,6 +248,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'pop-relieves-pressure-and-bonus',
     setup: {
       pressureRate: 0.5, // Speed up so pressure reaches blue stack
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: false, // Game runs — waiting for pressure to reach blue
     advance: { type: 'event', event: 'pop-complete' },
@@ -258,6 +269,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'crack-sealing-reward',
     setup: {
       // Green goop should be filled and on the green crack
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: true,
     advance: { type: 'action', action: 'pop-goop' },
@@ -279,6 +291,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'cylindrical-tank',
     setup: {
       spawnCrack: { color: COLORS.RED, placement: 'high-offscreen' },
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: true,
     advance: { type: 'action', action: 'rotate-tank' },
@@ -296,6 +309,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       // Crack is too high to reach from ground — need 2 pieces stacked
       spawnPiece: { color: COLORS.RED, size: 3 },
       // Flow controller spawns a second piece after first lands
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: true,
     advance: { type: 'event', event: 'crack-sealed' },
@@ -307,7 +321,9 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     phase: 'G',
     name: 'The Core Tradeoff',
     teaches: 'scaffolding-vs-pressure',
-    setup: {},
+    setup: {
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
+    },
     pauseGame: true,
     advance: { type: 'tap' },
     markComplete: 'FIRST_SHIFT',

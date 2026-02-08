@@ -19,6 +19,9 @@ export class SpinTankCommand implements Command {
     execute(engine: GameEngine): void {
         if (engine.state.gameOver || engine.state.isPaused) return;
 
+        // Training control gate: tank rotation
+        if (engine.trainingAllowedControls && engine.trainingAllowedControls.tankRotate === false) return;
+
         const newOffset = normalizeX(engine.state.tankRotation + this.dir);
         
         let newPiece = engine.state.activeGoop;
@@ -88,6 +91,9 @@ export class RotateGoopCommand implements Command {
     execute(engine: GameEngine): void {
         if (engine.state.gameOver || engine.state.isPaused || !engine.state.activeGoop) return;
 
+        // Training control gate: piece rotation
+        if (engine.trainingAllowedControls && engine.trainingAllowedControls.rotate === false) return;
+
         const p = engine.state.activeGoop;
         const nextRot = (p.rotation + (this.clockwise ? 1 : -1) + 4) % 4;
 
@@ -152,6 +158,9 @@ export class SetFastDropCommand implements Command {
     constructor(public active: boolean) {}
 
     execute(engine: GameEngine): void {
+        // Training control gate: fast drop
+        if (engine.trainingAllowedControls && engine.trainingAllowedControls.fastDrop === false) return;
+
         engine.isFastDropping = this.active;
     }
 }
