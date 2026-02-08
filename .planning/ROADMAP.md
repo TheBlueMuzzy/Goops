@@ -104,10 +104,13 @@ Plans:
 **Goal**: Multiple constrained training scenarios (0TA through 0T?) with intercom-guided progression. Each teaches one concept: rotation, dropping, crack sealing, pop timing tension (scaffolding vs pressure), cylindrical wrapping, first real shift. As many levels as needed to prove out core mechanics before rank 1
 **Depends on**: Phase 32 (journal records what's learned)
 **Research**: Unlikely (gameplay constraints, needs design iteration)
-**Plans**: TBD
+**Plans**: 4
 
 Plans:
-- [ ] 33-01: TBD
+- [ ] 33-01: Training scenario data model & configs
+- [ ] 33-02: GameEngine training mode & flow controller
+- [ ] 33-03: Intercom scripts & journal content
+- [ ] 33-04: Training HUD, highlight system & verification
 
 #### Phase 34: Rank-Gated UI
 
