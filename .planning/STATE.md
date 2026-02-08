@@ -10,11 +10,11 @@ updated: 2026-02-08
 ## Current Position
 
 Phase: 33 of 38 (Rank 0 Training Sequence)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-08 - Completed 33-01-PLAN.md
+Last activity: 2026-02-08 - Completed 33-02-PLAN.md
 
-Progress: ███░░░░░░░ 30%
+Progress: ███░░░░░░░ 32%
 
 ## Branch Workflow (SOP)
 
@@ -28,7 +28,7 @@ Progress: ███░░░░░░░ 30%
 
 ## Next Steps
 
-Phase 33 plan 1 of 4 complete. Next: 33-02 (GameEngine training mode & flow controller).
+Phase 33 plan 2 of 4 complete. Next: 33-03 (Intercom scripts & journal content).
 
 ### Decisions Made
 
@@ -37,6 +37,8 @@ Phase 33 plan 1 of 4 complete. Next: 33-02 (GameEngine training mode & flow cont
 - TEXT_MANIFEST.md as editable text source-of-truth
 - **Training: scripted 17-step sequence (1 continuous session) over 6 discrete scenarios**
 - Training uses COLORS.RED hex values matching engine convention
+- Training mode: pendingTrainingPalette interception pattern in enterPeriscope()
+- Training tick() gates skip all normal gameplay systems (complications, goals, cracks, heat, lights)
 
 ### Known Issues
 
@@ -59,7 +61,7 @@ Last session: 2026-02-08
 
 ### Resume Command
 ```
-Phase 33 IN PROGRESS — 1/4 plans complete
+Phase 33 IN PROGRESS — 2/4 plans complete
 
 WHAT'S DONE:
 - Phase 31: Tutorial Infrastructure (3/3 plans)
@@ -68,10 +70,15 @@ WHAT'S DONE:
   - 17-step scripted sequence across 7 phases (A-G)
   - Types: TrainingStep, StepSetup, StepAdvance
   - Data: TRAINING_SEQUENCE + helpers
+- Phase 33-02: GameEngine training mode & flow controller (COMPLETE)
+  - GameEngine.startTraining() with palette/maxPieceSize constraints
+  - useTrainingFlow hook for sequence management
+  - pendingTrainingPalette interception in enterPeriscope()
+  - TRAINING_SCENARIO_COMPLETE event
 
-NEXT: Execute 33-02 (GameEngine training mode & flow controller)
+NEXT: Plan 33-03 (Intercom scripts & journal content)
 
-/gsd:execute-plan .planning/phases/33-rank-0-training-sequence/33-02-PLAN.md
+/gsd:plan-phase 33 (or execute 33-03 if plan exists)
 ```
 
 ---
