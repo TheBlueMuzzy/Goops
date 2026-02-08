@@ -206,6 +206,48 @@ All visible text in Goops. Edit this file, then ask Claude to read it and apply 
 
 ---
 
+## TRAINING INTERCOM MESSAGES (tutorialSteps.ts)
+
+All 17 training step messages. Displayed via the Intercom component during rank 0 training.
+
+| # | Step ID | Keywords | Full Text |
+|---|---------|----------|-----------|
+| 1 | A1_BRIEFING | operator, safety training, shift | Welcome aboard, operator. Standard safety training is mandatory before your first shift. Pay attention. |
+| 2 | A2_PERISCOPE | periscope, tank, drag | Use the periscope to look inside the tank. Drag it down to enter. |
+| 3 | B1_GOOP_INTRO | goop, extruder, tank | The goop extruder drops material into the tank. Watch where it lands. |
+| 4 | B2_FAST_FALL | hold down, speed up, drop | Hold down to speed up the drop. Or just tap to slam it down. Your call. |
+| 5 | B3_PIECE_ROTATION | rotate, piece, Q, E | Rotate the piece before it lands. Q and E keys, or tap the screen edges. |
+| 6 | C1_POP_INTRO | pop, goop, pressure, tap | Too much goop builds pressure. Tap solid goop to pop it and vent the tank. |
+| 7 | C2_MERGE | same color, merges, bigger | Same color goop merges together into bigger blobs. Bigger pops vent more pressure. |
+| 8 | C3_FILL_TIMING | solid, fill, pop | Fresh goop needs time to solidify. You can only pop solid goop. The pressure line shows the threshold. |
+| 9 | D1_CRACK_APPEARS | crack, matching, seal | A crack in the tank wall. Only matching color goop can seal it. That is literally your one job. |
+| 10 | D2_TANK_ROTATION | rotate, tank, swipe, A, D | The goop is not above the crack. Rotate the tank to line it up. Swipe or use A and D keys. |
+| 11 | E1_PRESSURE_REVEAL | pressure, rising, goop | Notice the pressure gauge. Every piece of goop in the tank adds to it. If it hits maximum capacity, you fail. |
+| 12 | E2_PRESSURE_THRESHOLD | pressure line, above, pop | Goop can only be popped when the pressure line rises above it. Watch the line climb. |
+| 13 | E3_SUCCESSFUL_POP | pop, pressure drops, bonus | There. Pressure drops when you pop. Bigger groups drop it more. Popping also scores a bonus. |
+| 14 | F1_CRACK_SEAL | seal, crack, massive, pressure relief | The green goop is sitting on the green crack. Pop it to seal the crack. Sealed cracks give massive pressure relief. |
+| 15 | G1_OFFSCREEN_CRACK | wraps around, rotate, 360 | The tank is a cylinder. It wraps around. Keep rotating to see everything. There is more tank than you think. |
+| 16 | G2_SCAFFOLDING | stack, scaffolding, reach, higher | That crack is too high to reach from the floor. Stack pieces as scaffolding to reach it. |
+| 17 | G3_SCAFFOLDING_TRADEOFF | balance, scaffolding, pressure | More goop means more pressure. But sometimes you need scaffolding to reach the cracks. Balance is everything. Training complete. |
+
+---
+
+## JOURNAL PAGE CONTENT (journalEntries.ts)
+
+Updated sections for training phases. Only changed/new sections listed.
+
+| Page | Section | Text |
+|------|---------|------|
+| BASICS | YOUR OBJECTIVE (new) | Seal all cracks before the shift timer runs out. Cracks appear in the tank walls. Place matching-color goop on a crack, then pop it to seal. |
+| CONTROLS | TANK ROTATION (updated) | Swipe left/right or A/D keys to rotate the tank. The tank is a cylinder — it wraps all the way around. |
+| POPPING | WHAT CAN BE POPPED (updated) | Only fully solid goop below the pressure line can be popped. Fresh goop needs time to solidify — watch it fill in. |
+| POPPING | MERGING (new) | Same-color goop touching each other merges into bigger blobs. Bigger pops vent more pressure and score more points. |
+| CRACKS | SEALING CRACKS (updated) | Place matching-color goop on a crack and pop it. Sealed cracks give a massive pressure drop. This is the core of your job. |
+| WRAPPING | THE TANK WRAPS (updated) | The tank is a full cylinder. Goop on the left edge connects to goop on the right edge. Rotate all the way around to see everything. |
+| SCORING | SHIFTS (new) | Each shift lasts 75 seconds. Seal all assigned cracks before time runs out. |
+
+---
+
 ## END GAME (EndGameScreen.tsx) -- All SVG
 
 | # | Element | Text | fontSize | Color | Weight | Font | Extra |

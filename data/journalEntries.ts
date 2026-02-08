@@ -25,6 +25,10 @@ export const JOURNAL_PAGES: JournalPage[] = [
         heading: 'POPPING BASICS',
         body: 'Click or tap solid goop below the pressure line to pop it. Bigger groups vent more pressure. Keep the tank clear.',
       },
+      {
+        heading: 'YOUR OBJECTIVE',
+        body: 'Seal all cracks before the shift timer runs out. Cracks appear in the tank walls. Place matching-color goop on a crack, then pop it to seal.',
+      },
     ],
   },
 
@@ -37,7 +41,7 @@ export const JOURNAL_PAGES: JournalPage[] = [
     sections: [
       {
         heading: 'TANK ROTATION',
-        body: 'A / D keys or swipe left/right to rotate the tank view. The tank is a cylinder — it wraps around.',
+        body: 'Swipe left/right or A/D keys to rotate the tank. The tank is a cylinder — it wraps all the way around.',
       },
       {
         heading: 'PIECE ROTATION',
@@ -70,11 +74,15 @@ export const JOURNAL_PAGES: JournalPage[] = [
     sections: [
       {
         heading: 'WHAT CAN BE POPPED',
-        body: 'Only fully solid goop below the pressure line can be popped. Falling or partial goop is not ready yet.',
+        body: 'Only fully solid goop below the pressure line can be popped. Fresh goop needs time to solidify — watch it fill in.',
       },
       {
         heading: 'TIMING TENSION',
         body: 'Let goop accumulate for bigger group pops and more points. But wait too long and pressure overwhelms you. Find the balance.',
+      },
+      {
+        heading: 'MERGING',
+        body: 'Same-color goop touching each other merges into bigger blobs. Bigger pops vent more pressure and score more points.',
       },
     ],
   },
@@ -93,6 +101,10 @@ export const JOURNAL_PAGES: JournalPage[] = [
         heading: 'ELEVATION BONUS',
         body: 'Goop popped higher in the tank scores more. Build up, then pop from the top for maximum points.',
       },
+      {
+        heading: 'SHIFTS',
+        body: 'Each shift lasts 75 seconds. Seal all assigned cracks before time runs out.',
+      },
     ],
   },
 
@@ -108,7 +120,7 @@ export const JOURNAL_PAGES: JournalPage[] = [
       },
       {
         heading: 'SEALING CRACKS',
-        body: 'Place matching-color goop over a crack to seal it. Sealed cracks stop spreading. Prioritize cracks near the top.',
+        body: 'Place matching-color goop on a crack and pop it. Sealed cracks give a massive pressure drop. This is the core of your job.',
       },
     ],
   },
@@ -121,7 +133,7 @@ export const JOURNAL_PAGES: JournalPage[] = [
     sections: [
       {
         heading: 'THE TANK WRAPS',
-        body: 'The tank is a cylinder. Goop on the left edge connects to goop on the right edge. Use this for bigger groups.',
+        body: 'The tank is a full cylinder. Goop on the left edge connects to goop on the right edge. Rotate all the way around to see everything.',
       },
       {
         heading: 'CROSS-SEAM CONNECTIONS',
