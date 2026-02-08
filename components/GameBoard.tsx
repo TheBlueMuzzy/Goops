@@ -1279,9 +1279,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 );
             })}
 
-            {/* Active Piece - Grid cells (mobile fallback only) */}
-            {/* Desktop uses soft-body blob rendering above; mobile uses simple rects */}
-            {!softBodyPhysics && activeGoop && activeGoop.state === GoopState.FALLING && (() => {
+            {/* Active Piece - Grid cells (fallback when soft-body blob doesn't exist) */}
+            {/* Shows simple rects when the soft-body blob hasn't been created yet or isn't rendering */}
+            {activeGoop && activeGoop.state === GoopState.FALLING && (() => {
+                // Skip if soft-body blob exists and will render
+                if (softBodyPhysics) {
+                    const blobId = `active-${activeGoop.spawnTimestamp}`;
+                    const blob = softBodyPhysics.getBlob(blobId);
+                    if (blob && blob.isFalling && !blob.isLocked) return null;
+                }
                 const isWild = activeGoop.definition.isWild;
                 const apCells = activeGoop.cells.map((cell, idx) => {
                     const color = activeGoop.definition.cellColors?.[idx] ?? activeGoop.definition.color;
