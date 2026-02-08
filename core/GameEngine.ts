@@ -1,5 +1,6 @@
 
 import { GameState, TankCell, ActivePiece, GoopTemplate, LooseGoop, ScoreBreakdown, GameStats, FloatingText, GoalMark, Crack, ScreenType, GoopState, GoopShape, Complication, TankSystem, DumpPiece } from '../types';
+import { TrainingStep } from '../types/training';
 import {
     TANK_WIDTH, TANK_HEIGHT, TANK_VIEWPORT_WIDTH, TANK_VIEWPORT_HEIGHT, BUFFER_HEIGHT, PER_BLOCK_DURATION, SHIFT_DURATION,
     PRESSURE_RECOVERY_BASE_MS, PRESSURE_RECOVERY_PER_UNIT_MS, PRESSURE_TIER_THRESHOLD, PRESSURE_TIER_STEP, PRESSURE_TIER_BONUS_MS,
@@ -61,6 +62,8 @@ export class GameEngine {
     public initialTotalScore: number = 0;
     public powerUps: Record<string, number> = {};
     public isSessionActive: boolean = false;
+    public isTrainingMode: boolean = false;
+    public maxPieceSize: number | null = null;  // Training: limit piece cell count (null = no limit)
     public equippedActives: string[] = [];
     private crackManager: CrackManager;
 
@@ -215,6 +218,9 @@ export class GameEngine {
     }
 
     public startRun() {
+        this.isTrainingMode = false;
+        this.maxPieceSize = null;
+
         const startRank = calculateRankDetails(this.initialTotalScore).rank;
         const palette = getPaletteForRank(startRank);
         const newTarget = palette.length + startRank;
@@ -334,6 +340,101 @@ export class GameEngine {
         this.spawnNewPiece();
         gameEventBus.emit(GameEventType.GAME_START);
         gameEventBus.emit(GameEventType.MUSIC_START);
+        this.emitChange();
+    }
+
+    /**
+     * Start a training session (rank 0 scripted tutorial).
+     * Initializes a clean, constrained game environment for guided learning.
+     * The flow controller (useTrainingFlow) orchestrates step-by-step progression.
+     */
+    public startTraining(palette: string[]) {
+        this.isTrainingMode = true;
+        this.maxPieceSize = null; // Flow controller sets this per-step via maxPieceSize property
+
+        // Clean grid (no junk in training)
+        const emptyGrid = Array(TANK_HEIGHT).fill(null).map(() => Array(TANK_WIDTH).fill(null));
+
+        // Generate initial piece using training palette (Tetra pool only, no corruption)
+        const nextColor = palette[Math.floor(Math.random() * palette.length)];
+        const startPool = TETRA_NORMAL;
+        const startPieceIndex = Math.floor(Math.random() * startPool.length);
+        const startBasePiece = this.maybeApplyMirror({ ...startPool[startPieceIndex] });
+
+        const storedColor = palette[Math.floor(Math.random() * palette.length)];
+        const storedPieceIndex = Math.floor(Math.random() * startPool.length);
+        const storedBasePiece = this.maybeApplyMirror({ ...startPool[storedPieceIndex] });
+
+        this.state = {
+            ...this.state,
+            grid: emptyGrid,
+            tankRotation: 0,
+            shiftScore: 0,
+            gameOver: false,
+            isPaused: false,
+            activeGoop: null,
+            storedGoop: {
+                ...storedBasePiece,
+                color: storedColor,
+            },
+            nextGoop: {
+                ...startBasePiece,
+                color: nextColor,
+            },
+            canSwap: true,
+            popStreak: 0,
+            cellsCleared: 0,
+            looseGoop: [],
+            dumpPieces: [],
+            dumpQueue: [],
+            shiftTime: 999999, // Effectively infinite — no timer pressure during training
+            floatingTexts: [],
+            goalMarks: [],
+            crackCells: [],
+            goalsCleared: 0,
+            goalsTarget: 0, // Flow controller manages completion, not goal counting
+            gameStats: { startTime: Date.now(), totalBonusTime: 0, maxGroupSize: 0 },
+            scoreBreakdown: { base: 0, height: 0, offscreen: 0, adjacency: 0, speed: 0 },
+            phase: ScreenType.ConsoleScreen, // Training starts at console (Phase A briefing)
+            complications: [],
+            activeComplicationId: null,
+            totalUnitsAdded: 0,
+            totalUnitsPopped: 0,
+            totalRotations: 0,
+            rotationTimestamps: [],
+            complicationThresholds: {
+                lights: this.randomThreshold(),
+                controls: this.randomThreshold(),
+                laser: this.randomThreshold()
+            },
+            prePoppedGoopGroups: new Set(),
+            poppedGoopGroupIds: new Set(),
+            laserCharge: 100,
+            controlsHeat: 0,
+            lightsBrightness: 100,
+            lightsGraceStart: null,
+            lightsFlickered: false,
+            complicationCooldowns: {
+                [TankSystem.LIGHTS]: 0,
+                [TankSystem.CONTROLS]: 0,
+                [TankSystem.LASER]: 0
+            },
+            colorizerColor: null,
+            colorizerRemaining: 0,
+            crackDownRemaining: 0
+        };
+
+        this.lockStartTime = null;
+        this.lastGoalSpawnTime = Date.now();
+        this.lastComplicationCheckTime = Date.now();
+        this.isFastDropping = false;
+        this.isSessionActive = true;
+
+        // No active abilities in training
+        this.state.activeCharges = {};
+
+        this.spawnNewPiece();
+        gameEventBus.emit(GameEventType.GAME_START);
         this.emitChange();
     }
 
@@ -672,7 +773,17 @@ export class GameEngine {
                 }
             }
             // Zone-based piece selection with corruption and mirroring
-            const { pool, isCorrupted } = this.getPiecePoolByZone();
+            let { pool, isCorrupted } = this.getPiecePoolByZone();
+
+            // Training mode: filter piece pool by maxPieceSize constraint
+            if (this.maxPieceSize !== null) {
+                const filtered = pool.filter(p => p.cells.length <= this.maxPieceSize!);
+                if (filtered.length > 0) {
+                    pool = filtered;
+                }
+                // If all pieces exceed maxPieceSize, fall back to unfiltered pool
+            }
+
             const pieceIndex = Math.floor(Math.random() * pool.length);
             const basePieceDef = this.maybeApplyMirror({ ...pool[pieceIndex] });
 
@@ -1383,32 +1494,35 @@ export class GameEngine {
         // Timer - stop if game ended
         if (!this.tickTimer(dt)) return;
 
-        // Goals
-        this.tickGoals();
+        // Skip normal gameplay systems during training (flow controller manages state)
+        if (!this.isTrainingMode) {
+            // Goals
+            this.tickGoals();
 
-        // Crack growth (rank 30+ expanding cracks mechanic)
-        this.crackManager.tickGrowth(this.state, this.initialTotalScore, this.powerUps, this.maxTime);
+            // Crack growth (rank 30+ expanding cracks mechanic)
+            this.crackManager.tickGrowth(this.state, this.initialTotalScore, this.powerUps, this.maxTime);
 
-        // Complications check
-        this.checkComplications(dt);
+            // Complications check
+            this.checkComplications(dt);
 
-        // Heat dissipation
-        this.tickHeat(dt);
+            // Heat dissipation
+            this.tickHeat(dt);
 
-        // Lights brightness (player-controlled via fast drop)
-        this.tickLightsBrightness(dt);
+            // Lights brightness (player-controlled via fast drop)
+            this.tickLightsBrightness(dt);
 
-        // Loose goop (falling after pop)
+            // Dump pieces (GOOP_DUMP ability rain effect)
+            this.tickDumpPieces(dt);
+
+            // Active ability charging (passive)
+            this.tickActiveCharges(dt);
+        }
+
+        // Loose goop (falling after pop) — always needed for physics
         this.tickLooseGoop(dt);
 
-        // Dump pieces (GOOP_DUMP ability rain effect)
-        this.tickDumpPieces(dt);
-
-        // Active piece gravity
+        // Active piece gravity — always needed for piece control
         this.tickActivePiece(dt);
-
-        // Active ability charging (passive)
-        this.tickActiveCharges(dt);
 
         this.emitChange();
     }
