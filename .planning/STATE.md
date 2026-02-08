@@ -9,12 +9,12 @@ updated: 2026-02-08
 
 ## Current Position
 
-Phase: 32 of 38 (Journal System)
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-02-08 - Completed 32-01-PLAN.md
+Phase: 33 of 38 (Rank 0 Training Sequence)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-08 - Completed 33-01-PLAN.md
 
-Progress: ███░░░░░░░ 29%
+Progress: ███░░░░░░░ 30%
 
 ## Branch Workflow (SOP)
 
@@ -24,17 +24,19 @@ Progress: ███░░░░░░░ 29%
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- `feature/tutorial-infrastructure` (Phase 31 complete, Phase 32 complete)
+- `feature/tutorial-infrastructure` (Phase 31 complete, Phase 32 complete, Phase 33 in progress)
 
 ## Next Steps
 
-Phase 32 complete (1/1 plans). Next: Phase 33 (Rank 0 Training Sequence).
+Phase 33 plan 1 of 4 complete. Next: 33-02 (GameEngine training mode & flow controller).
 
 ### Decisions Made
 
 - Typography: 18px minimum body, CSS classes with !important, full project sweep
 - Journal layout: accordion (single column) over sidebar+content (two column)
 - TEXT_MANIFEST.md as editable text source-of-truth
+- **Training: scripted 17-step sequence (1 continuous session) over 6 discrete scenarios**
+- Training uses COLORS.RED hex values matching engine convention
 
 ### Known Issues
 
@@ -57,19 +59,19 @@ Last session: 2026-02-08
 
 ### Resume Command
 ```
-Phase 32 COMPLETE — ready for Phase 33
+Phase 33 IN PROGRESS — 1/4 plans complete
 
 WHAT'S DONE:
 - Phase 31: Tutorial Infrastructure (3/3 plans)
 - Phase 32: Journal System (1/1 plans)
-  - Journal data layer (types + 11 pages)
-  - OperatorJournal accordion component
-  - Typography system project-wide (18px min)
-  - TEXT_MANIFEST.md
+- Phase 33-01: Training data model & configs (COMPLETE)
+  - 17-step scripted sequence across 7 phases (A-G)
+  - Types: TrainingStep, StepSetup, StepAdvance
+  - Data: TRAINING_SEQUENCE + helpers
 
-NEXT: Plan Phase 33 (Rank 0 Training Sequence)
+NEXT: Execute 33-02 (GameEngine training mode & flow controller)
 
-/gsd:plan-phase 33
+/gsd:execute-plan .planning/phases/33-rank-0-training-sequence/33-02-PLAN.md
 ```
 
 ---
