@@ -83,7 +83,7 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
 
         {/* Header bar */}
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-800 bg-slate-950/60">
-          <span className="text-xs text-slate-500 uppercase tracking-widest font-mono">
+          <span className="text-[18px] text-slate-500 uppercase tracking-widest font-mono">
             Intercom
           </span>
           {/* Blinking transmission indicator */}
@@ -91,7 +91,7 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
         </div>
 
         {/* Message body */}
-        <div className="px-3 py-2.5 text-sm text-slate-300">
+        <div className="px-3 py-2.5 text-[36px] text-slate-300">
           <IntercomText
             fullText={message.fullText}
             keywords={message.keywords}
@@ -101,13 +101,13 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
 
         {/* Action buttons — only show when fully revealed */}
         {isFullyRevealed && (
-          <div className="flex justify-end gap-2 px-3 py-2 border-t border-slate-800">
+          <div className="flex justify-end gap-3 px-3 py-3 border-t border-slate-800">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDismiss();
               }}
-              className="px-2 py-0.5 text-xs font-mono text-slate-500 hover:text-slate-300 border border-slate-700 rounded-sm transition-colors"
+              className="w-12 h-12 flex items-center justify-center text-2xl font-mono text-slate-500 hover:text-slate-300 border border-slate-700 rounded-sm transition-colors"
             >
               ✗
             </button>
@@ -116,7 +116,7 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
                 e.stopPropagation();
                 onComplete();
               }}
-              className="px-2 py-0.5 text-xs font-mono text-green-400 hover:text-green-300 border border-green-900 hover:border-green-700 rounded-sm transition-colors"
+              className="w-12 h-12 flex items-center justify-center text-2xl font-mono text-green-400 hover:text-green-300 border border-green-900 hover:border-green-700 rounded-sm transition-colors"
             >
               ✓
             </button>
