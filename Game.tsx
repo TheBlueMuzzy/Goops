@@ -1008,6 +1008,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
         activeStep={activeStep}
         onComplete={completeStep}
         onDismiss={dismissStep}
+        highlightElement={trainingStep?.setup?.highlightElement}
       />
 
     </div>

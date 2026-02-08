@@ -3,10 +3,27 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TutorialStep } from '../types/tutorial';
 import { IntercomMessageDisplay } from './IntercomMessage';
 
+// --- Highlight Region Definitions ---
+// Maps highlightElement strings (from TrainingStep.setup.highlightElement)
+// to viewport-relative percentage regions: { left, top, right, bottom }
+// Values are percentages of the viewport (0-100).
+// Add new entries here when new training steps need highlights.
+interface HighlightRegion {
+  left: number;   // % from left edge
+  top: number;    // % from top edge
+  right: number;  // % from right edge (not width — actual right edge position)
+  bottom: number; // % from top edge (not height — actual bottom edge position)
+}
+
+const HIGHLIGHT_REGIONS: Record<string, HighlightRegion> = {
+  periscope: { left: 20, top: 30, right: 80, bottom: 60 },
+};
+
 interface TutorialOverlayProps {
   activeStep: TutorialStep | null;
   onComplete: () => void;    // Mark step completed
   onDismiss: () => void;     // Dismiss without completing
+  highlightElement?: string; // Element key to highlight (from training step setup)
 }
 
 /**
@@ -16,13 +33,15 @@ interface TutorialOverlayProps {
  * Non-blocking: pointer-events-none on the overlay itself,
  * pointer-events-auto on the IntercomMessage only.
  *
- * Supports a highlight area infrastructure (clip-path cutout)
- * for future use in Phase 33 training scenarios.
+ * When highlightElement is defined, renders a semi-transparent dark overlay
+ * with a rectangular clip-path cutout so the highlighted area stays visible.
+ * When no highlight, overlay remains transparent (current behavior).
  */
 export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   activeStep,
   onComplete,
   onDismiss,
+  highlightElement,
 }) => {
   // Track the step being displayed (for fade-out: keep rendering while fading)
   const [displayedStep, setDisplayedStep] = useState<TutorialStep | null>(null);
@@ -60,6 +79,28 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   // Nothing to show
   if (!displayedStep) return null;
 
+  // Look up the highlight region for the current element (if any)
+  const highlightRegion = highlightElement
+    ? HIGHLIGHT_REGIONS[highlightElement] ?? null
+    : null;
+
+  // Build CSS clip-path polygon that creates a rectangular cutout.
+  // The polygon traces the outer edge of the overlay, then cuts inward to
+  // create a "hole" where the highlighted element is.
+  // Winding: outer clockwise, inner counter-clockwise.
+  const clipPathStyle = highlightRegion
+    ? {
+        clipPath: `polygon(
+          0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
+          ${highlightRegion.left}% ${highlightRegion.top}%,
+          ${highlightRegion.left}% ${highlightRegion.bottom}%,
+          ${highlightRegion.right}% ${highlightRegion.bottom}%,
+          ${highlightRegion.right}% ${highlightRegion.top}%,
+          ${highlightRegion.left}% ${highlightRegion.top}%
+        )`,
+      }
+    : undefined;
+
   return (
     <div
       className="absolute inset-0 z-[90] pointer-events-none"
@@ -68,9 +109,17 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
         opacity: isVisible ? 1 : 0,
       }}
     >
-      {/* Highlight area infrastructure — future Phase 33 will provide coordinates */}
-      {/* When highlightArea is defined on a step, render a semi-transparent overlay
-          with a clip-path cutout. For now, no steps define highlightArea. */}
+      {/* Highlight overlay — semi-transparent with clip-path cutout */}
+      {highlightRegion && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            ...clipPathStyle,
+            transition: 'clip-path 300ms ease-out',
+          }}
+        />
+      )}
 
       {/* Intercom message — pointer-events-auto so player can interact */}
       <div className="pointer-events-auto">
