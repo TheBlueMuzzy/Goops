@@ -2,7 +2,7 @@
 title: Project State
 type: session
 tags: [active, continuity, status]
-updated: 2026-02-06
+updated: 2026-02-07
 ---
 
 # Project State
@@ -11,11 +11,11 @@ updated: 2026-02-06
 
 Phase: 27.1 Physics-Controlled Active Piece
 Plan: MASTER-PLAN complete (9/9 tasks) — ALL BUGS FIXED + getGhostY safety net
-Status: Deployed — soft body physics + dev piece picker tool
-Last activity: 2026-02-07 - Dev piece picker panel (~) with repeat mode and debug toggles
-Branch: `soft-body-experiment` (merged to master for deploy)
+Status: Deploying — soft body rendering fixes + hole support + loose goop ease-in
+Last activity: 2026-02-07 - Multiple rendering fixes, donut hole support, loose goop ease-in
+Branch: `soft-body-experiment` (merging to master for deploy)
 
-Progress: █████████░ ~90% (core physics working, deployed, falling blob tendrils still TODO)
+Progress: █████████░ ~92% (core physics working, holes supported, rendering polished)
 
 ## Branch Workflow (SOP)
 
@@ -29,42 +29,35 @@ Progress: █████████░ ~90% (core physics working, deployed, f
 
 ## Next Steps
 
-### TODO: Add tendrils to falling blobs
-
-**The problem:** Tendrils (attraction spring beads) only render for locked blobs, not falling blobs.
-
-**Root cause:** In `GameBoard.tsx`, `blobsByColor` is built with `if (blob.isFalling) continue;`, so falling blobs don't get a per-color goo filter group. Tendrils are rendered inside these per-color groups, so falling blob tendrils are invisible.
-
-**What needs to happen:**
-- In the falling blobs rendering section (~line 997-1034 of GameBoard.tsx), add tendril rendering for springs that involve falling blobs
-- Tendrils must be INSIDE the `<g filter="url(#goo-filter)">` group so the goo filter merges the bead dots into smooth strands
-- Filter springs where at least one blob is falling AND matches the color being rendered
-- The tendril bead code is identical to what's in the locked blob section (lines ~878-912)
-
-**Physics note:** `updateAttractionSprings()` in `core/softBody/physics.ts` does NOT filter by isFalling — springs CAN connect falling↔locked and falling↔falling blobs. The rendering just doesn't show them.
-
-**Reference:** Proto 9 (`prototypes/SoftBodyProto9.tsx`) rendered everything in ONE goo filter group. Current code splits by locked/falling. Need tendrils in both.
-
 ### What was done THIS session:
 
-1. **Dev piece picker panel** — New `~` key toggles a left-side dev panel showing all 54 pieces organized by Tetra/Penta/Hexa (normal + corrupted), with color selector respecting rank-locked colors.
-2. **Random Pieces toggle** — Checkbox (default: on). When unchecked, clicking a piece repeats it every spawn via `engine.devOverrideNextGoop`.
-3. **Moved debug checkboxes** — Show Vertices, Freeze Timer, Freeze Falling moved from physics panel (`) to piece picker panel (~).
+1. **Tendril cylindrical wrapping fix** — Tendrils now use `cylindricalDistanceX()` so they don't stretch across the screen when vertex positions straddle the cylinder boundary
+2. **Wall/blur color bleed fix** — Inner cutouts (`#1e293b`) moved outside goo filter group so dark fill can't contaminate the goo blur fringe
+3. **Donut hole support** — New `traceAllLoops()` separates outer boundary from inner hole boundaries. Compound SVG paths + `fillRule="evenodd"` render holes correctly. Ring springs respect loop boundaries. Pieces like P_S_C now show hollow centers.
+4. **Default stiffness** — Changed from 15 → 10
+5. **Loose goop gravity ease-in** — Cubic ease-in (`t³`) over 0.6s so loose blobs drip/peel slowly before ripping away. No more instant collapse.
 
 ### Files modified (this session):
 
-- `Game.tsx` — Piece picker panel, state, key handler, moved checkboxes
-- `core/GameEngine.ts` — `devOverrideNextGoop` property + override in `spawnGoop()`
+- `components/GameBoard.tsx` — fillRule="evenodd", cylindrical tendril fix, cutout layer separation
+- `core/softBody/blobFactory.ts` — `traceAllLoops()`, multi-loop blob creation, loop-aware ring springs
+- `core/softBody/physics.ts` — Loose goop gravity ease-in with cubic ramp
+- `core/softBody/rendering.ts` — Compound SVG path generation for blobs with holes
+- `core/softBody/types.ts` — `loopStarts`, `looseTime` fields, stiffness default
+- `tests/softBody.test.ts` — Updated stiffness default
 
 ### Known Issues
 
-- **Falling blob tendrils not rendered** — tendrils only render for locked blobs, not falling blobs (next task)
-- Physics "looseness" could be tuned (blobs are a bit wobbly)
+- Physics "looseness" could be tuned further (blobs are a bit wobbly)
+- Falling blob tendrils render but could be improved
 
 ### Decisions Made
 
-- Goo filter defaults: stdDeviation=8, alphaMul=24, alphaOff=-13 (user-tuned)
-- All physics params confirmed at defaults (user saved snapshot matches)
+- Goo filter defaults: stdDeviation=5, alphaMul=40, alphaOff=-11 (user-tuned)
+- Stiffness default = 10 (user-tuned, was 15)
+- Donut holes use separate boundary loops + evenodd fill, not figure-8 paths
+- Inner cutouts render OUTSIDE goo filter to prevent color bleed
+- Loose goop uses cubic ease-in (t³) over 0.6s for drip/rip feel
 - `homeStiffness` is the right param for anchoring against attraction pull (not returnSpeed/viscosity)
 - Tendrils must be inside goo filter groups to get the smooth Proto 9 look
 
@@ -74,27 +67,27 @@ Progress: █████████░ ~90% (core physics working, deployed, f
 
 Last session: 2026-02-07
 **Version:** 1.1.13
-**Branch:** soft-body-experiment (deployed to master)
-**Build:** 218
+**Branch:** soft-body-experiment (deploying to master)
+**Build:** 224
 
 ### Resume Command
 ```
-DEPLOYED — Dev piece picker panel + soft body physics live on GitHub Pages.
+DEPLOYED — Rendering fixes + hole support + loose goop ease-in live on GitHub Pages.
 
 SESSION ACCOMPLISHMENTS:
-- Dev piece picker panel (~ key) with all 54 pieces, color selector, rank-locked colors
-- Random Pieces toggle (uncheck = selected piece repeats every spawn)
-- Moved debug checkboxes (vertices, freeze timer/falling) from physics to picker panel
+- Tendril cylindrical wrapping fix (no more cross-screen stretching)
+- Wall/blur color bleed fix (cutouts outside goo filter)
+- Donut hole support (traceAllLoops + compound paths + evenodd)
+- Stiffness default 15 → 10
+- Loose goop cubic ease-in (0.6s ramp, t³ curve)
 - 210 tests, all passing
 - Deployed to production
 
 REMAINING WORK:
-- Add tendril rendering to falling blobs section in GameBoard.tsx (~line 997-1034)
-- Tendrils must go INSIDE the falling blobs' goo filter group
-- Filter springs where at least one blob is falling
-- Physics looseness tuning
+- Further physics tuning if needed
+- Falling blob tendril improvements
 
-Next: Implement falling blob tendrils in GameBoard.tsx
+Next: User testing of deployed version
 ```
 
 ---

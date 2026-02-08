@@ -414,7 +414,7 @@ describe('DEFAULT_PHYSICS', () => {
   it('has expected default values (user-tuned)', () => {
     // Core physics
     expect(DEFAULT_PHYSICS.damping).toBe(0.98);
-    expect(DEFAULT_PHYSICS.stiffness).toBe(15);
+    expect(DEFAULT_PHYSICS.stiffness).toBe(10);
     expect(DEFAULT_PHYSICS.pressure).toBe(20);
     expect(DEFAULT_PHYSICS.iterations).toBe(3);
     expect(DEFAULT_PHYSICS.homeStiffness).toBe(0.35);

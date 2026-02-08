@@ -942,6 +942,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                               key={`soft-${blob.id}-${idx}`}
                               d={outerPath}
                               fill={blob.color}
+                              fillRule="evenodd"
                               transform={transform}
                             />
                           ))}
@@ -1070,6 +1071,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                           key={`falling-${blob.id}-${idx}`}
                           d={path}
                           fill={fillColor}
+                          fillRule="evenodd"
                           fillOpacity={0.8}
                           transform={transform}
                           className={isWild ? "wild-stroke wild-fill" : undefined}

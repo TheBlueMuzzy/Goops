@@ -187,6 +187,122 @@ export function tracePerimeter(edges: Edge[]): Vec2[] {
 }
 
 // =============================================================================
+// Multi-Loop Perimeter Tracing (supports holes)
+// =============================================================================
+
+/**
+ * Trace ALL boundary loops from a set of edges.
+ * Returns separate loops for outer boundary and any inner holes.
+ * Each loop is complete (returns to its start point).
+ */
+export function traceAllLoops(edges: Edge[]): Vec2[][] {
+  if (edges.length === 0) return [];
+
+  // Build adjacency: for each endpoint, which edges connect?
+  const edgeMap = new Map<string, Edge[]>();
+
+  for (const edge of edges) {
+    const startKey = `${edge.x1},${edge.y1}`;
+    const endKey = `${edge.x2},${edge.y2}`;
+
+    if (!edgeMap.has(startKey)) edgeMap.set(startKey, []);
+    if (!edgeMap.has(endKey)) edgeMap.set(endKey, []);
+
+    edgeMap.get(startKey)!.push(edge);
+    edgeMap.get(endKey)!.push(edge);
+  }
+
+  // Helper: get angle of edge from a point
+  const getEdgeAngle = (
+    edge: Edge,
+    fromPoint: { x: number; y: number }
+  ): number => {
+    const toX =
+      fromPoint.x === edge.x1 && fromPoint.y === edge.y1 ? edge.x2 : edge.x1;
+    const toY =
+      fromPoint.x === edge.x1 && fromPoint.y === edge.y1 ? edge.y2 : edge.y1;
+    return Math.atan2(toY - fromPoint.y, toX - fromPoint.x);
+  };
+
+  // Helper: normalize angle difference to [-PI, PI]
+  const angleDiff = (from: number, to: number): number => {
+    let diff = to - from;
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+    return diff;
+  };
+
+  const visited = new Set<Edge>();
+  const loops: Vec2[][] = [];
+
+  while (visited.size < edges.length) {
+    // Find an unvisited edge to start a new loop
+    const startEdge = edges.find(e => !visited.has(e));
+    if (!startEdge) break;
+
+    const loop: Vec2[] = [];
+    let currentEdge = startEdge;
+    let currentPoint = { x: currentEdge.x1, y: currentEdge.y1 };
+    const startPoint = { x: currentPoint.x, y: currentPoint.y };
+    let incomingAngle = getEdgeAngle(currentEdge, currentPoint) + Math.PI;
+    let firstStep = true;
+
+    while (true) {
+      visited.add(currentEdge);
+      loop.push({ x: currentPoint.x, y: currentPoint.y });
+
+      // Move to the end of this edge
+      const endPoint =
+        currentPoint.x === currentEdge.x1 && currentPoint.y === currentEdge.y1
+          ? { x: currentEdge.x2, y: currentEdge.y2 }
+          : { x: currentEdge.x1, y: currentEdge.y1 };
+
+      // Check if we've returned to the start of this loop
+      if (!firstStep && endPoint.x === startPoint.x && endPoint.y === startPoint.y) {
+        break;
+      }
+      firstStep = false;
+
+      // Calculate incoming angle at endpoint
+      const arrivedAngle = Math.atan2(
+        endPoint.y - currentPoint.y,
+        endPoint.x - currentPoint.x
+      );
+      incomingAngle = arrivedAngle + Math.PI;
+
+      // Find next unvisited edge from this endpoint
+      const endKey = `${endPoint.x},${endPoint.y}`;
+      const connectedEdges = edgeMap.get(endKey) || [];
+      const unvisitedEdges = connectedEdges.filter((e) => !visited.has(e));
+
+      if (unvisitedEdges.length === 0) break;
+
+      // Pick edge with largest turn (counterclockwise) - right-hand rule
+      let bestEdge = unvisitedEdges[0];
+      let bestTurn = -Infinity;
+
+      for (const candidate of unvisitedEdges) {
+        const outAngle = getEdgeAngle(candidate, endPoint);
+        const turn = angleDiff(incomingAngle, outAngle);
+        if (turn > bestTurn) {
+          bestTurn = turn;
+          bestEdge = candidate;
+        }
+      }
+
+      currentEdge = bestEdge;
+      currentPoint = endPoint;
+    }
+
+    if (loop.length >= 3) {
+      loops.push(loop);
+    }
+  }
+
+  return loops;
+}
+
+// =============================================================================
 // Coordinate Conversion
 // =============================================================================
 
@@ -261,22 +377,58 @@ export function createBlobFromCells(
   isLocked: boolean,
   tankRotation: number = 0
 ): SoftBlob {
-  // 1. Find boundary edges and trace perimeter
+  // 1. Find boundary edges and trace perimeter loops (supports holes)
   const edges = findBoundaryEdges(cells);
-  const gridPerimeter = tracePerimeter(edges);
-  const pixelPerimeter = gridToPixels(gridPerimeter);
-  let points = ensureCCW(pixelPerimeter);
+  const gridLoops = traceAllLoops(edges);
+
+  // Convert each loop to pixels and sort: outer loop first (largest area)
+  const pixelLoops = gridLoops.map(loop => gridToPixels(loop));
+
+  // Signed area helper (positive = CCW, negative = CW)
+  const signedArea = (pts: Vec2[]): number => {
+    let area = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const j = (i + 1) % pts.length;
+      area += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+    }
+    return area / 2;
+  };
+
+  // Sort loops: largest absolute area first (outer boundary)
+  pixelLoops.sort((a, b) => Math.abs(signedArea(b)) - Math.abs(signedArea(a)));
+
+  // Ensure outer loop is CCW, hole loops are CW (for evenodd rendering)
+  const processedLoops = pixelLoops.map((loop, idx) => {
+    const area = signedArea(loop);
+    if (idx === 0) {
+      // Outer loop: ensure CCW (positive area)
+      return area > 0 ? loop : [...loop].reverse();
+    } else {
+      // Hole loops: ensure CW (negative area) — opposite winding
+      return area < 0 ? loop : [...loop].reverse();
+    }
+  });
+
+  // Flatten all loops into a single vertex array, tracking loop boundaries
+  let allPoints: Vec2[] = [];
+  const loopStarts: number[] = [];
+  for (const loop of processedLoops) {
+    loopStarts.push(allPoints.length);
+    allPoints = allPoints.concat(loop);
+  }
 
   // Fallback for invalid perimeter (less than 3 vertices)
-  if (points.length < 3) {
+  if (allPoints.length < 3) {
     const center = getGridCentroid(cells);
     const halfSize = PHYSICS_CELL_SIZE * 0.4;
-    points = [
+    allPoints = [
       { x: center.x - halfSize, y: center.y - halfSize },
       { x: center.x + halfSize, y: center.y - halfSize },
       { x: center.x + halfSize, y: center.y + halfSize },
       { x: center.x - halfSize, y: center.y + halfSize },
     ];
+    loopStarts.length = 0;
+    loopStarts.push(0);
   }
 
   // 2. Calculate centroid
@@ -285,7 +437,7 @@ export function createBlobFromCells(
   const cy = centroid.y;
 
   // 3. Create vertices with home offsets
-  const vertices: Vertex[] = points.map((p) => ({
+  const vertices: Vertex[] = allPoints.map((p) => ({
     pos: { x: p.x, y: p.y },
     oldPos: { x: p.x, y: p.y },
     homeOffset: { x: p.x - cx, y: p.y - cy },
@@ -293,31 +445,41 @@ export function createBlobFromCells(
     attractionRadius: 0.8 + Math.random() * 0.4, // 0.8-1.2 variation
   }));
 
-  // 4. Create ring springs (adjacent vertices)
+  // 4. Create ring springs (adjacent vertices within each loop)
   const n = vertices.length;
   const ringsprings: Spring[] = [];
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    ringsprings.push({
-      a: i,
-      b: j,
-      restLength: vecDistance(vertices[i].pos, vertices[j].pos),
-    });
+  for (let loopIdx = 0; loopIdx < loopStarts.length; loopIdx++) {
+    const start = loopStarts[loopIdx];
+    const end = loopIdx + 1 < loopStarts.length ? loopStarts[loopIdx + 1] : n;
+    for (let i = start; i < end; i++) {
+      const j = (i + 1 < end) ? i + 1 : start; // wrap within this loop
+      ringsprings.push({
+        a: i,
+        b: j,
+        restLength: vecDistance(vertices[i].pos, vertices[j].pos),
+      });
+    }
   }
 
   // 5. Create cross springs (non-adjacent vertices within distance threshold)
+  // Build set of ring-spring neighbors to skip them
+  const ringNeighborPairs = new Set<string>();
+  for (const rs of ringsprings) {
+    ringNeighborPairs.add(`${Math.min(rs.a, rs.b)}-${Math.max(rs.a, rs.b)}`);
+  }
+
   const crossSprings: Spring[] = [];
   const maxCrossDist = PHYSICS_CELL_SIZE * 1.5;
   const addedPairs = new Set<string>();
 
   for (let i = 0; i < n; i++) {
-    for (let j = i + 2; j < n; j++) {
-      // Skip wrap-around neighbor
-      if (j === n - 1 && i === 0) continue;
+    for (let j = i + 1; j < n; j++) {
+      // Skip ring-spring neighbors (already connected)
+      const pairKey = `${i}-${j}`;
+      if (ringNeighborPairs.has(pairKey)) continue;
 
       const dist = vecDistance(vertices[i].pos, vertices[j].pos);
       if (dist < maxCrossDist) {
-        const pairKey = `${Math.min(i, j)}-${Math.max(i, j)}`;
         if (!addedPairs.has(pairKey)) {
           addedPairs.add(pairKey);
           crossSprings.push({ a: i, b: j, restLength: dist });
@@ -326,11 +488,17 @@ export function createBlobFromCells(
     }
   }
 
-  // 6. Calculate rest area (Shoelace formula)
+  // 6. Calculate rest area (outer area minus hole areas)
   let restArea = 0;
-  for (let i = 0; i < points.length; i++) {
-    const j = (i + 1) % points.length;
-    restArea += points[i].x * points[j].y - points[j].x * points[i].y;
+  for (let loopIdx = 0; loopIdx < loopStarts.length; loopIdx++) {
+    const start = loopStarts[loopIdx];
+    const end = loopIdx + 1 < loopStarts.length ? loopStarts[loopIdx + 1] : allPoints.length;
+    let loopArea = 0;
+    for (let i = start; i < end; i++) {
+      const j = (i + 1 < end) ? i + 1 : start;
+      loopArea += allPoints[i].x * allPoints[j].y - allPoints[j].x * allPoints[i].y;
+    }
+    restArea += loopArea; // CCW outer adds, CW holes subtract
   }
   restArea = Math.abs(restArea) / 2;
 
@@ -350,6 +518,7 @@ export function createBlobFromCells(
     color,
     vertices,
     innerVertices,
+    loopStarts,
     ringsprings,
     crossSprings,
     restArea,
@@ -358,6 +527,7 @@ export function createBlobFromCells(
     isLocked,
     isFalling: !isLocked,          // If not locked, it's falling
     isLoose: false,                // Only set true when blob loses support
+    looseTime: 0,                  // Tracks time since becoming loose (gravity ease-in)
     fillAmount: isLocked ? 0 : 1, // Locked = start filling, Falling = full
     wasFullLastFrame: !isLocked,   // Falling pieces start full, locked start empty
     rotation: 0,

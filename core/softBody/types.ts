@@ -130,6 +130,7 @@ export interface SoftBlob {
   color: string;
   vertices: Vertex[];
   innerVertices: Vertex[];   // Stable core for complex merges
+  loopStarts: number[];      // Start indices for each boundary loop (outer + holes)
   ringsprings: Spring[];     // Perimeter edge springs
   crossSprings: Spring[];    // Structural support springs
   restArea: number;          // Target area (Shoelace formula)
@@ -138,6 +139,7 @@ export interface SoftBlob {
   isLocked: boolean;         // Locked = viscous, Falling = snappy
   isFalling: boolean;        // Active falling piece (not yet locked)
   isLoose: boolean;          // Falling after losing support (was locked)
+  looseTime: number;         // Seconds since becoming loose (for gravity ease-in)
   fillAmount: number;        // 0-1 for fill animation
   wasFullLastFrame: boolean; // For triggering impulse when fill reaches 100%
   rotation: number;          // Current rotation angle
@@ -217,7 +219,7 @@ export interface PhysicsParams {
  */
 export const DEFAULT_PHYSICS: PhysicsParams = {
   damping: 0.98,
-  stiffness: 15,
+  stiffness: 10,
   pressure: 20,
   iterations: 3,
   homeStiffness: 0.35,

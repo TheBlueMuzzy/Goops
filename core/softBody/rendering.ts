@@ -56,9 +56,27 @@ export function getBlobPath(vertices: Vertex[]): string {
 
 /**
  * Generate smooth SVG path from a SoftBlob.
+ * Handles compound paths (outer + holes) using loopStarts.
  */
 export function getSoftBlobPath(blob: SoftBlob): string {
-  return getBlobPath(blob.vertices);
+  if (!blob.loopStarts || blob.loopStarts.length <= 1) {
+    // Single loop — no holes
+    return getBlobPath(blob.vertices);
+  }
+
+  // Compound path: one subpath per loop (outer + holes)
+  let compoundPath = '';
+  for (let loopIdx = 0; loopIdx < blob.loopStarts.length; loopIdx++) {
+    const start = blob.loopStarts[loopIdx];
+    const end = loopIdx + 1 < blob.loopStarts.length
+      ? blob.loopStarts[loopIdx + 1]
+      : blob.vertices.length;
+    const loopVertices = blob.vertices.slice(start, end);
+    if (loopVertices.length >= 3) {
+      compoundPath += getPath(loopVertices.map(v => v.pos)) + ' ';
+    }
+  }
+  return compoundPath.trim();
 }
 
 // =============================================================================

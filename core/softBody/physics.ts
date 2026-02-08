@@ -79,7 +79,18 @@ export function integrate(
     // Proto-9 uses damping directly for all blobs
     // Viscosity affects home force, not damping
     const effectiveDamping = params.damping;
-    const gravity = blob.isLocked ? params.gravity : params.fallingGravity;
+    let gravity = blob.isLocked ? params.gravity : params.fallingGravity;
+
+    // Ease-in gravity for loose blobs (were locked, lost support)
+    // Starts very slow (dripping), then rips away and accelerates
+    if (blob.isLoose) {
+      blob.looseTime += cappedDt;
+      const easeInDuration = 0.6; // seconds to ramp from 0 to full gravity
+      const t = Math.min(1, blob.looseTime / easeInDuration);
+      gravity *= t * t * t; // cubic ease-in: very slow start, then rips
+    } else {
+      blob.looseTime = 0;
+    }
 
     // Update outer vertices
     for (const v of blob.vertices) {
