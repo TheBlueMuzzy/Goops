@@ -490,7 +490,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
       {/* LAYER 4: PHYSICS DEBUG PANEL (Toggle with backtick key) */}
       {showPhysicsDebug && !isMobile && (
         <div
-          className="absolute top-2 right-2 z-[100] bg-black/90 text-white p-3 rounded-lg text-xs font-mono pointer-events-auto overflow-y-auto"
+          className="absolute top-2 right-2 z-[100] bg-black/90 text-white p-3 rounded-lg t-meta font-mono pointer-events-auto overflow-y-auto"
           style={{ minWidth: 460, maxHeight: '95vh' }}
         >
           <div className="flex justify-between items-center mb-2">
@@ -500,7 +500,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
 
           {/* === SHARED PARAMS (full width) === */}
           <div className="space-y-2 mb-2">
-            <div className="text-gray-400 text-[10px] uppercase tracking-wider">Shared</div>
+            <div className="text-gray-400 t-meta uppercase tracking-wider">Shared</div>
             <label className="block">
               <span>Damping: {physicsParams.damping.toFixed(2)}</span>
               <input type="range" min="0.8" max="0.99" step="0.01" value={physicsParams.damping}
@@ -537,7 +537,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-600">
             {/* LEFT COLUMN: Locked Blobs */}
             <div className="space-y-2">
-              <div className="text-yellow-400 text-[10px] uppercase tracking-wider">Locked</div>
+              <div className="text-yellow-400 t-meta uppercase tracking-wider">Locked</div>
               <label className="block">
                 <span>Home Stiffness: {physicsParams.homeStiffness.toFixed(2)}</span>
                 <input type="range" min="0" max="1" step="0.05" value={physicsParams.homeStiffness}
@@ -563,7 +563,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
                   className="w-full" />
               </label>
               <div className="pt-1 border-t border-gray-700">
-                <div className="text-gray-500 text-[10px]">Goo Filter</div>
+                <div className="text-gray-500 t-meta">Goo Filter</div>
                 <label className="block">
                   <span>Blur: {gooStdDev}</span>
                   <input type="range" min="1" max="25" step="1" value={gooStdDev}
@@ -587,7 +587,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
 
             {/* RIGHT COLUMN: Falling Blobs */}
             <div className="space-y-2">
-              <div className="text-cyan-400 text-[10px] uppercase tracking-wider">Falling</div>
+              <div className="text-cyan-400 t-meta uppercase tracking-wider">Falling</div>
               <label className="block">
                 <span>Home Stiffness: {physicsParams.fallingHomeStiffness.toFixed(2)}</span>
                 <input type="range" min="0" max="1" step="0.05" value={physicsParams.fallingHomeStiffness}
@@ -613,7 +613,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
                   className="w-full" />
               </label>
               <div className="pt-1 border-t border-gray-700">
-                <div className="text-gray-500 text-[10px]">Tendrils</div>
+                <div className="text-gray-500 t-meta">Tendrils</div>
                 <label className="block">
                   <span>Goopiness: {physicsParams.fallingGoopiness}</span>
                   <input type="range" min="1" max="50" step="1" value={physicsParams.fallingGoopiness}
@@ -634,7 +634,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
                 </label>
               </div>
               <div className="pt-1 border-t border-gray-700">
-                <div className="text-gray-500 text-[10px]">Goo Filter</div>
+                <div className="text-gray-500 t-meta">Goo Filter</div>
                 <label className="block">
                   <span>Blur: {fallingGooStdDev}</span>
                   <input type="range" min="1" max="25" step="1" value={fallingGooStdDev}
@@ -751,7 +751,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
               <div className="flex gap-1 mt-1">
                 <button
                   onClick={() => { setPhysicsParams({ ...DEFAULT_PHYSICS }); setNormalGoopOpacity(0.25); setShowVertexDebug(false); setGooStdDev(8); setGooAlphaMul(24); setGooAlphaOff(-13); setFallingGooStdDev(8); setFallingGooAlphaMul(24); setFallingGooAlphaOff(-13); }}
-                  className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs"
+                  className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded t-meta"
                 >
                   Reset to Defaults
                 </button>
@@ -771,7 +771,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
                     console.log(JSON.stringify(snapshot, null, 2));
                     console.log('============================');
                   }}
-                  className="px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded text-xs"
+                  className="px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded t-meta"
                 >
                   Save
                 </button>
@@ -785,7 +785,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
       {import.meta.env.DEV && (
         <button
           onClick={() => setShowTestIntercom(true)}
-          className="absolute bottom-2 left-2 z-[100] px-2 py-1 bg-slate-800 text-slate-400 text-[10px] font-mono rounded border border-slate-700 hover:text-slate-200 pointer-events-auto"
+          className="absolute bottom-2 left-2 z-[100] px-2 py-1 bg-slate-800 text-slate-400 t-meta font-mono rounded border border-slate-700 hover:text-slate-200 pointer-events-auto"
         >
           Test Intercom
         </button>
@@ -878,7 +878,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
 
         return (
           <div
-            className="absolute top-2 left-2 z-[100] bg-black/90 text-white p-3 rounded-lg text-xs font-mono pointer-events-auto overflow-y-auto"
+            className="absolute top-2 left-2 z-[100] bg-black/90 text-white p-3 rounded-lg t-meta font-mono pointer-events-auto overflow-y-auto"
             style={{ minWidth: 280, maxHeight: '95vh' }}
           >
             <div className="flex justify-between items-center mb-2">
@@ -889,18 +889,18 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             {/* Current Next / Hold preview */}
             <div className="flex gap-3 mb-2 pb-2 border-b border-gray-700">
               <div className="text-gray-400">
-                <span className="text-[10px] uppercase tracking-wider">Next:</span>{' '}
+                <span className="t-meta uppercase tracking-wider">Next:</span>{' '}
                 <span className="text-gray-200">{gameState.nextGoop?.type ?? '—'}</span>
               </div>
               <div className="text-gray-400">
-                <span className="text-[10px] uppercase tracking-wider">Hold:</span>{' '}
+                <span className="t-meta uppercase tracking-wider">Hold:</span>{' '}
                 <span className="text-gray-200">{gameState.storedGoop?.type ?? '—'}</span>
               </div>
             </div>
 
             {/* Color selector */}
             <div className="mb-2 pb-2 border-b border-gray-700">
-              <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Color</div>
+              <div className="t-meta uppercase tracking-wider text-gray-400 mb-1">Color</div>
               <div className="flex gap-1.5">
                 {allColors.map(c => {
                   const unlocked = activePalette.includes(c.hex);
@@ -970,11 +970,11 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
             {/* Piece grids by category */}
             {pieceGroups.map(group => (
               <div key={group.label} className="mb-2">
-                <div className="text-[10px] uppercase tracking-wider text-cyan-400 mb-1">{group.label} — Normal</div>
+                <div className="t-meta uppercase tracking-wider text-cyan-400 mb-1">{group.label} — Normal</div>
                 <div className="flex flex-wrap gap-1 mb-1.5">
                   {group.normal.map((p, i) => renderMiniPiece(p, i))}
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-orange-400 mb-1">{group.label} — Corrupted</div>
+                <div className="t-meta uppercase tracking-wider text-orange-400 mb-1">{group.label} — Corrupted</div>
                 <div className="flex flex-wrap gap-1 mb-1.5">
                   {group.corrupted.map((p, i) => renderMiniPiece(p, i))}
                 </div>

@@ -41,9 +41,9 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onBack }
        <div className="flex items-center justify-between">
            <div className="flex items-center gap-3">
                <Icon className={`w-5 h-5 ${colorClass}`} />
-               <span className="font-bold text-slate-300 tracking-wide uppercase text-sm">{label}</span>
+               <span className="font-bold text-slate-300 tracking-wide uppercase t-body">{label}</span>
            </div>
-           <span className={`font-bold text-sm ${colorClass}`}>{value}%</span>
+           <span className={`font-bold t-body ${colorClass}`}>{value}%</span>
        </div>
        <div className="relative w-full h-6 flex items-center">
            <input 
@@ -100,9 +100,9 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onBack }
     >
        <div className="flex items-center gap-3">
            <Icon className={`w-5 h-5 ${colorClass}`} />
-           <span className="font-bold text-slate-300 tracking-wide uppercase text-sm">{label}</span>
+           <span className="font-bold text-slate-300 tracking-wide uppercase t-body">{label}</span>
        </div>
-       
+
        <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${value ? 'bg-cyan-600' : 'bg-slate-700'}`}>
            <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${value ? 'translate-x-6' : 'translate-x-0'}`} />
        </div>
@@ -126,7 +126,7 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onBack }
               {/* Scrollable Content Area */}
               <div className="w-full h-full flex flex-col items-center overflow-y-auto px-6 pt-6 pb-32 animate-in slide-in-from-right duration-300 scrollbar-hide">
                   <div className="w-full max-w-md flex items-center justify-center mb-6">
-                      <h2 className="text-3xl text-slate-200 tracking-wider uppercase" style={{ fontFamily: '"From Where You Are", cursive' }}>Config</h2>
+                      <h2 className="t-title text-slate-200 tracking-wider uppercase" style={{ fontFamily: '"From Where You Are", cursive' }}>Config</h2>
                   </div>
 
                   <div className="w-full max-w-md space-y-4">
@@ -167,7 +167,7 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onBack }
                       />
                   </div>
                   
-                   <div className="mt-8 text-center text-slate-700 text-[10px] uppercase tracking-widest font-bold">
+                   <div className="mt-8 text-center text-slate-700 t-body uppercase tracking-widest font-bold">
                       Audio System v2.1 &bull; Initialized
                   </div>
               </div>

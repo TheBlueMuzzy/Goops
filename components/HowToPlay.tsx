@@ -24,7 +24,7 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
               {/* Scrollable Content Area */}
               <div className="w-full h-full flex flex-col items-center overflow-y-auto px-6 pt-6 pb-32 animate-in slide-in-from-right duration-300 scrollbar-hide">
                   <div className="w-full max-w-md flex items-center justify-center mb-6 flex-shrink-0">
-                      <h2 className="text-3xl text-slate-200 tracking-wider uppercase" style={{ fontFamily: '"From Where You Are", cursive' }}>Operator Manual</h2>
+                      <h2 className="t-title text-slate-200 tracking-wider uppercase" style={{ fontFamily: '"From Where You Are", cursive' }}>Operator Manual</h2>
                   </div>
 
                   <div className="w-full max-w-md space-y-6">
@@ -33,9 +33,9 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                       <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-sm">
                           <div className="flex items-center gap-3 mb-3">
                               <Gauge className="w-6 h-6 text-red-500" />
-                              <h3 className="text-xl font-bold text-white tracking-wide">THE OBJECTIVE</h3>
+                              <h3 className="t-heading font-bold text-white tracking-wide">THE OBJECTIVE</h3>
                           </div>
-                          <p className="text-slate-400 leading-relaxed text-base">
+                          <p className="text-slate-400 leading-relaxed t-body">
                               The filtration system is clogging! Pop as much ooze as you can before the <span className="text-red-400 font-bold">Pressure</span> reaches 100%. 
                               <br/><br/>
                               <span className="text-green-400 font-bold">PRO TIP:</span> Popping larger groups of goop vents pressure, buying you more time to work.
@@ -46,7 +46,7 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                       <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-sm">
                           <div className="flex items-center gap-3 mb-4">
                               <Keyboard className="w-6 h-6 text-slate-400" />
-                              <h3 className="text-xl font-bold text-white tracking-wide">CONTROLS</h3>
+                              <h3 className="t-heading font-bold text-white tracking-wide">CONTROLS</h3>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-3">
@@ -57,7 +57,7 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                               <ControlKey keyName="W / Space" action="Return to Console" />
                               <ControlKey keyName="CLICK" action="Pop Solid Goop" />
                           </div>
-                          <div className="mt-4 text-center text-sm text-slate-500 italic">
+                          <div className="mt-4 text-center t-body text-slate-500 italic">
                               * Touch controls: Drag to rotate tank, tap sides to rotate piece.
                           </div>
                       </div>
@@ -66,7 +66,7 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                       <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 backdrop-blur-sm space-y-4">
                           <div className="flex items-center gap-3 mb-1">
                               <Combine className="w-6 h-6 text-cyan-400" />
-                              <h3 className="text-xl font-bold text-white tracking-wide">MECHANICS</h3>
+                              <h3 className="t-heading font-bold text-white tracking-wide">MECHANICS</h3>
                           </div>
                           
                           <div className="flex gap-4 items-start">
@@ -74,8 +74,8 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                                 <Target className="w-5 h-5 text-red-500" />
                               </div>
                               <div>
-                                  <h4 className="font-bold text-slate-200 text-base">Priority Targets</h4>
-                                  <p className="text-slate-400 text-sm mt-1">
+                                  <h4 className="font-bold text-slate-200 t-body">Priority Targets</h4>
+                                  <p className="text-slate-400 t-body mt-1">
                                       Sensors identify impurity hotspots with <span className="text-white font-bold">colored markers</span> on the grid. 
                                       Clear goop of the <span className="text-white font-bold">matching color</span> at these coordinates to execute a localized flush protocol.
                                   </p>
@@ -87,8 +87,8 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                                 <MousePointer className="w-5 h-5 text-yellow-400" />
                               </div>
                               <div>
-                                  <h4 className="font-bold text-slate-200 text-base">Purging (Clicking)</h4>
-                                  <p className="text-slate-400 text-sm mt-1">
+                                  <h4 className="font-bold text-slate-200 t-body">Purging (Clicking)</h4>
+                                  <p className="text-slate-400 t-body mt-1">
                                       You can only pop goop that is <span className="text-white font-bold">fully filled</span> (solid) and sitting <span className="text-white font-bold">below the pressure line</span> (the water level).
                                   </p>
                               </div>
@@ -99,8 +99,8 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                                 <ArrowUpCircle className="w-5 h-5 text-green-400" />
                               </div>
                               <div>
-                                  <h4 className="font-bold text-slate-200 text-base">Scoring</h4>
-                                  <p className="text-slate-400 text-sm mt-1">
+                                  <h4 className="font-bold text-slate-200 t-body">Scoring</h4>
+                                  <p className="text-slate-400 t-body mt-1">
                                       Goop combines with like colors. 
                                       <br/>• <span className="text-green-400">Bigger Groups</span> = More XP.
                                       <br/>• <span className="text-green-400">Higher Elevation</span> = More XP.
@@ -113,8 +113,8 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                                 <RefreshCw className="w-5 h-5 text-orange-400" />
                               </div>
                               <div>
-                                  <h4 className="font-bold text-slate-200 text-base">Console Maintenance</h4>
-                                  <p className="text-slate-400 text-sm mt-1">
+                                  <h4 className="font-bold text-slate-200 t-body">Console Maintenance</h4>
+                                  <p className="text-slate-400 t-body mt-1">
                                       Sometimes equipment fails! If controls lock up or lights go out, press <span className="text-white font-bold">SPACE</span> or <span className="text-white font-bold">W</span> to return to the Console and fix the issue manually.
                                   </p>
                               </div>
@@ -125,8 +125,8 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                                 <Zap className="w-5 h-5 text-purple-400" />
                               </div>
                               <div>
-                                  <h4 className="font-bold text-slate-200 text-base">Progression</h4>
-                                  <p className="text-slate-400 text-sm mt-1">
+                                  <h4 className="font-bold text-slate-200 t-body">Progression</h4>
+                                  <p className="text-slate-400 t-body mt-1">
                                       Level up your Operator Rank to earn <span className="text-yellow-400">Scraps</span>. Spend these in the Upgrades menu to enhance your efficiency!
                                   </p>
                               </div>
@@ -159,7 +159,7 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
 
 const ControlKey = ({ keyName, action }: { keyName: string, action: string }) => (
     <div className="flex flex-col bg-slate-950 border border-slate-800 p-2 rounded-lg text-center">
-        <span className="text-cyan-400 font-black text-base mb-1">{keyName}</span>
-        <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">{action}</span>
+        <span className="text-cyan-400 font-black t-body mb-1">{keyName}</span>
+        <span className="text-slate-400 t-body font-bold uppercase tracking-wider">{action}</span>
     </div>
 );

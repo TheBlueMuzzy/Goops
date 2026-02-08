@@ -54,7 +54,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
       <div className="absolute top-6 w-full flex justify-center z-50 pointer-events-auto opacity-50 hover:opacity-100 transition-opacity">
           <button 
             onClick={handleWipeClick}
-            className={`relative z-50 text-[10px] font-mono uppercase tracking-widest flex items-center gap-2 px-3 py-1 rounded border transition-all cursor-pointer active:scale-95 duration-200 ${
+            className={`relative z-50 t-meta font-mono uppercase tracking-widest flex items-center gap-2 px-3 py-1 rounded border transition-all cursor-pointer active:scale-95 duration-200 ${
               confirmWipe 
                 ? 'bg-red-900/80 border-red-500 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' 
                 : 'text-red-500/50 hover:text-red-500 border-transparent hover:border-red-900/50'
@@ -74,7 +74,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
             >
             GOOPS
             </h1>
-            <div className="text-center text-green-500/60 font-mono tracking-[0.5em] text-sm mt-2 uppercase">Filtration Defense</div>
+            <div className="text-center text-green-500/60 font-mono tracking-[0.5em] t-body mt-2 uppercase">Filtration Defense</div>
         </div>
       </div>
 
@@ -82,21 +82,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
       <div className="w-full max-w-sm z-10 bg-slate-900/80 p-4 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
           <div className="flex justify-between items-end mb-2">
               <div>
-                  <div className="text-xs text-slate-500 uppercase font-bold tracking-wider">Operator Rank</div>
-                  <div className="text-3xl font-mono text-white font-bold leading-none">{rankInfo.rank}</div>
+                  <div className="t-body text-slate-500 uppercase font-bold tracking-wider">Operator Rank</div>
+                  <div className="t-display font-mono text-white font-bold leading-none">{rankInfo.rank}</div>
               </div>
               <div className="text-right">
-                   <div className="text-xs text-yellow-500 uppercase font-bold tracking-wider">Scraps</div>
-                   <div className="text-xl font-mono text-yellow-400 font-bold leading-none">{saveData.scraps}</div>
+                   <div className="t-body text-yellow-500 uppercase font-bold tracking-wider">Scraps</div>
+                   <div className="t-display font-mono text-yellow-400 font-bold leading-none">{saveData.scraps}</div>
               </div>
           </div>
           
           {/* Promotion Threshold Label */}
-          <div className="text-[10px] font-mono text-slate-500 text-right mb-1">
+          <div className="t-body font-mono text-slate-500 text-right mb-1">
               PROMOTION THRESHOLD
           </div>
           {/* XP Bar */}
-          <div className="w-full h-5 bg-slate-950 rounded-full overflow-hidden border border-slate-700 relative">
+          <div className="w-full h-7 bg-slate-950 rounded-full overflow-hidden border border-slate-700 relative">
               <div
                   className="h-full bg-gradient-to-r from-green-600 to-green-400 transition-all duration-1000 ease-out"
                   style={{ width: `${progressPercent}%` }}
@@ -104,7 +104,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
               {/* Gloss */}
               <div className="absolute inset-0 bg-white/5" />
               {/* Values inside bar */}
-              <div className="absolute inset-0 flex items-center justify-end pr-2 text-[11px] font-mono text-white font-semibold">
+              <div className="absolute inset-0 flex items-center justify-end pr-2 t-body font-mono text-white font-semibold">
                   {Math.floor(rankInfo.progress).toLocaleString()} / {rankInfo.isMaxRank ? 'MAX' : Math.floor(rankInfo.toNextRank).toLocaleString()}
               </div>
           </div>
@@ -114,7 +114,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
       <div className="flex flex-col gap-4 w-full max-w-xs z-10 relative">
         <button 
           onClick={handlePlayClick}
-          className="group relative flex items-center justify-center gap-4 px-8 py-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-xl shadow-[0_0_30px_rgba(21,128,61,0.4)] hover:shadow-[0_0_50px_rgba(34,197,94,0.6)] transition-all active:scale-95 text-2xl border border-green-500/30 overflow-hidden"
+          className="group relative flex items-center justify-center gap-4 px-8 py-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-xl shadow-[0_0_30px_rgba(21,128,61,0.4)] hover:shadow-[0_0_50px_rgba(34,197,94,0.6)] transition-all active:scale-95 t-heading border border-green-500/30 overflow-hidden"
         >
            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out" />
            <Play className="w-8 h-8 fill-current" /> 
@@ -123,25 +123,25 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
 
         <button 
           onClick={onHowToPlay}
-          className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-900/50 text-slate-500 font-bold rounded-xl border border-slate-800 transition-all active:scale-95 text-lg cursor-pointer hover:bg-slate-900"
+          className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-900/50 text-slate-500 font-bold rounded-xl border border-slate-800 transition-all active:scale-95 t-body cursor-pointer hover:bg-slate-900"
         >
-           <HelpCircle className="w-5 h-5 text-slate-400" /> 
+           <HelpCircle className="w-5 h-5 text-slate-400" />
            <span>HOW TO PLAY</span>
         </button>
 
         <button 
           onClick={handleSystemsClick}
-          className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-900/50 text-slate-500 font-bold rounded-xl border border-slate-800 transition-all active:scale-95 text-lg cursor-pointer hover:bg-slate-900"
+          className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-900/50 text-slate-500 font-bold rounded-xl border border-slate-800 transition-all active:scale-95 t-body cursor-pointer hover:bg-slate-900"
         >
-           <Zap className={`w-5 h-5 ${systemsLabel === 'SYSTEMS' ? 'text-slate-600' : 'text-yellow-500'}`} /> 
+           <Zap className={`w-5 h-5 ${systemsLabel === 'SYSTEMS' ? 'text-slate-600' : 'text-yellow-500'}`} />
            <span>{systemsLabel}</span>
         </button>
 
         <button 
           onClick={onSettings}
-          className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-900/50 text-slate-500 font-bold rounded-xl border border-slate-800 transition-all active:scale-95 text-lg cursor-pointer hover:bg-slate-900"
+          className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-900/50 text-slate-500 font-bold rounded-xl border border-slate-800 transition-all active:scale-95 t-body cursor-pointer hover:bg-slate-900"
         >
-           <Settings className="w-5 h-5 text-cyan-500" /> 
+           <Settings className="w-5 h-5 text-cyan-500" />
            <span>CONFIG</span>
         </button>
       </div>
@@ -149,8 +149,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onUpgrades, onSettin
       {/* Footer Info */}
       <div className="absolute bottom-6 w-full flex flex-col items-center gap-4 z-50 pointer-events-auto">
           <div className="flex flex-col items-center gap-1 opacity-60">
-            <div className="text-slate-600 text-xs font-mono">v1.1.13.{__BUILD_NUMBER__} &bull; REACTOR STABLE</div>
-            <div className="text-slate-500 text-[10px] font-mono tracking-widest">
+            <div className="text-slate-600 t-meta font-mono">v1.1.13.{__BUILD_NUMBER__} &bull; REACTOR STABLE</div>
+            <div className="text-slate-500 t-meta font-mono tracking-widest">
                 MuzzyMade &copy; 2026
             </div>
           </div>

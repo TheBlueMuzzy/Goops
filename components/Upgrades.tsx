@@ -24,7 +24,7 @@ export const Upgrades: React.FC<UpgradesProps> = ({ onBack }) => {
               {/* Content */}
               <div className="w-full h-full flex flex-col items-center overflow-y-auto px-6 pt-6 pb-32 animate-in slide-in-from-right duration-300 scrollbar-hide">
                   <div className="w-full max-w-md flex items-center justify-center mb-4">
-                      <h2 className="text-2xl font-bold text-yellow-400 tracking-wider">UPGRADES</h2>
+                      <h2 className="t-title font-bold text-yellow-400 tracking-wider">UPGRADES</h2>
                   </div>
 
                   <div className="w-full max-w-md space-y-4 opacity-50 pointer-events-none">
@@ -35,16 +35,16 @@ export const Upgrades: React.FC<UpgradesProps> = ({ onBack }) => {
                                       <Lock className="w-6 h-6 text-slate-600" />
                                   </div>
                                   <div>
-                                      <div className="font-bold text-slate-300">Locked Upgrade {i}</div>
-                                      <div className="text-xs text-slate-500">Requires Rank {i * 5}</div>
+                                      <div className="font-bold text-slate-300 t-body">Locked Upgrade {i}</div>
+                                      <div className="t-body text-slate-500">Requires Rank {i * 5}</div>
                                   </div>
                               </div>
-                              <div className="px-3 py-1 bg-slate-800 rounded text-slate-500 text-xs font-bold">LOCKED</div>
+                              <div className="px-3 py-1 bg-slate-800 rounded text-slate-500 t-body font-bold">LOCKED</div>
                           </div>
                       ))}
                   </div>
                   
-                  <div className="mt-8 text-center text-slate-500 text-sm">
+                  <div className="mt-8 text-center text-slate-500 t-body">
                       Play more to unlock system upgrades.
                   </div>
               </div>

@@ -13,10 +13,11 @@ import {
   Wrench,
   Sparkles,
   ChevronLeft,
+  ChevronDown,
   LucideIcon,
 } from 'lucide-react';
 import { JOURNAL_PAGES } from '../data/journalEntries';
-import { JournalPage, JournalPageId } from '../types/tutorial';
+import { JournalPageId } from '../types/tutorial';
 import './OperatorJournal.css';
 
 // --- Icon mapping: string name -> lucide component ---
@@ -51,23 +52,17 @@ export const OperatorJournal: React.FC<OperatorJournalProps> = ({ completedSteps
     return ids;
   }, [completedSteps]);
 
-  // Default selection: first unlocked page
+  // Default expanded: first unlocked page
   const defaultPage = useMemo(() => {
     const first = JOURNAL_PAGES.find(p => unlockedPageIds.has(p.id));
-    return first?.id ?? 'BASICS';
+    return first?.id ?? null;
   }, [unlockedPageIds]);
 
-  const [selectedPageId, setSelectedPageId] = useState<JournalPageId>(defaultPage);
-  const [contentKey, setContentKey] = useState(0); // For re-triggering fade animation
+  const [expandedPageId, setExpandedPageId] = useState<JournalPageId | null>(defaultPage);
 
-  const selectedPage = JOURNAL_PAGES.find(p => p.id === selectedPageId) ?? JOURNAL_PAGES[0];
-  const isSelectedUnlocked = unlockedPageIds.has(selectedPageId);
-
-  const handleTabClick = (page: JournalPage) => {
-    if (!unlockedPageIds.has(page.id)) return; // Can't select locked pages
-    if (page.id === selectedPageId) return;     // Already selected
-    setSelectedPageId(page.id);
-    setContentKey(prev => prev + 1); // Trigger fade animation
+  const handleToggle = (pageId: JournalPageId) => {
+    if (!unlockedPageIds.has(pageId)) return;
+    setExpandedPageId(prev => prev === pageId ? null : pageId);
   };
 
   return (
@@ -85,109 +80,89 @@ export const OperatorJournal: React.FC<OperatorJournalProps> = ({ completedSteps
       >
         <div className="w-full h-full flex flex-col items-center relative bg-slate-950 overflow-hidden border-x-4 border-slate-900">
 
-          {/* Title */}
+          {/* Title — fixed at top, centered */}
           <div className="w-full flex items-center justify-center pt-5 pb-3 flex-shrink-0">
             <h2
-              className="text-2xl text-slate-200 tracking-wider uppercase"
+              className="t-title text-slate-200 tracking-wider uppercase"
               style={{ fontFamily: '"From Where You Are", cursive' }}
             >
               Operator Journal
             </h2>
           </div>
 
-          {/* Main Layout: tabs + content */}
-          <div className="w-full flex-1 flex flex-col min-[400px]:flex-row overflow-hidden px-2 gap-2">
+          {/* Accordion — single scrollable column */}
+          <div className="w-full flex-1 overflow-y-auto pb-28 px-3 space-y-1.5">
+            {JOURNAL_PAGES.map(page => {
+              const isUnlocked = unlockedPageIds.has(page.id);
+              const isExpanded = expandedPageId === page.id;
+              const IconComponent = ICON_MAP[page.icon];
 
-            {/* Tab Navigation */}
-            {/* Narrow screens: horizontal strip at top */}
-            {/* Wide screens (>=400px): vertical sidebar on left */}
-            <div className="journal-tabs-strip flex min-[400px]:flex-col gap-1 overflow-x-auto min-[400px]:overflow-x-visible min-[400px]:overflow-y-auto flex-shrink-0 min-[400px]:w-[120px] pb-1 min-[400px]:pb-0 min-[400px]:pr-1">
-              {JOURNAL_PAGES.map(page => {
-                const isUnlocked = unlockedPageIds.has(page.id);
-                const isActive = page.id === selectedPageId;
-                const IconComponent = ICON_MAP[page.icon];
-
-                return (
+              return (
+                <div key={page.id}>
+                  {/* Accordion Header */}
                   <button
-                    key={page.id}
-                    onClick={() => handleTabClick(page)}
+                    onClick={() => handleToggle(page.id)}
                     disabled={!isUnlocked}
                     className={`
-                      flex items-center gap-2 min-[400px]:gap-2 px-3 py-2.5
-                      min-w-[100px] min-[400px]:min-w-0 min-[400px]:w-full
+                      w-full flex items-center gap-3 px-4 py-3
                       rounded-lg border text-left transition-all
-                      flex-shrink-0
-                      ${isActive
+                      ${isExpanded
                         ? 'bg-slate-800 border-green-600 text-slate-100'
                         : isUnlocked
                           ? 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
                           : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed opacity-50'
                       }
                     `}
-                    style={{ minHeight: '44px' }}
+                    style={{ minHeight: '48px' }}
                   >
+                    {/* Icon */}
                     <div className="relative flex-shrink-0">
                       {IconComponent && (
                         <IconComponent
-                          className={`w-4 h-4 ${isActive ? 'text-green-400' : isUnlocked ? 'text-slate-500' : 'text-slate-700'}`}
+                          className={`w-5 h-5 ${isExpanded ? 'text-green-400' : isUnlocked ? 'text-slate-500' : 'text-slate-700'}`}
                         />
                       )}
                       {!isUnlocked && (
                         <Lock className="w-3 h-3 text-slate-600 absolute -bottom-1 -right-1" />
                       )}
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-wider truncate">
+
+                    {/* Title */}
+                    <span className="t-body flex-1 font-bold uppercase tracking-wider">
                       {isUnlocked ? page.title : '???'}
                     </span>
-                  </button>
-                );
-              })}
-            </div>
 
-            {/* Content Area */}
-            <div className="flex-1 overflow-y-auto pb-28 scrollbar-hide">
-              {isSelectedUnlocked ? (
-                <div key={contentKey} className="journal-page-enter space-y-4 px-2">
-                  {/* Page Title */}
-                  <div className="flex items-center gap-3 mb-2">
-                    {ICON_MAP[selectedPage.icon] && (
-                      React.createElement(ICON_MAP[selectedPage.icon], {
-                        className: 'w-6 h-6 text-green-400',
-                      })
+                    {/* Expand/collapse indicator */}
+                    {isUnlocked && (
+                      <ChevronDown
+                        className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${
+                          isExpanded ? 'rotate-180 text-green-400' : 'text-slate-600'
+                        }`}
+                      />
                     )}
-                    <h3
-                      className="text-xl font-bold text-slate-100 tracking-wide uppercase"
-                      style={{ fontFamily: '"From Where You Are", cursive' }}
-                    >
-                      {selectedPage.title}
-                    </h3>
-                  </div>
+                  </button>
 
-                  {/* Sections */}
-                  {selectedPage.sections.map((section, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 backdrop-blur-sm"
-                    >
-                      <h4 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-2">
-                        {section.heading}
-                      </h4>
-                      <p className="text-slate-400 text-sm leading-relaxed">
-                        {section.body}
-                      </p>
+                  {/* Accordion Content — sections nested inside */}
+                  {isExpanded && isUnlocked && (
+                    <div className="journal-page-enter mt-1.5 mb-2 space-y-3 pl-2 pr-1">
+                      {page.sections.map((section, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 backdrop-blur-sm"
+                        >
+                          <h4 className="t-heading font-bold text-slate-200 uppercase tracking-wider mb-2">
+                            {section.heading}
+                          </h4>
+                          <p className="t-body text-slate-400 leading-relaxed">
+                            {section.body}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center text-slate-600">
-                    <Lock className="w-8 h-8 mx-auto mb-2" />
-                    <p className="text-sm uppercase tracking-wider">Access restricted</p>
-                    <p className="text-xs text-slate-700 mt-1">Continue operating to unlock</p>
-                  </div>
-                </div>
-              )}
-            </div>
+              );
+            })}
           </div>
 
           {/* Floating Bottom Button */}

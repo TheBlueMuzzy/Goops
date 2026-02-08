@@ -9,12 +9,12 @@ updated: 2026-02-08
 
 ## Current Position
 
-Phase: 31 of 38 (Tutorial Infrastructure)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-08 - Completed 31-03-PLAN.md
+Phase: 32 of 38 (Journal System)
+Plan: 1 of 1 in current phase (IN PROGRESS — checkpoint pending)
+Status: In progress
+Last activity: 2026-02-08 - Executing 32-01-PLAN.md (Tasks 1-2 done, checkpoint pending)
 
-Progress: ███░░░░░░░ 25%
+Progress: ███░░░░░░░ 27%
 
 ## Branch Workflow (SOP)
 
@@ -24,48 +24,50 @@ Progress: ███░░░░░░░ 25%
 - Merge to master only after human verification passes
 
 **Active feature branches:**
-- `feature/tutorial-infrastructure` (Phase 31, complete)
+- `feature/tutorial-infrastructure` (Phase 31 complete, Phase 32 in progress)
 
 ## Next Steps
 
 ### What was done THIS session:
 
-1. **31-01 complete** — Tutorial state machine, SaveData persistence, event bus hooks
-2. **31-02 complete** — Intercom text rendering system
-   - IntercomText.tsx: garble renderer with seeded PRNG, keyword highlighting
-   - IntercomMessage.tsx: typewriter reveal, maintenance-order styling, 48x48 action buttons
-   - IntercomMessage.css: blink + fade-in animations
-   - Sizes tuned live: 36px body, 18px header, 48x48 buttons
-3. **31-03 complete** — TutorialOverlay & full integration
-   - TutorialOverlay.tsx: z-[90], non-blocking, fade transitions, highlight infrastructure
-   - Game.tsx: useTutorial hook wired, TutorialOverlay rendered as Layer 6
-   - App.tsx: saveData/setSaveData passed to Game
-   - Human verification passed: end-to-end pipeline working
+1. **32-01 Tasks 1-2 complete** — Journal data layer + OperatorJournal component
+   - types/tutorial.ts: JournalPageId, JournalPage, JournalSection types
+   - data/journalEntries.ts: 11 journal pages (6 with content, 5 stubs)
+   - components/OperatorJournal.tsx: Accordion layout, unlock logic, maintenance-order style
+   - components/OperatorJournal.css: Fade-in animation
+   - Commits: dbc5e00, ee04a0c
+
+2. **Typography system created** — Project-wide standardization
+   - index.html: Typography scale CSS classes (t-meta through t-hero) with !important
+   - TEXT_MANIFEST.md: Editable source-of-truth for all text properties
+   - Applied across: MainMenu, Controls, UpgradePanel, Upgrades, Settings, HowToPlay, IntercomMessage, ConsoleView, PiecePreview, Game.tsx
+   - 18px minimum for all player-facing text, dev tools stay small
+   - NOT YET COMMITTED — needs checkpoint approval first
+
+3. **32-01 Checkpoint PENDING** — OperatorJournal visual verification
+   - App.tsx temporarily swapped to show OperatorJournal instead of HowToPlay
+   - Need to verify: accordion layout, text sizes, unlock logic, back button
+   - After approval: revert App.tsx temp change, commit typography + journal, create SUMMARY
 
 ### Key Design Decisions (v1.6):
 
-- **Intercom system** — employer speaks through static-corrupted PA. Key tutorial terms come through clearly, flavor words are garbled. Brilliant dual-purpose: teaches mechanics AND establishes grungy world.
-- **Multiple rank 0 training levels** — 0TA, 0TB, 0TC, etc. As many as needed. Each teaches one concept through constrained play.
-- **The aha moment** — pop timing tension (pop too early = lose scaffolding to reach cracks; pop too late = pressure maxes). NOT the cylinder wrap.
-- **Journal (? button)** — living reference that grows. Player writes down what they learn from transmissions.
-- **Rank-gated UI** — console elements hidden until their unlock rank. Glow when new.
-- **Multi-modal delivery** — intercom pop-ups, HUD hints, console glow, journal entries
-- **8 words max per instruction** — keep it brief
-- **Max 1 tooltip per game** — non-blocking during gameplay
+- **Typography scale** — t-meta(10), t-caption(12), t-body(18), t-heading(24), t-title(28), t-display(36), t-hero(48). !important to override Tailwind CDN.
+- **TEXT_MANIFEST.md** — Editable markdown file mapping all visible text to properties. User edits in Obsidian, Claude reads and applies.
+- **Journal accordion layout** — Single column, collapsible sections, one expanded at a time (replaced 2-column sidebar+content)
+- **Intercom system** — employer speaks through static-corrupted PA
+- **Journal (? button)** — living reference that grows with progression
 - **Rank IS the tutorial gate** — no separate tutorial progression
 
 ### Known Issues
 
-- None currently
+- PiecePreview NEXT/HOLD labels at 18px may be too large for 48px box — revisit layout later
+- Some SVG text in Art.tsx (PROMOTION THRESHOLD at 12px, XP at 14px) not yet standardized — SVG coordinate space differs from screen pixels
 
 ### Decisions Made
 
-- v1.5 shipped with deferred phases (28-30 can be a future milestone)
-- Tutorial visual style: grungy low-tech (Lethal Company meets Uncle Chop), not scan-lines (performance issues). "Maintenance order" tooltip style.
-- Story theme: modern indentured servitude, employer appears benign but is exploitative
-- The veteran character provides upgrades (radio hijack system, content TBD)
-- Full story arc is PRD-documented but most content is future milestone scope
-- TutorialOverlay at z-[90] (highest game layer), non-blocking pointer events
+- Typography: 18px minimum body, CSS classes with !important, full project sweep
+- Journal layout: accordion (single column) over sidebar+content (two column)
+- TEXT_MANIFEST.md as editable text source-of-truth
 
 ### Roadmap Evolution
 
@@ -79,16 +81,25 @@ Progress: ███░░░░░░░ 25%
 Last session: 2026-02-08
 **Version:** 1.1.13
 **Branch:** feature/tutorial-infrastructure
-**Build:** 235
+**Build:** 236
 
 ### Resume Command
 ```
-Phase 31 COMPLETE — Tutorial Infrastructure (state machine + intercom + overlay integration)
+Phase 32 IN PROGRESS — 32-01 checkpoint pending
 
-NEXT: /gsd:plan-phase 32
-- Journal System (? button becomes living reference)
+WHAT'S DONE:
+- Tasks 1-2 committed (journal data + OperatorJournal component)
+- Typography system applied project-wide (uncommitted)
+- App.tsx has TEMP swap: OperatorJournal replacing HowToPlay for testing
 
-/clear first → fresh context window
+NEXT: Complete checkpoint verification, then:
+1. Revert App.tsx temp change
+2. Commit typography changes
+3. Commit OperatorJournal fixes from checkpoint feedback
+4. Create 32-01-SUMMARY.md
+5. Update ROADMAP
+
+/gsd:execute-plan .planning/phases/32-journal-system/32-01-PLAN.md
 ```
 
 ---

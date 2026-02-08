@@ -162,12 +162,12 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
             <h3
-              className="font-bold tracking-wide"
-              style={{ color: accent.text, fontSize: '18px' }}
+              className="font-bold tracking-wide t-body"
+              style={{ color: accent.text }}
             >
               {upgrade.name}
             </h3>
-            <p style={{ color: '#59acae', fontSize: '13px' }} className="mt-1">
+            <p style={{ color: '#59acae' }} className="mt-1 t-body">
               {upgrade.desc}
             </p>
           </div>
@@ -176,7 +176,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
             <button
               onClick={() => onToggleEquip(upgrade.id)}
               disabled={!isEquipped && equippedActives.length >= maxActiveSlots}
-              className="ml-2 px-3 py-1 rounded-lg font-bold text-sm border-2 transition-all"
+              className="ml-2 px-3 py-1 rounded-lg font-bold t-body border-2 transition-all"
               style={{
                 borderColor: isEquipped ? '#5bbc70' : '#59acae60',
                 color: isEquipped ? '#5bbc70' : '#59acae',
@@ -196,7 +196,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
           <button
             onClick={() => canDecrease && onRefund?.(upgrade.id)}
             disabled={!canDecrease}
-            className="w-8 h-8 rounded-lg font-bold text-xl border-2 transition-all flex items-center justify-center"
+            className="w-8 h-8 rounded-lg font-bold t-heading border-2 transition-all flex items-center justify-center"
             style={{
               borderColor: canDecrease ? accent.accent : '#59acae30',
               color: canDecrease ? accent.text : '#59acae40',
@@ -225,7 +225,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
           <button
             onClick={() => canIncrease && onPurchase(upgrade.id)}
             disabled={!canIncrease}
-            className="w-8 h-8 rounded-lg font-bold text-xl border-2 transition-all flex items-center justify-center"
+            className="w-8 h-8 rounded-lg font-bold t-heading border-2 transition-all flex items-center justify-center"
             style={{
               borderColor: canIncrease ? accent.accent : '#59acae30',
               color: canIncrease ? accent.text : '#59acae40',
@@ -238,15 +238,15 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
 
           {/* Level text */}
           <span
-            className="font-bold w-12 text-right"
-            style={{ color: accent.text, fontSize: '16px' }}
+            className="font-bold w-12 text-right t-body"
+            style={{ color: accent.text }}
           >
             {currentLevel}/{upgrade.maxLevel}
           </span>
         </div>
 
         {/* Current Effect + Max on same line */}
-        <div className="flex justify-between items-start" style={{ fontSize: '14px' }}>
+        <div className="flex justify-between items-start t-body">
           <div style={{ color: '#ffffff' }}>
             {isActive ? (
               <>Effect: {upgrade.formatEffect(1)}</>
@@ -278,13 +278,12 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="font-bold text-center transition-all"
+              className="font-bold text-center transition-all t-body"
               style={{
                 width: '25%',
                 backgroundColor: isActive ? tab.color + '30' : 'transparent',
                 color: isActive ? tab.color : '#59acae',
                 borderBottom: isActive ? `3px solid ${tab.color}` : '3px solid transparent',
-                fontSize: '11px',
                 padding: '8px 4px',
                 fontFamily: "'From Where You Are', sans-serif",
                 letterSpacing: '0.05em'
@@ -354,12 +353,12 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
               // Empty state
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <p
-                  className="text-2xl tracking-wide mb-3"
+                  className="t-heading tracking-wide mb-3"
                   style={{ color: '#6acbda', fontFamily: "'From Where You Are', sans-serif" }}
                 >
                   NO UPGRADES AVAILABLE
                 </p>
-                <p style={{ color: '#59acae', fontSize: '16px' }}>
+                <p className="t-body" style={{ color: '#59acae' }}>
                   Reach Rank 2 to unlock your first upgrade
                 </p>
               </div>
@@ -367,7 +366,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
               <div className="pb-20">
                 {/* Scraps earning message - subtitle */}
                 <div
-                  className="text-lg mb-3 text-center"
+                  className="t-body mb-3 text-center"
                   style={{ color: '#fbbf24', fontFamily: "'Amazon Ember', sans-serif" }}
                 >
                   Earn Scraps by Increasing your Operator Rank
@@ -381,7 +380,7 @@ export const UpgradePanel: React.FC<UpgradePanelProps> = ({
                   {filteredUpgrades.length > 0 ? (
                     filteredUpgrades.map(renderUpgradeCard)
                   ) : (
-                    <div className="text-center py-8" style={{ color: '#59acae' }}>
+                    <div className="text-center py-8 t-body" style={{ color: '#59acae' }}>
                       No upgrades available in this category yet.
                     </div>
                   )}

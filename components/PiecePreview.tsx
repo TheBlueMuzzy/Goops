@@ -98,8 +98,7 @@ export const PiecePreview: React.FC<PiecePreviewProps> = ({ piece, label, visibl
       flexDirection: 'column',
       alignItems: 'center'
     }}>
-      <div style={{
-        fontSize: '9px',
+      <div className="t-body" style={{
         color: '#94a3b8',
         textAlign: 'center',
         marginBottom: '2px',

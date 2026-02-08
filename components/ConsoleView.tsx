@@ -205,21 +205,21 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({ engine, state, careerS
             <div className="mt-auto mb-4 flex flex-col items-center">
                 {isGameRunning ? (
                     monitorMsgIndex === 0 ? (
-                        <div className="text-[#5bbc70] text-3xl font-black tracking-widest font-['From_Where_You_Are'] animate-pulse">
+                        <div className="text-[#5bbc70] t-display font-black tracking-widest font-['From_Where_You_Are'] animate-pulse">
                             CLEANING...
                         </div>
                     ) : (
-                        <div className="text-[#f1a941] text-3xl font-black tracking-widest font-['From_Where_You_Are']">
+                        <div className="text-[#f1a941] t-display font-black tracking-widest font-['From_Where_You_Are']">
                             {Math.floor((1 - (state.shiftTime/engine.maxTime)) * 100)}% PSI
                         </div>
                     )
                 ) : (
                     monitorMsgIndex === 0 ? (
-                        <div className="text-[#f1a941] text-3xl font-black tracking-widest font-['From_Where_You_Are'] animate-pulse leading-none">
+                        <div className="text-[#f1a941] t-display font-black tracking-widest font-['From_Where_You_Are'] animate-pulse leading-none">
                             TO START SHIFT
                         </div>
                     ) : (
-                        <div className="text-[#f1a941] text-3xl font-black tracking-widest font-['From_Where_You_Are'] animate-pulse leading-none">
+                        <div className="text-[#f1a941] t-display font-black tracking-widest font-['From_Where_You_Are'] animate-pulse leading-none">
                             PULL DOWN PERISCOPE
                         </div>
                     )
