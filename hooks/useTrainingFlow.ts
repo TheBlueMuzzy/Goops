@@ -26,8 +26,9 @@ const ADVANCE_EVENT_MAP: Record<string, GameEventType[]> = {
   'rotate-tank': [GameEventType.INPUT_DRAG],
   // Events
   'piece-landed': [GameEventType.PIECE_DROPPED],
-  'pop-complete': [GameEventType.GOOP_POPPED],
+  'goop-merged': [GameEventType.PIECE_DROPPED],  // Merge happens on landing
   'crack-sealed': [GameEventType.GOAL_CAPTURED],
+  'game-over': [GameEventType.GAME_OVER],
 };
 
 // Events without direct mappings get auto-advanced after this delay
@@ -36,7 +37,7 @@ const AUTO_ADVANCE_FALLBACK_MS = 4000;
 /**
  * Manages the rank 0 training sequence.
  *
- * Sequences the player through 17 scripted training steps (phases A-G).
+ * Sequences the player through 14 scripted training steps (phases A-F).
  * Sets up the GameEngine for training mode when the player is at rank 0
  * and hasn't completed all training steps.
  *
@@ -189,21 +190,10 @@ export const useTrainingFlow = ({
   }, [gameEngine]);
 
   // --- Pause management during training ---
-  // Game is always paused on step transitions (handled by step-change effect above).
-  // The pauseGame field on the step controls what happens AFTER the player dismisses:
-  // - pauseGame: true + tap advance → stays paused until tap advances (no unpause on dismiss)
-  // - pauseGame: false → unpauses when message appears (gameplay needs to run for events)
-  useEffect(() => {
-    if (!gameEngine || !currentStep || !isInTraining) return;
-    if (!gameEngine.isSessionActive) return;
-
-    // For non-pausing steps (like B1 watch-only), unpause once the message is visible
-    // so gameplay can run and the event-based advance can fire
-    if (!currentStep.pauseGame && messageVisible) {
-      gameEngine.state.isPaused = false;
-      gameEngine.emitChange();
-    }
-  }, [currentStep?.id, messageVisible, gameEngine, isInTraining]);
+  // ALL steps start paused on transition (handled by step-change effect above).
+  // The game stays paused until the player dismisses the message.
+  // dismissMessage() handles unpausing for action/event steps.
+  // For tap steps, advanceStep() moves to next step (which pauses again).
 
   // --- Event/action advance listeners ---
   useEffect(() => {

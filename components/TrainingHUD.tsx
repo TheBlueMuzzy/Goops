@@ -9,7 +9,7 @@ interface TrainingHUDProps {
 }
 
 // All phases in order
-const ALL_PHASES: TrainingPhase[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+const ALL_PHASES: TrainingPhase[] = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 /**
  * TrainingHUD — persistent top-of-screen HUD during rank 0 training.

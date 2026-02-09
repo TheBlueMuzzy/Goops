@@ -428,7 +428,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   });
 
   // Compute training progress for the intercom header (replaces TrainingHUD)
-  const ALL_PHASES: TrainingPhase[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  const ALL_PHASES: TrainingPhase[] = ['A', 'B', 'C', 'D', 'E', 'F'];
   const trainingProgress = isInTraining && trainingStep ? (() => {
     const stepIndex = TRAINING_SEQUENCE.findIndex(s => s.id === trainingStep.id);
     const phaseDots: PhaseDotInfo[] = ALL_PHASES.map(phase => {
@@ -1043,6 +1043,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
         onDismiss={overlayOnDismiss}
         highlightElement={trainingStep?.setup?.highlightElement}
         messagePosition={isInTraining ? trainingMessagePosition : undefined}
+        advanceType={isInTraining ? (isTapAdvance ? 'tap' : 'dismiss') : undefined}
         trainingProgress={trainingProgress}
       />
 

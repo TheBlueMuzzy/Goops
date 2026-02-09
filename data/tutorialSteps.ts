@@ -32,78 +32,69 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
 ];
 
 /**
- * Intercom messages for all 17 training steps.
+ * Intercom messages for all 14 training steps.
  *
  * Keyed by TrainingStepId so the training flow controller can look up
  * the message to display at each step.
+ *
+ * Keywords are single words that render as green (clear) text.
+ * Non-keyword text gets garbled by the intercom renderer.
  */
 export const TRAINING_MESSAGES: Record<TrainingStepId, IntercomMessage> = {
   A1_BRIEFING: {
-    keywords: ['operator', 'safety training', 'shift'],
-    fullText: 'Welcome aboard, operator. Standard safety training is mandatory before your first shift. Pay attention.',
+    keywords: ['Operator', 'shift'],
+    fullText: '[Welcome] Operator. [You must complete] training [before your first] shift.',
   },
   A2_PERISCOPE: {
-    keywords: ['periscope', 'tank', 'drag'],
-    fullText: 'Use the periscope to look inside the tank. Drag it down to enter.',
+    keywords: ['periscope', 'tank'],
+    fullText: '[Use the] periscope [to] look inside [the] tank. Drag [it] down [to] start [your shift].',
   },
   B1_GOOP_INTRO: {
-    keywords: ['goop', 'extruder', 'tank'],
-    fullText: 'The goop extruder drops material into the tank. Watch where it lands.',
+    keywords: ['goop', 'tank'],
+    fullText: '[The goop] extruder [drops] goop into [the] tank. [The goop] drops slowly.',
   },
   B2_FAST_FALL: {
-    keywords: ['swipe down', 'press S', 'speed up', 'drop', 'fast-drop'],
-    fullText: 'Swipe down or press S to fast-drop. The faster you place it, the better.',
+    keywords: ['fast-drop'],
+    fullText: 'Swipe down or [press] S [to] fast-drop. [The] faster [you place it, the] better.',
   },
   B3_PIECE_ROTATION: {
-    keywords: ['rotate', 'piece', 'tap', 'arrows', 'Q', 'E'],
-    fullText: 'Rotate the piece before it lands. Tap the rotation arrows, or press Q and E.',
+    keywords: ['Rotate'],
+    fullText: 'Rotate [the goop before it lands]. Tap [the left/right side of the] screen or [press] Q/E [to rotate].',
   },
   C1_POP_INTRO: {
-    keywords: ['pop', 'goop', 'pressure', 'tap'],
-    fullText: 'Too much goop builds pressure. Tap solid goop to pop it and vent the tank.',
+    keywords: ['Pressure', 'laser', 'goop', 'pressure'],
+    fullText: 'Pressure [increases] over time. [Use the] laser [to] pop goop [to] vent [some of the] pressure.',
   },
   C2_MERGE: {
-    keywords: ['same color', 'merges', 'bigger'],
-    fullText: 'Same color goop merges together into bigger blobs. Bigger pops vent more pressure.',
+    keywords: ['goop', 'merges'],
+    fullText: 'Same color goop merges [together into] bigger [goop]. Popping bigger [goops] vents more [pressure].',
   },
   C3_FILL_TIMING: {
-    keywords: ['solid', 'fill', 'pop'],
-    fullText: 'Fresh goop needs time to solidify. You can only pop solid goop. The pressure line shows the threshold.',
+    keywords: ['goop', 'pressure'],
+    fullText: 'Fresh goop needs [time to] solidify before [it can be] popped. [The] pressure must [be] high [enough] as well.',
   },
   D1_CRACK_APPEARS: {
-    keywords: ['crack', 'matching', 'seal'],
-    fullText: 'A crack in the tank wall. Only matching color goop can seal it. That is literally your one job.',
+    keywords: ['Cracks', 'tank', 'goop', 'laser'],
+    fullText: 'You [have] one job! Cracks form in [the] tank [wall]. Cover [them with matching] color goop. [Then] seal [them] with [the] laser.',
   },
   D2_TANK_ROTATION: {
-    keywords: ['rotate', 'tank', 'swipe left', 'swipe right', 'A', 'D'],
-    fullText: 'The goop is not above the crack. Swipe left or right to rotate the tank, or use A and D keys.',
+    keywords: ['tank', 'goop', 'crack'],
+    fullText: 'Swipe left/right or [use] A/D to spin [the] tank. [This will] align the [falling] goop [with the] crack.',
   },
-  E1_PRESSURE_REVEAL: {
-    keywords: ['pressure', 'rising', 'goop'],
-    fullText: 'Notice the pressure gauge. Every piece of goop in the tank adds to it. If it hits maximum capacity, you fail.',
+  D3_OFFSCREEN_CRACKS: {
+    keywords: ['tank', 'Cracks'],
+    fullText: '[You] only see 1/3 [of the] tank [at a time]. Cracks [can] form anywhere. Spin [the] tank [to] find [the next] crack.',
   },
-  E2_PRESSURE_THRESHOLD: {
-    keywords: ['pressure line', 'above', 'pop'],
-    fullText: 'Goop can only be popped when the pressure line rises above it. Watch the line climb.',
+  E1_SCAFFOLDING: {
+    keywords: ['Cracks', 'pressure', 'goop', 'cracks'],
+    fullText: 'Cracks [form] higher [as the] pressure increases. Stack goop [to] reach higher cracks.',
   },
-  E3_SUCCESSFUL_POP: {
-    keywords: ['pop', 'pressure drops', 'bonus'],
-    fullText: 'There. Pressure drops when you pop. Bigger groups drop it more. Popping also scores a bonus.',
+  F1_CLEANUP: {
+    keywords: ['goop', 'shift', 'tank'],
+    fullText: "Clear [as much] residual goop [as possible] before [the] shift end. Don't let [the] goop overflow [the top of] the tank!",
   },
-  F1_CRACK_SEAL: {
-    keywords: ['seal', 'crack', 'massive', 'pressure relief'],
-    fullText: 'The green goop is sitting on the green crack. Pop it to seal the crack. Sealed cracks give massive pressure relief.',
-  },
-  G1_OFFSCREEN_CRACK: {
-    keywords: ['wraps around', 'rotate', '360'],
-    fullText: 'The tank is a cylinder. It wraps around. Keep rotating to see everything. There is more tank than you think.',
-  },
-  G2_SCAFFOLDING: {
-    keywords: ['stack', 'scaffolding', 'reach', 'higher'],
-    fullText: 'That crack is too high to reach from the floor. Stack pieces as scaffolding to reach it.',
-  },
-  G3_SCAFFOLDING_TRADEOFF: {
-    keywords: ['balance', 'scaffolding', 'pressure'],
-    fullText: 'More goop means more pressure. But sometimes you need scaffolding to reach the cracks. Balance is everything. Training complete.',
+  F2_PRACTICE: {
+    keywords: ['pressure', 'tank'],
+    fullText: "We'll turn [the] pressure off [so you can] practice. When [you're] done practicing, [just let the goop] overflow [the] tank.",
   },
 };

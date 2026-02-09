@@ -15,16 +15,13 @@ export type TrainingStepId =
   | 'C3_FILL_TIMING'
   | 'D1_CRACK_APPEARS'
   | 'D2_TANK_ROTATION'
-  | 'E1_PRESSURE_REVEAL'
-  | 'E2_PRESSURE_THRESHOLD'
-  | 'E3_SUCCESSFUL_POP'
-  | 'F1_CRACK_SEAL'
-  | 'G1_OFFSCREEN_CRACK'
-  | 'G2_SCAFFOLDING'
-  | 'G3_SCAFFOLDING_TRADEOFF';
+  | 'D3_OFFSCREEN_CRACKS'
+  | 'E1_SCAFFOLDING'
+  | 'F1_CLEANUP'
+  | 'F2_PRACTICE';
 
 // Phase groupings (A-G)
-export type TrainingPhase = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+export type TrainingPhase = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 
 // --- Step Configuration ---
 

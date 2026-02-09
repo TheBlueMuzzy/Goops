@@ -10,9 +10,9 @@ updated: 2026-02-08
 ## Current Position
 
 Phase: 33 of 38 (Rank 0 Training Sequence)
-Plan: 4 of 4 in current phase (IN PROGRESS — UAT checkpoint)
+Plan: 4 of 4 in current phase (IN PROGRESS — UAT bug fixes)
 Status: In progress
-Last activity: 2026-02-08 - Executing 33-04 checkpoint verification
+Last activity: 2026-02-09 - Restructured tutorial 17→14 steps, rewrote garble system
 
 Progress: ████░░░░░░ 35%
 
@@ -28,19 +28,24 @@ Progress: ████░░░░░░ 35%
 
 ## Next Steps
 
-33-04 tasks 1-2 complete, checkpoint 3 (human-verify) in progress. Fixing issues found during UAT.
+UAT in progress on restructured 14-step tutorial. User is testing and reporting bugs.
 
 ### Decisions Made
 
 - Typography: 18px minimum body, CSS classes with !important, full project sweep
 - Journal layout: accordion (single column) over sidebar+content (two column)
 - TEXT_MANIFEST.md as editable text source-of-truth
-- **Training: scripted 17-step sequence (1 continuous session) over 6 discrete scenarios**
+- **Training: restructured from 17→14 steps, 7→6 phases (A-F, removed G)**
+- **Garble system: bracket notation `[text]` in fullText for explicit garble control**
+- **Garble chars: Unicode block elements (░▒▓█▌▐■▬▮▪), 100% letter replacement, slate-500 color**
+- **Three-color text: white (clear), green (keywords), slate-500 (garbled)**
 - Training uses COLORS.RED hex values matching engine convention
 - Training mode: pendingTrainingPalette interception pattern in enterPeriscope()
 - Training tick() gates skip all normal gameplay systems (complications, goals, cracks, heat, lights)
 - TRAINING_MESSAGES as separate Record export alongside TUTORIAL_STEPS (Phase 31 system untouched)
 - Console idle text shrunk from t-display (36px) to t-heading (24px) to prevent wrapping
+- `goop-merged` advance maps to PIECE_DROPPED (merge happens on landing)
+- `game-over` advance maps to GAME_OVER (for F2 practice mode)
 
 ### Known Issues
 
@@ -48,7 +53,6 @@ Progress: ████░░░░░░ 35%
 - Some SVG text in Art.tsx (PROMOTION THRESHOLD at 12px, XP at 14px) not yet standardized
 - Per-step piece spawning (specific sizes, autoFall, slowFall) not yet implemented — pieces come from palette queue
 - Per-step crack spawning and pressure rate changes not yet active
-- `goop-merged` event has 4s fallback auto-advance (no direct merge event in engine)
 
 ### Roadmap Evolution
 
@@ -59,27 +63,25 @@ Progress: ████░░░░░░ 35%
 
 ## Session Continuity
 
-Last session: 2026-02-08
+Last session: 2026-02-09
 **Version:** 1.1.13
 **Branch:** feature/tutorial-infrastructure
-**Build:** 237
+**Build:** 242
 
 ### Resume Command
 ```
-Phase 33 Plan 04 IN PROGRESS — UAT checkpoint active
+Phase 33 Plan 04 IN PROGRESS — UAT bug fixes
 
 WHAT'S DONE THIS SESSION:
-- 33-04 Task 1: TrainingHUD component (phase name, dots, step counter) — fee0dd0
-- 33-04 Task 2: Highlight system clip-path cutout in TutorialOverlay — e6090c7
-- 33-04 Fix: Wired training messages to overlay, step advancement,
-  PSI fix, double-periscope fix, pause support — ddee8ae
-- Console text shrunk to t-heading to prevent wrapping
+- Restructured tutorial: 17→14 steps, 7→6 phases (A-F)
+- Rewrote all training messages with V2 user-authored text
+- IntercomText: bracket-based garble ([text] = garbled, keywords = green, rest = clear)
+- Garble chars: Unicode blocks (░▒▓█), 100% replacement, slate-500 color
+- Added game-over + goop-merged event mappings in useTrainingFlow
+- Updated ALL_PHASES arrays in Game.tsx + TrainingHUD.tsx
 
-CHECKPOINT 3: Human verification of full 17-step training flow
-- User testing in progress, fixing issues iteratively
-- Dev server: npm run dev -- --host
-
-/gsd:execute-plan .planning/phases/33-rank-0-training-sequence/33-04-PLAN.md
+UAT: User testing 14-step flow, reporting bugs
+Dev server: npm run dev -- --host
 ```
 
 ---

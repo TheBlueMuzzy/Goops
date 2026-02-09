@@ -10,8 +10,8 @@ interface IntercomTextProps {
   visibleChars?: number;
 }
 
-// Industrial/terminal garble characters
-const GARBLE_CHARS = '░▒▓█▐▌╪╫╬─│┤├┬┴┼';
+// Industrial block characters for radio-static garble effect
+const GARBLE_CHARS = '░▒▓█▌▐■▬▮▪';
 
 /**
  * Seeded pseudo-random number generator.
@@ -50,7 +50,7 @@ function getLeadingPunctuation(word: string): string {
 }
 
 // Garble level for non-keyword words
-type GarbleLevel = 'none' | 'partial' | 'full';
+type GarbleLevel = 'none' | 'partial';
 
 interface ProcessedWord {
   isKeyword: boolean;
@@ -68,11 +68,58 @@ export const IntercomText: React.FC<IntercomTextProps> = ({
 }) => {
   const processedWords = useMemo(() => {
     const keywordsLower = keywords.map(k => k.toLowerCase());
-    const words = fullText.split(/(\s+)/); // Split but preserve whitespace tokens
+    const hasBrackets = fullText.includes('[');
 
+    // --- Bracket-based garbling ---
+    // fullText uses [brackets] to mark garbled words. Everything else is clear.
+    // Keywords (from keywords array) render green. Non-keyword non-bracketed = plain clear.
+    if (hasBrackets) {
+      const result: ProcessedWord[] = [];
+      // Split fullText into alternating clear/garbled segments
+      // e.g. "[Welcome] Operator" → ["", "Welcome", " Operator"]
+      const parts = fullText.split(/\[([^\]]*)\]/);
+      let wordIndex = 0;
+
+      for (let p = 0; p < parts.length; p++) {
+        const isGarbled = p % 2 === 1; // Odd indices are bracket contents
+        const text = parts[p];
+        if (!text) continue;
+
+        const tokens = text.split(/(\s+)/);
+        for (const token of tokens) {
+          if (!token) continue;
+          if (/^\s+$/.test(token)) {
+            result.push({ isKeyword: false, display: token, original: token, garbleLevel: 'none' });
+            continue;
+          }
+
+          const coreWord = stripPunctuation(token);
+          const leading = getLeadingPunctuation(token);
+          const trailing = getTrailingPunctuation(token);
+          const isKw = !isGarbled && keywordsLower.includes(coreWord.toLowerCase());
+          const currentIndex = wordIndex++;
+
+          // Revealed mode or keyword or non-garbled → show clearly
+          if (revealed || isKw || !isGarbled) {
+            result.push({ isKeyword: isKw, display: token, original: token, garbleLevel: 'none' });
+            continue;
+          }
+
+          // Garbled word — replace ALL letters with block characters
+          const rng = seededRandom(currentIndex * 7919 + 31);
+          const garbled = coreWord.split('')
+            .map(() => GARBLE_CHARS[Math.floor(rng() * GARBLE_CHARS.length)])
+            .join('');
+          result.push({ isKeyword: false, display: leading + garbled + trailing, original: token, garbleLevel: 'partial' });
+        }
+      }
+      return result;
+    }
+
+    // --- Legacy random garbling (no brackets in fullText) ---
+    const words = fullText.split(/(\s+)/);
     let wordIndex = 0;
     return words.map((token): ProcessedWord => {
-      // Whitespace tokens pass through as-is
       if (/^\s+$/.test(token)) {
         return { isKeyword: false, display: token, original: token, garbleLevel: 'none' };
       }
@@ -81,64 +128,24 @@ export const IntercomText: React.FC<IntercomTextProps> = ({
       const leading = getLeadingPunctuation(token);
       const trailing = getTrailingPunctuation(token);
       const isKeyword = keywordsLower.includes(coreWord.toLowerCase());
-
-      const currentIndex = wordIndex;
-      wordIndex++;
+      const currentIndex = wordIndex++;
 
       if (revealed || isKeyword) {
         return { isKeyword, display: token, original: token, garbleLevel: 'none' };
       }
 
-      // Light corruption: most text readable, some garbled for radio-static flavor
-      // 70% clear, 15% partial (1-2 chars garbled), 15% fully garbled
+      // Legacy: 70% clear, 30% fully garbled
       const rng = seededRandom(currentIndex * 7919 + 31);
-      const roll = rng(); // 0-1 determines corruption level
+      const roll = rng();
 
       if (roll < 0.70) {
-        // Clear — word renders as-is
-        return {
-          isKeyword: false,
-          display: token,
-          original: token,
-          garbleLevel: 'none',
-        };
+        return { isKeyword: false, display: token, original: token, garbleLevel: 'none' };
       }
 
-      if (roll < 0.85) {
-        // Partial garble — 1-2 characters within the word are corrupted
-        const chars = coreWord.split('');
-        const garbleCount = Math.min(chars.length, coreWord.length <= 2 ? 1 : (rng() < 0.5 ? 1 : 2));
-        const indicesToGarble = new Set<number>();
-        while (indicesToGarble.size < garbleCount) {
-          indicesToGarble.add(Math.floor(rng() * chars.length));
-        }
-        const partialGarbled = chars
-          .map((ch, idx) => indicesToGarble.has(idx)
-            ? GARBLE_CHARS[Math.floor(rng() * GARBLE_CHARS.length)]
-            : ch
-          )
-          .join('');
-
-        return {
-          isKeyword: false,
-          display: leading + partialGarbled + trailing,
-          original: token,
-          garbleLevel: 'partial',
-        };
-      }
-
-      // Full garble — entire word replaced with block chars
-      const garbled = coreWord
-        .split('')
+      const garbled = coreWord.split('')
         .map(() => GARBLE_CHARS[Math.floor(rng() * GARBLE_CHARS.length)])
         .join('');
-
-      return {
-        isKeyword: false,
-        display: leading + garbled + trailing,
-        original: token,
-        garbleLevel: 'full',
-      };
+      return { isKeyword: false, display: leading + garbled + trailing, original: token, garbleLevel: 'partial' };
     });
   }, [fullText, keywords, revealed]);
 
@@ -183,11 +190,9 @@ export const IntercomText: React.FC<IntercomTextProps> = ({
           );
         }
 
-        // Garbled or partially garbled word
-        // Full garble: muted color so it blends as static, not redaction
-        // Partial garble: normal text color (corrupted chars blend in)
-        const garbleClass = word.garbleLevel === 'full'
-          ? 'text-slate-500 font-mono'
+        // Three-color system: green (keywords), white (clear), muted (garbled)
+        const garbleClass = word.garbleLevel !== 'none'
+          ? 'text-slate-500'
           : 'text-slate-300';
 
         return (
