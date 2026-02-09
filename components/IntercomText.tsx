@@ -105,12 +105,32 @@ export const IntercomText: React.FC<IntercomTextProps> = ({
             continue;
           }
 
-          // Garbled word — replace ALL letters with block characters
+          // Light corruption: 70% clear, 15% partial (1-2 chars), 15% full garble
           const rng = seededRandom(currentIndex * 7919 + 31);
-          const garbled = coreWord.split('')
-            .map(() => GARBLE_CHARS[Math.floor(rng() * GARBLE_CHARS.length)])
-            .join('');
-          result.push({ isKeyword: false, display: leading + garbled + trailing, original: token, garbleLevel: 'partial' });
+          const roll = rng();
+
+          if (roll < 0.70) {
+            // Clear — show the word as-is
+            result.push({ isKeyword: false, display: token, original: token, garbleLevel: 'none' });
+          } else if (roll < 0.85) {
+            // Partial — corrupt 1-2 characters within the word
+            const chars = coreWord.split('');
+            const numToCorrupt = Math.min(chars.length, Math.ceil(rng() * 2)); // 1 or 2
+            const indices = new Set<number>();
+            while (indices.size < numToCorrupt && indices.size < chars.length) {
+              indices.add(Math.floor(rng() * chars.length));
+            }
+            const corrupted = chars.map((ch, ci) =>
+              indices.has(ci) ? GARBLE_CHARS[Math.floor(rng() * GARBLE_CHARS.length)] : ch
+            ).join('');
+            result.push({ isKeyword: false, display: leading + corrupted + trailing, original: token, garbleLevel: 'partial' });
+          } else {
+            // Full garble — replace entire word with block characters
+            const garbled = coreWord.split('')
+              .map(() => GARBLE_CHARS[Math.floor(rng() * GARBLE_CHARS.length)])
+              .join('');
+            result.push({ isKeyword: false, display: leading + garbled + trailing, original: token, garbleLevel: 'partial' });
+          }
         }
       }
       return result;

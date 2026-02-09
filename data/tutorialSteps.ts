@@ -58,12 +58,12 @@ export const TRAINING_MESSAGES: Record<TrainingStepId, IntercomMessage> = {
     fullText: '[Yeah.] It\'s slow.',
   },
   B2_FAST_FALL: {
-    keywords: ['fast-drop'],
-    fullText: 'Swipe down or [press] S [to] fast-drop. [The] faster [you place it, the] better.',
+    keywords: ['fast-drop', 'Swipe', 'down', 'press', 'S'],
+    fullText: 'Swipe down [or] press S [to] fast-drop. [The] faster [you place it, the] better.',
   },
   B3_PIECE_ROTATION: {
-    keywords: ['Rotate'],
-    fullText: 'Rotate [the goop before it lands]. Tap [the left/right side of the] screen or [press] Q/E [to rotate].',
+    keywords: ['Rotate', 'Tap', 'arrows', 'press', 'Q/E'],
+    fullText: 'Rotate [the goop before it lands]. Tap [the] arrows [or] press Q/E [to rotate].',
   },
   C1_POP_INTRO: {
     keywords: ['Pressure', 'laser', 'goop', 'pressure'],
@@ -82,8 +82,8 @@ export const TRAINING_MESSAGES: Record<TrainingStepId, IntercomMessage> = {
     fullText: 'You [have] one job! Cracks form in [the] tank [wall]. Cover [them with matching] color goop. [Then] seal [them] with [the] laser.',
   },
   D2_TANK_ROTATION: {
-    keywords: ['tank', 'goop', 'crack'],
-    fullText: 'Swipe left/right or [use] A/D to spin [the] tank. [This will] align the [falling] goop [with the] crack.',
+    keywords: ['tank', 'goop', 'crack', 'Swipe', 'left/right', 'A/D', 'spin'],
+    fullText: 'Swipe left/right [or use] A/D [to] spin [the] tank. [This will] align [the falling] goop [with the] crack.',
   },
   D3_OFFSCREEN_CRACKS: {
     keywords: ['tank', 'Cracks'],
