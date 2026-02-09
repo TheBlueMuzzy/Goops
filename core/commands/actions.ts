@@ -469,6 +469,11 @@ export class SetPhaseCommand implements Command {
     constructor(public phase: ScreenType) {}
 
     execute(engine: GameEngine): void {
+        // Training control gate: block console exit during training
+        if (this.phase === ScreenType.ConsoleScreen && engine.isTrainingMode && engine.trainingAllowedControls) {
+            return; // Can't leave tank during training
+        }
+
         if (this.phase === ScreenType.TankScreen) {
             engine.enterPeriscope();
         } else if (this.phase === ScreenType.ConsoleScreen) {

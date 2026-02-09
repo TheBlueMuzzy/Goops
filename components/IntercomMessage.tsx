@@ -16,6 +16,8 @@ interface IntercomMessageProps {
   onComplete: () => void;
   position?: 'top' | 'center' | 'bottom';
   className?: string;
+  // 'tap' = show ✓ only, 'dismiss' = show ✗ only, undefined = show both
+  advanceType?: 'tap' | 'dismiss';
   // Training progress (optional — only shown during rank 0 training)
   trainingProgress?: {
     phaseName: string;       // e.g. "Phase B: Goop Basics"
@@ -35,6 +37,7 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
   onComplete,
   position = 'top',
   className = '',
+  advanceType,
   trainingProgress,
 }) => {
   const [visibleChars, setVisibleChars] = useState(0);
@@ -77,22 +80,25 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
     }
   }, [isFullyRevealed, totalChars]);
 
-  // Position classes
+  // Position classes — top sits ~33% down (under XP bar), center at 50%, bottom near base
   const positionClasses = {
-    top: 'top-8 left-1/2 -translate-x-1/2',
+    top: 'left-1/2 -translate-x-1/2',
     center: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-    bottom: 'bottom-8 left-1/2 -translate-x-1/2',
+    bottom: 'bottom-12 left-1/2 -translate-x-1/2',
   };
+
+  // "top" position needs inline style since Tailwind doesn't have top-[33%]
+  const positionStyle = position === 'top' ? { top: '33%' } : {};
 
   return (
     <div
-      className={`absolute ${positionClasses[position]} z-[90] intercom-enter ${className}`}
-      style={{ maxWidth: 420, width: '90%' }}
+      className={`absolute ${positionClasses[position]} z-[90] ${className}`}
+      style={{ width: 'min(calc(100vw - 24px), calc(100dvh * 0.5625 - 24px))', ...positionStyle }}
       onClick={handleSkip}
       onTouchStart={handleSkip}
     >
       {/* Main container — maintenance order style */}
-      <div className="bg-slate-900/95 border border-slate-700 rounded-sm shadow-lg shadow-black/50 overflow-hidden">
+      <div className="bg-slate-900/95 border border-slate-700 rounded-sm shadow-lg shadow-black/50 overflow-hidden intercom-enter">
 
         {/* Header bar */}
         <div className="px-3 py-1.5 border-b border-slate-800 bg-slate-950/60">
@@ -141,24 +147,30 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
         {/* Action buttons — only show when fully revealed */}
         {isFullyRevealed && (
           <div className="flex justify-end gap-3 px-3 py-3 border-t border-slate-800">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDismiss();
-              }}
-              className="w-12 h-12 flex items-center justify-center t-heading font-mono text-slate-500 hover:text-slate-300 border border-slate-700 rounded-sm transition-colors"
-            >
-              ✗
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onComplete();
-              }}
-              className="w-12 h-12 flex items-center justify-center t-heading font-mono text-green-400 hover:text-green-300 border border-green-900 hover:border-green-700 rounded-sm transition-colors"
-            >
-              ✓
-            </button>
+            {/* Dismiss button: shown for 'dismiss' mode or when no advanceType (legacy) */}
+            {advanceType !== 'tap' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDismiss();
+                }}
+                className="w-12 h-12 flex items-center justify-center t-heading font-mono text-slate-500 hover:text-slate-300 border border-slate-700 rounded-sm transition-colors"
+              >
+                ✗
+              </button>
+            )}
+            {/* Complete button: shown for 'tap' mode or when no advanceType (legacy) */}
+            {advanceType !== 'dismiss' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComplete();
+                }}
+                className="w-12 h-12 flex items-center justify-center t-heading font-mono text-green-400 hover:text-green-300 border border-green-900 hover:border-green-700 rounded-sm transition-colors"
+              >
+                ✓
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -478,6 +478,9 @@ export class GameEngine {
     }
 
     public enterPeriscope() {
+        // Block periscope during training briefing (paused = still reading message)
+        if (this.pendingTrainingPalette && this.state.isPaused) return;
+
         if (this.state.gameOver) {
             if (this.pendingTrainingPalette) {
                 this.startTraining(this.pendingTrainingPalette);

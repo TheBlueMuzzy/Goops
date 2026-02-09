@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Game from './Game';
 import { Upgrades } from './components/Upgrades';
 import { Settings } from './components/Settings';
-import { HowToPlay } from './components/HowToPlay';
+import { OperatorJournal } from './components/OperatorJournal';
 import { SaveData } from './types';
 import { loadSaveData, saveGameData, wipeSaveData } from './utils/storage';
 import { calculateRankDetails, getScoreForMidRank, getMilestonesInRange, calculateCappedProgression } from './utils/progression';
@@ -248,7 +248,10 @@ const App: React.FC = () => {
       )}
 
       {view === 'HOW_TO_PLAY' && (
-        <HowToPlay onBack={() => setView('GAME')} />
+        <OperatorJournal
+          completedSteps={saveData.tutorialProgress?.completedSteps ?? []}
+          onBack={() => setView('GAME')}
+        />
       )}
     </div>
   );

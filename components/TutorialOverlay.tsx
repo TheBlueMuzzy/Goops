@@ -16,9 +16,9 @@ interface HighlightRegion {
 }
 
 const HIGHLIGHT_REGIONS: Record<string, HighlightRegion> = {
-  // Periscope drag handle — centered in the console view, lower-middle area
-  // Tight framing with ~3% padding around the handle element
-  periscope: { left: 33, top: 52, right: 67, bottom: 72 },
+  // Periscope drag handle — centered horizontally, bottom area of console view
+  // The handle is a small white up-arrow at the very bottom of the console
+  periscope: { left: 25, top: 72, right: 75, bottom: 92 },
 };
 
 // Accepts any object with a message — compatible with both TutorialStep and training display steps
@@ -32,6 +32,7 @@ interface TutorialOverlayProps {
   onDismiss: () => void;     // Dismiss without completing
   highlightElement?: string; // Element key to highlight (from training step setup)
   messagePosition?: 'top' | 'center' | 'bottom'; // Contextual position for intercom window
+  advanceType?: 'tap' | 'dismiss'; // Button mode: tap=✓ only, dismiss=✗ only
   trainingProgress?: {
     phaseName: string;
     stepProgress: string;
@@ -56,6 +57,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   onDismiss,
   highlightElement,
   messagePosition = 'center',
+  advanceType,
   trainingProgress,
 }) => {
   // Track the step being displayed (for fade-out: keep rendering while fading)
@@ -143,6 +145,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
           onDismiss={onDismiss}
           onComplete={onComplete}
           position={messagePosition}
+          advanceType={advanceType}
           trainingProgress={trainingProgress}
         />
       </div>
