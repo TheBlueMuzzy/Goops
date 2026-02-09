@@ -75,7 +75,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false },
     },
     pauseGame: false,
-    advance: { type: 'auto', delayMs: 3500 },  // Mid-fall, then B1B takes over
+    advance: { type: 'tap' },  // Player dismisses manually, piece keeps falling
   },
 
   {
@@ -87,6 +87,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       // No new piece spawn — the B1 piece is still falling
       pressureRate: 0,
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false },
+      showWhenPieceBelow: 12,  // Only show message when piece Y >= 12 (halfway down)
     },
     pauseGame: false,  // Piece keeps falling while message shows
     advance: { type: 'event', event: 'piece-landed' },  // Wait for it to land

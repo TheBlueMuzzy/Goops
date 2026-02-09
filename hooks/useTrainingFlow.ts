@@ -66,12 +66,18 @@ export const useTrainingFlow = ({
 
   // Transition delay timer ref — cleaned up on unmount
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Position-polling interval ref for showWhenPieceBelow
+  const positionPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Show message when step changes, with a brief delay for reading rhythm
   useEffect(() => {
     if (transitionTimerRef.current) {
       clearTimeout(transitionTimerRef.current);
       transitionTimerRef.current = null;
+    }
+    if (positionPollRef.current) {
+      clearInterval(positionPollRef.current);
+      positionPollRef.current = null;
     }
 
     if (currentStep) {
@@ -82,7 +88,7 @@ export const useTrainingFlow = ({
           gameEngine.freezeFalling = true;
           gameEngine.emitChange();
         } else {
-          // Non-pausing step (e.g. B1B) — ensure game is running
+          // Non-pausing step (e.g. B1, B1B) — ensure game is running
           // (advanceStep may have paused momentarily during transition)
           gameEngine.state.isPaused = false;
           gameEngine.freezeFalling = false;
@@ -90,11 +96,26 @@ export const useTrainingFlow = ({
         }
       }
 
-      // Brief delay before showing the message (let player see result of previous action)
-      // Skip delay for non-pausing steps — show immediately since gameplay is live
-      if (currentStep.pauseGame === false) {
+      const pieceThreshold = currentStep.setup?.showWhenPieceBelow;
+
+      if (pieceThreshold != null && gameEngine) {
+        // Position-gated message: poll piece Y until it reaches threshold
+        setMessageVisible(false);
+        positionPollRef.current = setInterval(() => {
+          const pieceY = gameEngine.state.activeGoop?.y ?? 0;
+          if (pieceY >= pieceThreshold) {
+            setMessageVisible(true);
+            if (positionPollRef.current) {
+              clearInterval(positionPollRef.current);
+              positionPollRef.current = null;
+            }
+          }
+        }, 200);  // Check every 200ms
+      } else if (currentStep.pauseGame === false) {
+        // Non-pausing step without position gate — show immediately
         setMessageVisible(true);
       } else {
+        // Pausing step — brief delay before showing message
         setMessageVisible(false);
         transitionTimerRef.current = setTimeout(() => {
           setMessageVisible(true);
@@ -107,6 +128,10 @@ export const useTrainingFlow = ({
       if (transitionTimerRef.current) {
         clearTimeout(transitionTimerRef.current);
         transitionTimerRef.current = null;
+      }
+      if (positionPollRef.current) {
+        clearInterval(positionPollRef.current);
+        positionPollRef.current = null;
       }
     };
   }, [currentStep?.id]);

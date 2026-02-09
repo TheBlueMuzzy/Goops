@@ -57,6 +57,7 @@ export interface StepSetup {
   highlightElement?: string;    // UI element to glow/highlight
   allowedControls?: AllowedControls;  // Progressive control gating (undefined = all allowed)
   messagePosition?: 'top' | 'center' | 'bottom';  // Where to show intercom message (default: 'center')
+  showWhenPieceBelow?: number;  // Delay showing message until activeGoop.y >= this value (grid rows)
 }
 
 // How the player advances past this step
