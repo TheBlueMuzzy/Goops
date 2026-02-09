@@ -1279,14 +1279,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 );
             })}
 
-            {/* Active Piece - Grid cells (fallback when soft-body blob doesn't exist) */}
-            {/* Shows simple rects when the soft-body blob hasn't been created yet or isn't rendering */}
+            {/* Active Piece - Grid cells (fallback when soft-body blob doesn't exist or is above viewport) */}
+            {/* Shows simple rects when the soft-body blob hasn't been created yet or isn't rendering visibly */}
             {activeGoop && activeGoop.state === GoopState.FALLING && (() => {
-                // Skip if soft-body blob exists and will render
+                // Skip if soft-body blob exists, is falling, AND is within the visible viewport
+                // (If blob is still in the buffer zone above viewport, show fallback rects so piece isn't invisible)
                 if (softBodyPhysics) {
                     const blobId = `active-${activeGoop.spawnTimestamp}`;
                     const blob = softBodyPhysics.getBlob(blobId);
-                    if (blob && blob.isFalling && !blob.isLocked) return null;
+                    if (blob && blob.isFalling && !blob.isLocked) {
+                        // Check if any grid cell is within visible area (y >= 0 in visual space)
+                        const anyVisible = blob.gridCells.some(cell => cell.y >= 0);
+                        if (anyVisible) return null;
+                    }
                 }
                 const isWild = activeGoop.definition.isWild;
                 const apCells = activeGoop.cells.map((cell, idx) => {

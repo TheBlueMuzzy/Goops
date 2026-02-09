@@ -879,11 +879,13 @@ export class GameEngine {
         // LOGIC: Spawn at top center of visible tankViewport
         // Map visible center to grid coordinate based on board offset
         const spawnVisualX = Math.floor((TANK_VIEWPORT_WIDTH - 1) / 2);
-        const spawnVisualY = 0;
+        // Training mode: spawn closer to visible area so piece is visible sooner
+        // (Normal: y=0 in buffer zone, Training: y=BUFFER_HEIGHT-1, just above visible)
+        const spawnVisualY = this.isTrainingMode ? BUFFER_HEIGHT - 1 : 0;
 
         piece.screenX = spawnVisualX; // Screen Space Source of Truth
         piece.x = getGridX(spawnVisualX, currentOffset); // Grid Space Derived
-        
+
         piece.y = spawnVisualY;
         piece.startSpawnY = spawnVisualY;
         piece.state = GoopState.FALLING;
