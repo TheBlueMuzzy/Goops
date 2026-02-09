@@ -228,6 +228,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       pressureRate: 0.3,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
+      messagePosition: 'top',
     },
     pauseGame: true,
     advance: { type: 'event', event: 'crack-sealed' },
@@ -246,6 +247,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       pressureRate: 0,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
+      messagePosition: 'top',
     },
     pauseGame: true,
     advance: { type: 'tap' },
@@ -259,6 +261,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       pressureRate: 0,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
+      messagePosition: 'top',
     },
     pauseGame: true,
     advance: { type: 'event', event: 'game-over' },
