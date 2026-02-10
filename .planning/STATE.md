@@ -10,9 +10,9 @@ updated: 2026-02-09
 ## Current Position
 
 Phase: 33 of 38 (Rank 0 Training Sequence)
-Plan: 4 of 4 in current phase (IN PROGRESS — UAT round 2)
-Status: In progress
-Last activity: 2026-02-09 - Fixed freeze-falling, periscope pulse, B1B slow comment
+Plan: 4 of 4 in current phase — FIX plan executed, AT CHECKPOINT (UAT round 3)
+Status: In progress — waiting for human verification
+Last activity: 2026-02-09 - Executed 33-04-FIX (3 code fixes, 5 already done)
 
 Progress: ████░░░░░░ 35%
 
@@ -28,7 +28,8 @@ Progress: ████░░░░░░ 35%
 
 ## Next Steps
 
-UAT round 2 in progress. User testing through B1→B1B→B2 flow and beyond.
+33-04-FIX executed. At checkpoint — need UAT round 3 verification of all 9 fixes.
+After verification: create SUMMARY, update ROADMAP, complete plan metadata commit.
 
 ### Decisions Made
 
@@ -37,7 +38,7 @@ UAT round 2 in progress. User testing through B1→B1B→B2 flow and beyond.
 - TEXT_MANIFEST.md as editable text source-of-truth
 - **Training: 15 steps, 6 phases (A-F) — added B1B "Yeah. It's slow." mid-fall**
 - **Garble system: bracket notation `[text]` in fullText for explicit garble control**
-- **Garble chars: Unicode block elements (░▒▓█▌▐■▬▮▪), 100% letter replacement, slate-500 color**
+- **Garble chars: Unicode block elements (░▒▓█▌▐■▬▮▪), light corruption (70/15/15 model), slate-500 color**
 - Training uses COLORS.RED hex values matching engine convention
 - Training mode: pendingTrainingPalette interception pattern in enterPeriscope()
 - Training tick() gates skip all normal gameplay systems
@@ -71,20 +72,26 @@ Last session: 2026-02-09
 
 ### Resume Command
 ```
-Phase 33 Plan 04 IN PROGRESS — UAT round 2
+Phase 33 Plan 04-FIX — AT CHECKPOINT (UAT round 3 verification)
 
-WHAT'S DONE THIS SESSION:
-- freezeFalling fix: pieces actually stop during training pauses
-- Periscope pulse animation (CSS scale+glow, standalone scale prop)
-- B1B "Yeah. It's slow." step: position-gated (showWhenPieceBelow: 12)
-- B1 changed to tap advance (player dismisses manually)
-- pauseGame-aware transitions (false = don't freeze, show immediately)
-- advanceType prop (tap-only ✓ or dismiss-only ✗ buttons)
-- Block periscope during briefing, block console exit during training
-- HowToPlay → OperatorJournal swap in App.tsx
+EXECUTE: /gsd:execute-plan .planning/phases/33-rank-0-training-sequence/33-04-FIX.md
 
-UAT: User testing B1→B1B→B2 flow. Continue verifying remaining steps.
-Dev server: npm run dev -- --host
+WHAT'S DONE (code committed, 3 commits):
+- bf70e26: Garble renderer light corruption (70% clear, 15% partial, 15% full)
+- bf70e26: B2/B3/D2 messages now include HOW to do controls + keywords tagged
+- 2070e0f: Falling pieces visible — spawn at BUFFER_HEIGHT-1 + fallback renders in buffer
+- a081eda: messagePosition 'top' for E1/F1/F2 pressure steps
+
+ALREADY IMPLEMENTED (no changes needed):
+- Control gating (Task 2), pause between steps (Task 3), highlight/pulse (Task 6)
+- Training progress in intercom header (Task 7), pressure meter (Task 8)
+
+WHAT TO DO:
+1. Start dev server: npm run dev -- --host
+2. Clear localStorage, reload at rank 0
+3. Run through all 15 UAT verification steps from the checkpoint
+4. Type "approved" or describe issues
+5. After approval: SUMMARY + STATE + ROADMAP update + metadata commit
 ```
 
 ---
