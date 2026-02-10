@@ -93,12 +93,21 @@ export const useTrainingFlow = ({
     }
 
     if (currentStep) {
+      // Delayed-pause steps start unpaused (piece falls), then pause when message appears
+      const isDelayedPause = currentStep.pauseGame !== false && currentStep.setup?.pauseDelay != null;
+
       // Arm advance listeners: disarmed for pausing steps (wait for dismiss),
       // armed immediately for non-pausing steps (game already running)
-      advanceArmedRef.current = currentStep.pauseGame === false;
+      // Delayed-pause steps are treated like pausing steps (disarmed until dismiss)
+      advanceArmedRef.current = currentStep.pauseGame === false && !isDelayedPause;
 
       if (gameEngine && gameEngine.isSessionActive) {
-        if (currentStep.pauseGame !== false) {
+        if (isDelayedPause) {
+          // Delayed pause: start unpaused so piece can begin falling
+          gameEngine.state.isPaused = false;
+          gameEngine.freezeFalling = false;
+          gameEngine.emitChange();
+        } else if (currentStep.pauseGame !== false) {
           // Pause/freeze for steps that need the player to read before acting
           gameEngine.state.isPaused = true;
           gameEngine.freezeFalling = true;
@@ -123,7 +132,19 @@ export const useTrainingFlow = ({
 
       const pieceThreshold = currentStep.setup?.showWhenPieceBelow;
 
-      if (pieceThreshold != null && gameEngine) {
+      if (isDelayedPause) {
+        // Delayed pause: hide message, then after delay pause game + show message
+        setMessageVisible(false);
+        transitionTimerRef.current = setTimeout(() => {
+          if (gameEngine && gameEngine.isSessionActive) {
+            gameEngine.state.isPaused = true;
+            gameEngine.freezeFalling = true;
+            gameEngine.emitChange();
+          }
+          setMessageVisible(true);
+          transitionTimerRef.current = null;
+        }, currentStep.setup!.pauseDelay!);
+      } else if (pieceThreshold != null && gameEngine) {
         // Position-gated message: poll piece Y until it reaches threshold
         setMessageVisible(false);
         positionPollRef.current = setInterval(() => {
@@ -281,16 +302,73 @@ export const useTrainingFlow = ({
     if (!currentStep || !isInTraining) return;
 
     const { advance } = currentStep;
+    const cleanups: (() => void)[] = [];
+
+    // Position-based advance: poll piece Y and advance when it reaches the threshold.
+    // Runs alongside normal event listeners — whichever fires first wins
+    // (advanceStep disarms to prevent double-fire).
+    if (currentStep.setup?.advanceAtRow != null && gameEngine) {
+      const threshold = currentStep.setup.advanceAtRow;
+      const pollInterval = setInterval(() => {
+        const pieceY = gameEngine.state.activeGoop?.y ?? 0;
+        if (pieceY >= threshold && advanceArmedRef.current) {
+          clearInterval(pollInterval);
+          advanceStepRef.current();
+        }
+      }, 150);
+      cleanups.push(() => clearInterval(pollInterval));
+    }
+
+    // Re-show message if player hasn't performed the expected action by a certain row.
+    // One-shot: fires once, then the poll stops. If they still don't act, piece lands and we advance.
+    if (currentStep.setup?.reshowAtRow != null && gameEngine) {
+      const threshold = currentStep.setup.reshowAtRow;
+      const actionPerformed = { current: false };
+
+      // Track if the expected action was performed (cancels the re-show)
+      if (currentStep.setup.reshowUntilAction) {
+        const events = ADVANCE_EVENT_MAP[currentStep.setup.reshowUntilAction];
+        if (events) {
+          const unsubs = events.map(event =>
+            gameEventBus.on(event, () => { actionPerformed.current = true; })
+          );
+          cleanups.push(() => unsubs.forEach(unsub => unsub()));
+        }
+      }
+
+      const reshowPoll = setInterval(() => {
+        // If they already performed the action, cancel
+        if (actionPerformed.current) {
+          clearInterval(reshowPoll);
+          return;
+        }
+        const pieceY = gameEngine.state.activeGoop?.y ?? 0;
+        if (pieceY >= threshold) {
+          clearInterval(reshowPoll);
+          // Re-pause game and re-show message
+          gameEngine.state.isPaused = true;
+          gameEngine.freezeFalling = true;
+          gameEngine.emitChange();
+          setMessageVisible(true);
+          // Disarm advance — will re-arm on next dismiss
+          advanceArmedRef.current = false;
+        }
+      }, 150);
+      cleanups.push(() => clearInterval(reshowPoll));
+    }
 
     // Tap advances are handled by overlay buttons, not event listeners
-    if (advance.type === 'tap') return;
+    if (advance.type === 'tap') {
+      return cleanups.length > 0 ? () => cleanups.forEach(fn => fn()) : undefined;
+    }
 
     // Auto-advance after a fixed delay
     if (advance.type === 'auto') {
       const timer = setTimeout(() => {
         advanceStepRef.current();
       }, advance.delayMs);
-      return () => clearTimeout(timer);
+      cleanups.push(() => clearTimeout(timer));
+      return () => cleanups.forEach(fn => fn());
     }
 
     // Determine which game events to listen for
@@ -303,7 +381,8 @@ export const useTrainingFlow = ({
             advanceStepRef.current();
           }
         });
-        return unsub;
+        cleanups.push(unsub);
+        return () => cleanups.forEach(fn => fn());
       }
       eventKey = advance.action;
     } else if (advance.type === 'event') {
@@ -321,14 +400,16 @@ export const useTrainingFlow = ({
           }
         })
       );
-      return () => unsubs.forEach(unsub => unsub());
-    } else {
-      // Unmapped event/action — auto-advance after timeout as fallback
+      cleanups.push(() => unsubs.forEach(unsub => unsub()));
+    } else if (!currentStep.setup?.advanceAtRow) {
+      // Unmapped event/action with no position advance — auto-advance after timeout as fallback
       const timer = setTimeout(() => {
         advanceStepRef.current();
       }, AUTO_ADVANCE_FALLBACK_MS);
-      return () => clearTimeout(timer);
+      cleanups.push(() => clearTimeout(timer));
     }
+
+    return () => cleanups.forEach(fn => fn());
   }, [currentStep?.id, isInTraining]);
 
   // --- Sync allowed controls to engine on step change ---

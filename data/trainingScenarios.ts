@@ -73,9 +73,10 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       spawnPiece: { color: COLORS.BLUE, size: 1, autoFall: true },
       pressureRate: 0,
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false },
+      advanceAtRow: 13,  // Auto-advance to B1B when piece reaches ~60% down visually
     },
     pauseGame: false,
-    advance: { type: 'event', event: 'piece-landed' },  // Wait for piece to land, then advance
+    advance: { type: 'event', event: 'piece-landed' },  // Fallback if piece lands before 50%
   },
 
   {
@@ -84,12 +85,12 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Slow Comment',
     teaches: 'patience-acknowledgment',
     setup: {
-      // No new piece spawn — the B1 piece already landed and the game froze
+      // No new piece spawn — the B1 piece is still falling
       pressureRate: 0,
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false },
     },
-    pauseGame: true,  // Game already frozen from piece landing
-    advance: { type: 'tap' },
+    pauseGame: false,  // Piece continues falling while "slow" message shows
+    advance: { type: 'event', event: 'piece-landed' },  // Advances when piece lands
   },
 
   {
@@ -100,9 +101,11 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       spawnPiece: { color: COLORS.BLUE, size: 1, slowFall: true },
       allowedControls: { fastDrop: true, rotate: false, tankRotate: false },
+      reshowAtRow: 13,              // Re-show message if player hasn't fast-dropped by ~50%
+      reshowUntilAction: 'fast-fall', // Cancel re-show once they fast-drop
     },
     pauseGame: true,
-    advance: { type: 'action', action: 'fast-fall' },
+    advance: { type: 'event', event: 'piece-landed' },  // Piece lands → advance (even without fast-drop)
   },
 
   {
@@ -113,9 +116,10 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       spawnPiece: { color: COLORS.YELLOW, size: 3 },
       allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
+      pauseDelay: 1200,  // Piece starts falling, then message appears after 1.2s
     },
     pauseGame: true,
-    advance: { type: 'action', action: 'rotate-piece' },
+    advance: { type: 'event', event: 'piece-landed' },  // Wait for piece to land after rotation
     markComplete: 'DROP_INTRO',
   },
 

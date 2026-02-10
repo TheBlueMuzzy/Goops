@@ -62,8 +62,8 @@ export const TRAINING_MESSAGES: Record<TrainingStepId, IntercomMessage> = {
     fullText: 'Swipe down [or] press S [to] fast-drop. [The] faster [you place it, the] better.',
   },
   B3_PIECE_ROTATION: {
-    keywords: ['Rotate', 'Tap', 'arrows', 'press', 'Q/E'],
-    fullText: 'Rotate [the goop before it lands]. Tap [the] arrows [or] press Q/E [to rotate].',
+    keywords: ['Rotate', 'goop', 'Q/E', 'tap', 'left/right', 'tank'],
+    fullText: 'Rotate [the] goop [with] Q/E or tap [the] left/right side [of the] tank.',
   },
   C1_POP_INTRO: {
     keywords: ['Pressure', 'laser', 'goop', 'pressure'],

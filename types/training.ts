@@ -58,6 +58,10 @@ export interface StepSetup {
   allowedControls?: AllowedControls;  // Progressive control gating (undefined = all allowed)
   messagePosition?: 'top' | 'center' | 'bottom';  // Where to show intercom message (default: 'center')
   showWhenPieceBelow?: number;  // Delay showing message until activeGoop.y >= this value (grid rows)
+  pauseDelay?: number;          // Start unpaused, then pause + show message after this many ms
+  advanceAtRow?: number;        // Auto-advance when active piece reaches this grid row
+  reshowAtRow?: number;         // Re-show message if player hasn't acted by this row
+  reshowUntilAction?: string;   // Cancel re-show if this action is performed (key into ADVANCE_EVENT_MAP)
 }
 
 // How the player advances past this step

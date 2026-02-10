@@ -10,11 +10,11 @@ updated: 2026-02-10
 ## Current Position
 
 Phase: 33 of 38 (Rank 0 Training Sequence)
-Plan: 4 of 4 in current phase — FIX plan, UAT round 4 in progress
-Status: In progress — fixing UAT issues from round 3
-Last activity: 2026-02-10 - UAT round 3 partial (steps 1-9 pass, step 10+ fixing)
+Plan: 4 of 4 in current phase — FIX plan, UAT round 5 in progress
+Status: In progress — A & B phases approved, testing C-F phases
+Last activity: 2026-02-10 - B-phase flow overhaul approved, committed
 
-Progress: ████░░░░░░ 35%
+Progress: ████░░░░░░ 40%
 
 ## Branch Workflow (SOP)
 
@@ -28,19 +28,22 @@ Progress: ████░░░░░░ 35%
 
 ## Next Steps
 
-UAT round 3 found issues. Fixes applied (uncommitted). Need UAT round 4 verification:
-- Steps 1-9 already passed
-- Step 10+ needs re-testing (B2 fast-drop advance was firing immediately on dismiss)
-- Also fixed: training piece spawning, garble renderer, interaction blocking
+UAT round 5: Continue testing C-F phases (steps 7-15).
+- A-phase (A1, A2): APPROVED
+- B-phase (B1, B1B, B2, B3): APPROVED — major flow overhaul
+- C-phase (C1, C2, C3): NEEDS TESTING
+- D-phase (D1, D2, D3): NEEDS TESTING
+- E-phase (E1): NEEDS TESTING
+- F-phase (F1, F2): NEEDS TESTING
 
-After full verification: commit fixes, create SUMMARY, update ROADMAP, metadata commit.
+After full verification: create 33-04-FIX SUMMARY, update ROADMAP, metadata commit.
 
 ### Decisions Made
 
 - Typography: 18px minimum body, CSS classes with !important, full project sweep
 - Journal layout: accordion (single column) over sidebar+content (two column)
 - TEXT_MANIFEST.md as editable text source-of-truth
-- **Training: 15 steps, 6 phases (A-F) — B1B now post-landing tap step (not mid-fall)**
+- **Training: 15 steps, 6 phases (A-F) — B1B is mid-fall message at ~60% down, not post-landing**
 - **Garble system: bracket notation `[text]` = full-word garble, no brackets = clear, keywords = green. NO partial/random corruption.**
 - **Garble chars: Unicode block elements (░▒▓█▌▐■▬▮▪), slate-500 color**
 - Training uses COLORS.RED hex values matching engine convention
@@ -53,6 +56,13 @@ After full verification: commit fixes, create SUMMARY, update ROADMAP, metadata 
 - **Overlay blockInteraction: pauseGame:true steps show dark scrim + block all touches until message closed**
 - `goop-merged` advance maps to PIECE_DROPPED (merge happens on landing)
 - `game-over` advance maps to GAME_OVER (for F2 practice mode)
+- **B-phase flow pattern: piece falls → lands → next piece spawns → message appears → dismiss → act → piece lands → advance**
+- **B1 advanceAtRow: 13** — auto-advances to B1B when piece reaches ~60% down
+- **B1B pauseGame: false** — mid-fall message, piece keeps falling, advances on piece-landed
+- **B2 reshowAtRow: 13** — re-shows fast-drop message at ~50% if player hasn't fast-dropped
+- **B3 pauseDelay: 1200** — piece spawns falling, message appears 1.2s later (delayed pause)
+- **B2/B3 advance on piece-landed** — not on action input, waits for piece to lock in
+- **StepSetup new fields: pauseDelay, advanceAtRow, reshowAtRow, reshowUntilAction**
 
 ### Known Issues
 
@@ -72,34 +82,23 @@ After full verification: commit fixes, create SUMMARY, update ROADMAP, metadata 
 Last session: 2026-02-10
 **Version:** 1.1.13
 **Branch:** feature/tutorial-infrastructure
-**Build:** 244
+**Build:** 247
 
 ### Resume Command
 ```
-Phase 33 Plan 04-FIX — UAT round 4 needed
+Phase 33 Plan 04-FIX — UAT round 5, testing C-F phases
 
-EXECUTE: /gsd:execute-plan .planning/phases/33-rank-0-training-sequence/33-04-FIX.md
-
-CHANGES THIS SESSION (uncommitted, 7 files modified):
-- IntercomText.tsx: Garble fixed — brackets = full garble, removed 70/15/15 random model
-- useTrainingFlow.ts: Advance arming (disarmed until dismiss), explicit piece spawning from step setup
-- TutorialOverlay.tsx: blockInteraction prop — dark scrim + pointer-events-auto for paused steps
-- IntercomMessage.tsx: Dismiss button green outline when in dismiss-only mode
-- GameEngine.ts: lockActivePiece() no auto-spawn in training, startTraining() no initial spawn
-- trainingScenarios.ts: B1 advance=piece-landed, B1B=pauseGame:true+tap (was mid-fall event)
-- Game.tsx: Pass blockInteraction prop to TutorialOverlay
-
-UAT ROUND 3 STATUS:
-- Steps 1-9: PASSED
-- Step 10+: Needs re-testing after fixes
+A & B phases APPROVED and committed. C-F phases need testing.
 
 WHAT TO DO:
 1. Start dev server: npm run dev -- --host
 2. Clear localStorage, reload at rank 0
-3. Verify steps 1-9 still pass (no regression)
-4. Verify step 10+ (B2 dismiss doesn't auto-advance, B-phase piece flow works)
-5. Continue through rest of UAT checklist
-6. After approval: commit all fixes, SUMMARY, ROADMAP update, metadata commit
+3. Play through A & B phases (already approved, quick verify no regression)
+4. Test C-phase: C1 (pop intro), C2 (merge), C3 (fill timing)
+5. Test D-phase: D1 (crack), D2 (tank rotation), D3 (offscreen)
+6. Test E-phase: E1 (scaffolding)
+7. Test F-phase: F1 (cleanup), F2 (practice until game over)
+8. After full approval: create 33-04-FIX SUMMARY, update ROADMAP, metadata commit
 ```
 
 ---
