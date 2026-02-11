@@ -91,9 +91,10 @@ Delegate to subagent → get summary back → main context stays clean.
 **MANDATORY CHECKLIST — Do ALL of these, in order:**
 
 1. [ ] Run `npm run test:run` — fix failures before proceeding
-2. [ ] Restart dev server: `npm run dev -- --host` (background)
-3. [ ] Wait 3-4 seconds, then read `.build-number` file
-4. [ ] Produce the **Handoff Block** below (copy this format exactly)
+2. [ ] Update `.planning/STATE.md` — what changed, current status, decisions, next steps
+3. [ ] Restart dev server: `npm run dev -- --host` (background)
+4. [ ] Wait 3-4 seconds, then read `.build-number` file
+5. [ ] Produce the **Handoff Block** below (copy this format exactly)
 
 **HANDOFF BLOCK (Required Output):**
 ```

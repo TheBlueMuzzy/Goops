@@ -86,6 +86,45 @@ After full verification: create 33-04-FIX SUMMARY, update ROADMAP, metadata comm
 - B2 keywords: "down" and "press" are white, not green
 - C-phase: pop yellow (not blue) → demonstrates merge + solidify timing with blue-on-blue
 
+### Pipeline Architecture Session (2026-02-10)
+
+**Goal:** Design a "Lossless Pipeline" integrating BMUZ + GSD + Agent Teams.
+
+**Installed:**
+- Agent Teams feature flag enabled globally (~/.claude/settings.json)
+- `/build-with-agent-team` skill installed (~/.claude/skills/build-with-agent-team/)
+
+**Architecture Explored (4-Agent Team):**
+- Lead (user handler), Scribe (docs), Builder (code), Researcher (eyes)
+- Scribe updates STATE/ROADMAP/SUMMARY/PRD/CLAUDE.md/memory in real-time
+- Researcher uses Playground (design exploration) + Playwright (automated testing)
+- Wrapper skill reads GSD PLAN.md and orchestrates AT team
+
+**Critical Concerns Identified:**
+- Token cost: 4 agents = 3-5x cost per session (too expensive for small tasks)
+- AT is experimental (no session resume, known bugs, could change)
+- Lead context bloat from message relaying (not actually "lean")
+- GSD plans are sequential — parallel agents don't add speed
+- Non-coders can't debug team coordination failures
+
+**Revised Direction:**
+- Enhanced single-agent with smart automation as default
+- Agent Teams as opt-in power mode for big plans only
+- Better hooks for auto-saving STATE.md (solve context loss without AT)
+- Playground for non-CLI visual interaction (JSON config files)
+- Subagents for parallel research (already works, no AT needed)
+
+**User's Core Needs (refined):**
+1. Low cost
+2. Lossless memory + vision capture
+3. Project manager that doesn't fall out of GSD loop
+4. Simple, covers non-coder mistakes
+5. End-to-end with flexible entry points
+6. Parallel research + documentation
+7. Non-CLI interaction methods
+
+**Status:** Designing final architecture. No code built yet for pipeline skill.
+
 ### Known Issues
 
 - PiecePreview NEXT/HOLD labels at 18px may be too large for 48px box
