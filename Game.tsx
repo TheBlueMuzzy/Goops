@@ -89,7 +89,8 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
     const context: PhysicsStepContext = {
       grid: engine.state.grid,
       tankRotation: engine.state.tankRotation,
-      fallSpeed: engine.freezeFalling ? 0 : engine.getFallSpeed()
+      fallSpeed: engine.freezeFalling ? 0 : engine.getFallSpeed(),
+      isPaused: engine.state.isPaused,
     };
 
     // Run physics with context (steps falling blobs + core physics)
@@ -442,7 +443,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
       };
     });
     return {
-      phaseName: `Phase ${trainingStep.phase}: ${TRAINING_PHASE_NAMES[trainingStep.phase]}`,
+      phaseName: `Phase ${trainingStep.id.split('_')[0]}: ${TRAINING_PHASE_NAMES[trainingStep.phase]}`,
       stepProgress: `Step ${stepIndex + 1} of ${TRAINING_SEQUENCE.length}`,
       phaseDots,
     };

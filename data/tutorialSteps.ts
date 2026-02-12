@@ -89,6 +89,10 @@ export const TRAINING_MESSAGES: Record<TrainingStepId, IntercomMessage> = {
     keywords: ['goop', 'pressure'],
     fullText: 'Fresh goop needs [time to] solidify before [it can be] popped. [The] pressure must [be] high [enough] as well.',
   },
+  C3B_POP_HINT: {
+    keywords: ['Pop', 'goop'],
+    fullText: 'Pop [the] goop.',
+  },
   D1_CRACK_APPEARS: {
     keywords: ['Cracks', 'tank', 'goop', 'laser'],
     fullText: 'You [have] one job! Cracks form in [the] tank [wall]. Cover [them with matching] color goop. [Then] seal [them] with [the] laser.',

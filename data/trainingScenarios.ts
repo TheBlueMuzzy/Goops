@@ -148,7 +148,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'pressure-and-popping',
     setup: {
       // No piece spawn — let pressure rise over existing pieces from B-phase
-      pressureRate: 0.5,
+      pressureRate: 0.625,
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false, pop: false },
       advanceAtPressure: 5,  // Advance when PSI reaches 5%
     },
@@ -162,13 +162,15 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Pressure Rising',
     teaches: 'pressure-pacing',
     setup: {
-      pressureRate: 0.5,
+      pressureRate: 0.625,
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false, pop: false },
       advanceWhenPressureAbovePieces: true,  // Advance when pressure line passes yellow goop
       advancePressureAboveColor: COLORS.YELLOW,  // Only check yellow — don't wait for pressure to cover all blues too
+      messageDelay: 1000,   // Wait 1s before arming input trigger
+      showOnInput: true,    // Only show "be patient" if user tries to interact
     },
-    pauseGame: true,
-    advance: { type: 'auto', delayMs: 60000 },  // Safety fallback
+    pauseGame: false,  // Pressure must keep rising
+    advance: { type: 'auto', delayMs: 60000 },  // Safety fallback — pressure threshold advances first
   },
 
   {
@@ -180,6 +182,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       pressureRate: 0,  // Freeze pressure while reading
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false },
       highlightGoopColor: COLORS.YELLOW,  // Pulse yellow goop, only yellow can be popped
+      reshowAfterMs: 3000,  // Re-remind every 3s if user doesn't pop
     },
     pauseGame: true,
     advance: { type: 'action', action: 'pop-goop' },
@@ -191,12 +194,12 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Color Merging',
     teaches: 'same-color-merge',
     setup: {
-      pressureRate: 0.2,
+      pressureRate: 0.3125,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
       pauseDelay: 1000,  // Wait 1s after pop before showing merge message
     },
     pauseGame: true,
-    advance: { type: 'event', event: 'goop-merged' },
+    advance: { type: 'tap' },  // Merge already happened during pauseDelay — tap to acknowledge
   },
 
   {
@@ -205,12 +208,26 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Solidify Timing',
     teaches: 'fill-delay-mechanic',
     setup: {
-      pressureRate: 0.2,
+      pressureRate: 0.3125,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
     },
     pauseGame: true,
     advance: { type: 'tap' },
     markComplete: 'POP_TIMING',
+  },
+
+  {
+    id: 'C3B_POP_HINT',
+    phase: 'C',
+    name: 'Pop Prompt',
+    teaches: 'first-pop-practice',
+    setup: {
+      pressureRate: 0.3125,
+      allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
+      messageDelay: 2000,  // Wait for fill to complete before showing hint
+    },
+    pauseGame: false,  // Game running — hint shows while user plays
+    advance: { type: 'action', action: 'pop-goop' },
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -225,8 +242,9 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'crack-sealing',
     setup: {
       spawnCrack: { color: COLORS.GREEN, placement: 'near-stack' },
-      pressureRate: 0.3,
+      pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
+      pauseDelay: 2500,  // Wait for pop droplets to fade + crack to appear before message
     },
     pauseGame: true,
     advance: { type: 'action', action: 'pop-goop' },
@@ -240,7 +258,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     teaches: 'tank-rotation-input',
     setup: {
       spawnPiece: { color: COLORS.GREEN, shape: GoopShape.T_O },
-      pressureRate: 0.3,
+      pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: true,
@@ -254,7 +272,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Offscreen Cracks',
     teaches: 'cylindrical-awareness',
     setup: {
-      pressureRate: 0.3,
+      pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
     },
     pauseGame: true,
@@ -273,7 +291,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Build Scaffolding',
     teaches: 'scaffolding-strategy',
     setup: {
-      pressureRate: 0.3,
+      pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
       messagePosition: 'top',
     },

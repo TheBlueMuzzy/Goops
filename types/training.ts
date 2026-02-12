@@ -18,6 +18,7 @@ export type TrainingStepId =
   | 'C1C_POP_INSTRUCTION'
   | 'C2_MERGE'
   | 'C3_FILL_TIMING'
+  | 'C3B_POP_HINT'
   | 'D1_CRACK_APPEARS'
   | 'D2_TANK_ROTATION'
   | 'D3_OFFSCREEN_CRACKS'
@@ -65,6 +66,8 @@ export interface StepSetup {
   messagePosition?: 'top' | 'center' | 'bottom';  // Where to show intercom message (default: 'center')
   showWhenPieceBelow?: number;  // Delay showing message until activeGoop.y >= this value (grid rows)
   pauseDelay?: number;          // Start unpaused, then pause + show message after this many ms
+  messageDelay?: number;        // For non-pausing steps: delay showing hint message (game keeps running)
+  showOnInput?: boolean;        // Only show message when user tries input (after messageDelay) — patient users never see it
   advanceAtRow?: number;        // Auto-advance when active piece reaches this grid row
   reshowAtRow?: number;         // Re-show message if player hasn't acted by this row
   reshowUntilAction?: string;   // Cancel re-show if this action is performed (key into ADVANCE_EVENT_MAP)
@@ -72,6 +75,7 @@ export interface StepSetup {
   advanceWhenPressureAbovePieces?: boolean;  // Auto-advance when pressure line rises above highest locked goop
   advancePressureAboveColor?: string;       // Only check goops of this color for the pressure-above check
   highlightGoopColor?: string;  // Pulse-highlight goops of this color (also restricts popping to only this color)
+  reshowAfterMs?: number;       // After dismiss, re-show message every N ms until advance action is performed
 }
 
 // How the player advances past this step

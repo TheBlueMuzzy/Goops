@@ -73,8 +73,14 @@ export const useTrainingFlow = ({
 
   // Transition delay timer ref — cleaned up on unmount
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track when game paused for training message — used to adjust fill timestamps on unpause
+  const pauseStartTimeRef = useRef<number | null>(null);
+  // When true, any user input will trigger message visibility (showOnInput feature)
+  const readyToShowOnInputRef = useRef(false);
   // Position-polling interval ref for showWhenPieceBelow
   const positionPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Re-show message timer ref for reshowAfterMs feature
+  const reshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show message when step changes, with a brief delay for reading rhythm
   useEffect(() => {
@@ -92,6 +98,11 @@ export const useTrainingFlow = ({
       clearTimeout(armTimerRef.current);
       armTimerRef.current = null;
     }
+    if (reshowTimerRef.current) {
+      clearTimeout(reshowTimerRef.current);
+      reshowTimerRef.current = null;
+    }
+    readyToShowOnInputRef.current = false;
 
     if (currentStep) {
       // Delayed-pause steps start unpaused (piece falls), then pause when message appears
@@ -112,6 +123,7 @@ export const useTrainingFlow = ({
           // Pause/freeze for steps that need the player to read before acting
           gameEngine.state.isPaused = true;
           gameEngine.freezeFalling = true;
+          pauseStartTimeRef.current = Date.now();
           gameEngine.emitChange();
         } else {
           // Non-pausing step (e.g. B1) — ensure game is running
@@ -151,6 +163,7 @@ export const useTrainingFlow = ({
           if (gameEngine && gameEngine.isSessionActive) {
             gameEngine.state.isPaused = true;
             gameEngine.freezeFalling = true;
+            pauseStartTimeRef.current = Date.now();
             gameEngine.emitChange();
           }
           setMessageVisible(true);
@@ -170,8 +183,23 @@ export const useTrainingFlow = ({
           }
         }, 200);  // Check every 200ms
       } else if (currentStep.pauseGame === false) {
-        // Non-pausing step without position gate — show immediately
-        setMessageVisible(true);
+        // Non-pausing step — show immediately, after delay, or on input
+        if (currentStep.setup?.messageDelay && currentStep.setup?.showOnInput) {
+          // Show only when user tries input (after delay) — patient users never see it
+          setMessageVisible(false);
+          transitionTimerRef.current = setTimeout(() => {
+            readyToShowOnInputRef.current = true;
+            transitionTimerRef.current = null;
+          }, currentStep.setup.messageDelay);
+        } else if (currentStep.setup?.messageDelay) {
+          setMessageVisible(false);
+          transitionTimerRef.current = setTimeout(() => {
+            setMessageVisible(true);
+            transitionTimerRef.current = null;
+          }, currentStep.setup.messageDelay);
+        } else {
+          setMessageVisible(true);
+        }
       } else {
         // Pausing step — brief delay before showing message
         setMessageVisible(false);
@@ -194,6 +222,10 @@ export const useTrainingFlow = ({
       if (armTimerRef.current) {
         clearTimeout(armTimerRef.current);
         armTimerRef.current = null;
+      }
+      if (reshowTimerRef.current) {
+        clearTimeout(reshowTimerRef.current);
+        reshowTimerRef.current = null;
       }
     };
   }, [currentStep?.id]);
@@ -245,6 +277,27 @@ export const useTrainingFlow = ({
   }, [currentStep, setSaveData]);
 
   /**
+   * Adjust goop fill timestamps for pause duration.
+   * Prevents fill from appearing "instant" after reading a long message (fill uses Date.now()).
+   * Called whenever transitioning from "paused for message" to next state.
+   */
+  const adjustFillTimestampsForPause = useCallback(() => {
+    if (gameEngine && pauseStartTimeRef.current) {
+      const pauseDuration = Date.now() - pauseStartTimeRef.current;
+      const grid = gameEngine.state.grid;
+      for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[y].length; x++) {
+          const cell = grid[y][x];
+          if (cell && cell.timestamp) {
+            cell.timestamp += pauseDuration;
+          }
+        }
+      }
+      pauseStartTimeRef.current = null;
+    }
+  }, [gameEngine]);
+
+  /**
    * Advance to the next training step.
    * Called after the current step's advance condition is met.
    */
@@ -253,6 +306,9 @@ export const useTrainingFlow = ({
 
     // Disarm to prevent double-advance from rapid events
     advanceArmedRef.current = false;
+
+    // Adjust fill timestamps before transitioning (covers tap-advance steps)
+    adjustFillTimestampsForPause();
 
     completeCurrentStep();
 
@@ -274,7 +330,7 @@ export const useTrainingFlow = ({
         gameEngine.pendingTrainingPalette = null;
       }
     }
-  }, [completeCurrentStep, currentStep, gameEngine]);
+  }, [adjustFillTimestampsForPause, completeCurrentStep, currentStep, gameEngine]);
 
   // Ref for advanceStep so event listeners always call the latest version
   const advanceStepRef = useRef(advanceStep);
@@ -286,6 +342,9 @@ export const useTrainingFlow = ({
    */
   const dismissMessage = useCallback(() => {
     setMessageVisible(false);
+
+    // Adjust fill timestamps before unpausing
+    adjustFillTimestampsForPause();
 
     // Unpause so the player can perform the required action
     if (gameEngine && gameEngine.isSessionActive) {
@@ -301,7 +360,24 @@ export const useTrainingFlow = ({
       advanceArmedRef.current = true;
       armTimerRef.current = null;
     }, 150);
-  }, [gameEngine]);
+
+    // Re-show reminder after delay if step has reshowAfterMs (repeats until action performed)
+    if (reshowTimerRef.current) clearTimeout(reshowTimerRef.current);
+    if (currentStep?.setup?.reshowAfterMs) {
+      reshowTimerRef.current = setTimeout(() => {
+        // Only re-show if advance hasn't fired yet (step hasn't changed)
+        if (advanceArmedRef.current && gameEngine && gameEngine.isSessionActive) {
+          gameEngine.state.isPaused = true;
+          gameEngine.freezeFalling = true;
+          pauseStartTimeRef.current = Date.now();
+          gameEngine.emitChange();
+          setMessageVisible(true);
+          advanceArmedRef.current = false;
+        }
+        reshowTimerRef.current = null;
+      }, currentStep.setup.reshowAfterMs);
+    }
+  }, [adjustFillTimestampsForPause, gameEngine, currentStep]);
 
   // --- Pause management during training ---
   // ALL steps start paused on transition (handled by step-change effect above).
@@ -315,6 +391,23 @@ export const useTrainingFlow = ({
 
     const { advance } = currentStep;
     const cleanups: (() => void)[] = [];
+
+    // showOnInput: show message when user tries any input (after messageDelay arms it)
+    // Uses DOM-level listeners to catch ALL touch/pointer/key input regardless of game state
+    if (currentStep.setup?.showOnInput) {
+      const showOnInputHandler = () => {
+        if (readyToShowOnInputRef.current) {
+          setMessageVisible(true);
+          readyToShowOnInputRef.current = false;
+        }
+      };
+      document.addEventListener('pointerdown', showOnInputHandler);
+      document.addEventListener('keydown', showOnInputHandler);
+      cleanups.push(() => {
+        document.removeEventListener('pointerdown', showOnInputHandler);
+        document.removeEventListener('keydown', showOnInputHandler);
+      });
+    }
 
     // Position-based advance: poll piece Y and advance when it reaches the threshold.
     // Runs alongside normal event listeners — whichever fires first wins

@@ -44,6 +44,7 @@ export interface PhysicsStepContext {
   grid: TankCell[][];
   tankRotation: number;
   fallSpeed: number;  // Pixels per second (GameEngine controls fast-fall)
+  isPaused?: boolean; // When true, skip fill animation (training messages)
 }
 
 export interface UseSoftBodyPhysicsOptions {
@@ -301,8 +302,9 @@ export function useSoftBodyPhysics(
         stepPhysics(blobs, dt, params, boundsRef.current);
 
         // 2. Fill animation for locked blobs (rate matches normal goop: groupSize * PER_BLOCK_DURATION)
+        // Skip fill when game is paused (training messages) so fill resumes on unpause
         for (const blob of blobs) {
-          if (blob.isLocked && blob.fillAmount < 1) {
+          if (blob.isLocked && blob.fillAmount < 1 && !context?.isPaused) {
             const fillDuration = blob.gridCells.length * PER_BLOCK_DURATION / 1000; // seconds
             const fillRate = 1.0 / fillDuration;
             blob.fillAmount = Math.min(1, blob.fillAmount + fillRate * dt);
