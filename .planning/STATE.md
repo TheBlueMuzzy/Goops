@@ -39,8 +39,7 @@ Progress: █████░░░░░ 50%
 **UAT approval status:**
 - A-phase (A1, A2): APPROVED
 - B-phase (B1, B1B, B2, B3, B4): APPROVED
-- C-phase (C1, C1B, C1C): APPROVED
-- C-phase (C2, C3, C3B): NEEDS TESTING — round 5 fixes applied
+- C-phase (C1, C1B, C1C, C2, C3, C3B): APPROVED
 - D-phase (D1, D2, D3): NEEDS TESTING
 - E-phase (E1): NEEDS TESTING
 - F-phase (F1, F2): NEEDS TESTING
