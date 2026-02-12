@@ -96,6 +96,36 @@
 **Expected:** Pressure rises when pieces lock, giving visual feedback.
 **Actual:** Pressure stays at 0/flat.
 
+### UAT-010: C3 solidify message never appears after C2 merge message
+
+**Discovered:** 2026-02-11
+**Phase/Plan:** 33-04 (UAT round 5)
+**Severity:** Major
+**Feature:** C2→C3 step transition
+**Description:** After dismissing C2 (merge message), the game unpauses but C3 (solidify timing) never appears. The user expects C3 to show immediately after C2 dismiss, since the merge already happened during C2's pauseDelay. Design intent: fill timer should pause during C3 so user can watch fill happen in real-time after closing C3.
+**Expected:** Dismiss C2 → C3 solidify message appears immediately. Fill timer frozen while C3 is showing.
+**Actual:** Dismiss C2 → game unpauses, no C3 message ever appears. Training stuck.
+
+### UAT-011: C2 step never advances — training stuck permanently
+
+**Discovered:** 2026-02-11
+**Phase/Plan:** 33-04 (UAT round 5)
+**Severity:** Blocker
+**Feature:** C2 advance mechanism
+**Description:** C2 is configured to advance on `goop-merged` event, but the merge fires during the 1s pauseDelay before C2 even shows its message. By the time C2 is listening for the event, it's already passed. Training never progresses past C2 — D, E, F phases are all unreachable.
+**Expected:** C2 captures the merge event (or advances immediately since merge already happened) and transitions to C3.
+**Actual:** C2 never advances. Pressure rises slowly (0.2 rate) but no further steps trigger. All subsequent training blocked.
+
+### UAT-012: Pressure rate feels too slow during C-phase
+
+**Discovered:** 2026-02-11
+**Phase/Plan:** 33-04 (UAT round 5)
+**Severity:** Minor
+**Feature:** Pressure tuning during training
+**Description:** After C2, pressure rises at 0.2 rate which feels noticeably slower than real gameplay. While slower pressure is appropriate for learning, the current rate may be too slow to demonstrate cause-and-effect.
+**Expected:** Pressure rate slow enough for learning but fast enough to feel consequential.
+**Actual:** Pressure rate 0.2 feels sluggish compared to normal gameplay.
+
 ## Resolved Issues
 
 [None yet]
@@ -104,4 +134,4 @@
 
 *Phase: 33-rank-0-training-sequence*
 *Plan: 04*
-*Tested: 2026-02-08*
+*Tested: 2026-02-08, 2026-02-11 (round 5)*

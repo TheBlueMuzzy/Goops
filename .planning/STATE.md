@@ -10,9 +10,9 @@ updated: 2026-02-10
 ## Current Position
 
 Phase: 33 of 38 (Rank 0 Training Sequence)
-Plan: 4 of 4 in current phase — FIX plan, UAT round 5 in progress
-Status: In progress — A & B approved, C-phase mostly approved (C1/C1B/C1C), testing C2+ and D-F
-Last activity: 2026-02-10 - Major C-phase overhaul: pressure color filter, per-blob shake, piece shape system
+Plan: 4 of 4 in current phase — FIX-R5 plan created, fixes coded (uncommitted), ready to commit and verify
+Status: In progress — A & B approved, C1/C1B/C1C approved, C2+ through F need UAT after R5 fixes
+Last activity: 2026-02-12 - Round 5 fixes: C2 tap advance, C3B step, pressure tuning, fill timestamp adjustment
 
 Progress: █████░░░░░ 50%
 
@@ -28,16 +28,24 @@ Progress: █████░░░░░ 50%
 
 ## Next Steps
 
-UAT round 5: Continue testing C-F phases.
+33-04-FIX-R5 plan created for 3 round-5 UAT issues. Fixes already coded (uncommitted).
+
+**Round 5 fixes (uncommitted, ready to commit):**
+- UAT-011 (Blocker): C2 changed from event-based to tap advance — merge fires during pauseDelay
+- UAT-010 (Major): Added C3B_POP_HINT step bridging C3→D1 gap
+- UAT-012 (Minor): Pressure rates bumped 0.2→0.3125 (C2/C3), 0.3→0.46875 (D/E)
+- Bonus: fill timestamp adjustment, showOnInput, reshowAfterMs, D1 pauseDelay
+
+**UAT approval status:**
 - A-phase (A1, A2): APPROVED
-- B-phase (B1, B1B, B2, B3, B4): APPROVED — single-fall flow, shape system, practice step
-- C-phase (C1, C1B, C1C): APPROVED — pressure flow, yellow highlight/pulse, per-blob shake, pop gating
-- C-phase (C2, C3): NEEDS TESTING — merge message (1s delay), fill timing
+- B-phase (B1, B1B, B2, B3, B4): APPROVED
+- C-phase (C1, C1B, C1C): APPROVED
+- C-phase (C2, C3, C3B): NEEDS TESTING — round 5 fixes applied
 - D-phase (D1, D2, D3): NEEDS TESTING
 - E-phase (E1): NEEDS TESTING
 - F-phase (F1, F2): NEEDS TESTING
 
-After full verification: create 33-04-FIX SUMMARY, update ROADMAP, metadata commit.
+After full verification: create 33-04-FIX-SUMMARY, update ROADMAP, metadata commit.
 
 ### Key Technical Changes This Session
 
@@ -140,31 +148,29 @@ After full verification: create 33-04-FIX SUMMARY, update ROADMAP, metadata comm
 
 ## Session Continuity
 
-Last session: 2026-02-10
+Last session: 2026-02-12
 **Version:** 1.1.13
 **Branch:** feature/tutorial-infrastructure
 **Build:** 250
 
 ### Resume Command
 ```
-Phase 33 Plan 04-FIX — UAT round 5
+Phase 33 Plan 04-FIX-R5 — commit fixes and UAT round 6
 
-A & B phases APPROVED. C1/C1B/C1C APPROVED. Testing C2+ and D-F.
+Round 5 fixes CODED but uncommitted (8 files, 175 insertions).
+A & B approved. C1/C1B/C1C approved. C2+ through F need testing.
 
-KEY SYSTEMS IMPLEMENTED:
-- PieceSpawn uses GoopShape templates (not size). Rotation supported.
-- Per-blob shake (not per-color). disableSwap, disablePop, highlightColor gating.
-- advancePressureAboveColor filters pressure check by goop color.
-- 16 steps across 6 phases (B4_PRACTICE added).
+FIXES IN UNCOMMITTED CHANGES:
+- C2: tap advance (was event-based, merge fired before listener)
+- C3B: new step bridging C3→D1 (pop prompt with 2s delay)
+- Pressure: 0.3125 (C/D/E), fill timestamp adjustment, showOnInput
 
 WHAT TO DO:
-1. Start dev server: npm run dev -- --host
-2. Clear localStorage, reload at rank 0
-3. Test C2 (merge after popping yellow, 1s delay), C3 (fill timing)
-4. Test D-phase: D1 (crack), D2 (tank rotation), D3 (offscreen)
-5. Test E-phase: E1 (scaffolding)
-6. Test F-phase: F1 (cleanup), F2 (practice until game over)
-7. After full approval: 33-04-FIX SUMMARY, ROADMAP, metadata commit
+1. Run tests: npm run test:run
+2. Commit round 5 fixes
+3. Start dev server: npm run dev -- --host
+4. Clear localStorage, test C2→C3→C3B→D→E→F flow
+5. After full approval: 33-04-FIX-SUMMARY, ROADMAP, metadata commit
 ```
 
 ---
