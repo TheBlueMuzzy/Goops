@@ -81,6 +81,10 @@ export const useTrainingFlow = ({
   const positionPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Re-show message timer ref for reshowAfterMs feature
   const reshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cleanup function for inactivity DOM listeners (pointerdown/keydown that reset reshow timer)
+  const reshowInputCleanupRef = useRef<(() => void) | null>(null);
+  // Whether the current message is a non-dismissible re-show (buttons hidden, only action clears it)
+  const [canDismiss, setCanDismiss] = useState(true);
 
   // Show message when step changes, with a brief delay for reading rhythm
   useEffect(() => {
@@ -102,7 +106,12 @@ export const useTrainingFlow = ({
       clearTimeout(reshowTimerRef.current);
       reshowTimerRef.current = null;
     }
+    if (reshowInputCleanupRef.current) {
+      reshowInputCleanupRef.current();
+      reshowInputCleanupRef.current = null;
+    }
     readyToShowOnInputRef.current = false;
+    setCanDismiss(true);
 
     if (currentStep) {
       // Delayed-pause steps start unpaused (piece falls), then pause when message appears
@@ -226,6 +235,10 @@ export const useTrainingFlow = ({
       if (reshowTimerRef.current) {
         clearTimeout(reshowTimerRef.current);
         reshowTimerRef.current = null;
+      }
+      if (reshowInputCleanupRef.current) {
+        reshowInputCleanupRef.current();
+        reshowInputCleanupRef.current = null;
       }
     };
   }, [currentStep?.id]);
@@ -361,10 +374,17 @@ export const useTrainingFlow = ({
       armTimerRef.current = null;
     }, 150);
 
-    // Re-show reminder after delay if step has reshowAfterMs (repeats until action performed)
+    // Re-show reminder after inactivity if step has reshowAfterMs
     if (reshowTimerRef.current) clearTimeout(reshowTimerRef.current);
+    if (reshowInputCleanupRef.current) {
+      reshowInputCleanupRef.current();
+      reshowInputCleanupRef.current = null;
+    }
     if (currentStep?.setup?.reshowAfterMs) {
-      reshowTimerRef.current = setTimeout(() => {
+      const isNonDismissible = !!currentStep.setup.reshowNonDismissible;
+      const delay = currentStep.setup.reshowAfterMs;
+
+      const doReshow = () => {
         // Only re-show if advance hasn't fired yet (step hasn't changed)
         if (advanceArmedRef.current && gameEngine && gameEngine.isSessionActive) {
           gameEngine.state.isPaused = true;
@@ -372,10 +392,36 @@ export const useTrainingFlow = ({
           pauseStartTimeRef.current = Date.now();
           gameEngine.emitChange();
           setMessageVisible(true);
-          advanceArmedRef.current = false;
+          if (isNonDismissible) {
+            // Non-dismissible: keep advance armed so action (e.g. pop) still works
+            setCanDismiss(false);
+          } else {
+            advanceArmedRef.current = false;
+          }
+        }
+        // Clean up inactivity listeners
+        if (reshowInputCleanupRef.current) {
+          reshowInputCleanupRef.current();
+          reshowInputCleanupRef.current = null;
         }
         reshowTimerRef.current = null;
-      }, currentStep.setup.reshowAfterMs);
+      };
+
+      // Start inactivity timer — any input resets the countdown
+      reshowTimerRef.current = setTimeout(doReshow, delay);
+
+      const onInput = () => {
+        if (reshowTimerRef.current) {
+          clearTimeout(reshowTimerRef.current);
+          reshowTimerRef.current = setTimeout(doReshow, delay);
+        }
+      };
+      document.addEventListener('pointerdown', onInput);
+      document.addEventListener('keydown', onInput);
+      reshowInputCleanupRef.current = () => {
+        document.removeEventListener('pointerdown', onInput);
+        document.removeEventListener('keydown', onInput);
+      };
     }
   }, [adjustFillTimestampsForPause, gameEngine, currentStep]);
 
@@ -650,5 +696,6 @@ export const useTrainingFlow = ({
     trainingDisplayStep,
     messagePosition,
     highlightColor,
+    canDismiss,
   };
 };

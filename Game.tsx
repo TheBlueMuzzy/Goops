@@ -422,6 +422,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
     trainingDisplayStep,
     messagePosition: trainingMessagePosition,
     highlightColor: trainingHighlightColor,
+    canDismiss: trainingCanDismiss,
   } = useTrainingFlow({
     saveData,
     setSaveData,
@@ -453,11 +454,12 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   // Tap steps: dismiss = advance. Action/event steps: dismiss just hides message.
   const isTapAdvance = trainingStep?.advance.type === 'tap';
   const overlayActiveStep = isInTraining ? trainingDisplayStep : activeStep;
+  const noop = () => {};
   const overlayOnComplete = isInTraining
-    ? (isTapAdvance ? trainingAdvance : trainingDismiss)
+    ? (trainingCanDismiss ? (isTapAdvance ? trainingAdvance : trainingDismiss) : noop)
     : completeStep;
   const overlayOnDismiss = isInTraining
-    ? (isTapAdvance ? trainingAdvance : trainingDismiss)
+    ? (trainingCanDismiss ? (isTapAdvance ? trainingAdvance : trainingDismiss) : noop)
     : dismissStep;
 
   // Lights brightness is now continuous (player-controlled via fast drop)
@@ -1052,6 +1054,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
         advanceType={isInTraining ? (isTapAdvance ? 'tap' : 'dismiss') : undefined}
         blockInteraction={isInTraining && trainingStep?.pauseGame !== false && !!trainingDisplayStep}
         trainingProgress={trainingProgress}
+        canDismiss={isInTraining ? trainingCanDismiss : true}
       />
 
     </div>

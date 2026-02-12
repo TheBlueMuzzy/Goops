@@ -179,10 +179,11 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Pop Instruction',
     teaches: 'how-to-pop',
     setup: {
-      pressureRate: 0,  // Freeze pressure while reading
+      pressureRate: 0.625,  // Pressure rises after dismiss (pauses on reshow)
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false },
       highlightGoopColor: COLORS.YELLOW,  // Pulse yellow goop, only yellow can be popped
-      reshowAfterMs: 3000,  // Re-remind every 3s if user doesn't pop
+      reshowAfterMs: 3000,  // Re-remind after 3s of no input
+      reshowNonDismissible: true,  // Can't close re-shown message — only clears on pop
     },
     pauseGame: true,
     advance: { type: 'action', action: 'pop-goop' },
@@ -222,7 +223,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Pop Prompt',
     teaches: 'first-pop-practice',
     setup: {
-      pressureRate: 0.3125,
+      pressureRate: 0,  // Freeze pressure — focus on popping, not pressure stress
       allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
       messageDelay: 2000,  // Wait for fill to complete before showing hint
     },

@@ -75,7 +75,8 @@ export interface StepSetup {
   advanceWhenPressureAbovePieces?: boolean;  // Auto-advance when pressure line rises above highest locked goop
   advancePressureAboveColor?: string;       // Only check goops of this color for the pressure-above check
   highlightGoopColor?: string;  // Pulse-highlight goops of this color (also restricts popping to only this color)
-  reshowAfterMs?: number;       // After dismiss, re-show message every N ms until advance action is performed
+  reshowAfterMs?: number;       // After dismiss, re-show message after N ms of no input until advance action is performed
+  reshowNonDismissible?: boolean; // When re-shown, message can't be closed — only clears when advance action fires
 }
 
 // How the player advances past this step

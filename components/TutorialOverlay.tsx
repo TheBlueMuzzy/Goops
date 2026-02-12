@@ -38,6 +38,7 @@ interface TutorialOverlayProps {
     stepProgress: string;
     phaseDots: PhaseDotInfo[];
   };
+  canDismiss?: boolean; // When false, intercom buttons are hidden (non-dismissible reshow)
 }
 
 /**
@@ -60,6 +61,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   advanceType,
   blockInteraction = false,
   trainingProgress,
+  canDismiss = true,
 }) => {
   // Track the step being displayed (for fade-out: keep rendering while fading)
   const [displayedStep, setDisplayedStep] = useState<DisplayableStep | null>(null);
@@ -149,6 +151,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
           position={messagePosition}
           advanceType={advanceType}
           trainingProgress={trainingProgress}
+          canDismiss={canDismiss}
         />
       </div>
     </div>

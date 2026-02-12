@@ -18,6 +18,8 @@ interface IntercomMessageProps {
   className?: string;
   // 'tap' = show ✓ only, 'dismiss' = show ✗ only, undefined = show both
   advanceType?: 'tap' | 'dismiss';
+  // When false, hide all buttons (non-dismissible reshow — only action clears it)
+  canDismiss?: boolean;
   // Training progress (optional — only shown during rank 0 training)
   trainingProgress?: {
     phaseName: string;       // e.g. "Phase B: Goop Basics"
@@ -38,6 +40,7 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
   position = 'top',
   className = '',
   advanceType,
+  canDismiss = true,
   trainingProgress,
 }) => {
   const [visibleChars, setVisibleChars] = useState(0);
@@ -144,8 +147,8 @@ export const IntercomMessageDisplay: React.FC<IntercomMessageProps> = ({
           />
         </div>
 
-        {/* Action buttons — only show when fully revealed */}
-        {isFullyRevealed && (
+        {/* Action buttons — only show when fully revealed and dismissible */}
+        {isFullyRevealed && canDismiss && (
           <div className="flex justify-end gap-3 px-3 py-3 border-t border-slate-800">
             {/* Dismiss button: shown for 'dismiss' mode or when no advanceType (legacy) */}
             {advanceType !== 'tap' && (
