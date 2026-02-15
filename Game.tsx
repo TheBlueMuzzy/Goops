@@ -14,7 +14,7 @@ import { gameEventBus } from './core/events/EventBus';
 import { GameEventType, RotatePayload, DragPayload, FastDropPayload, BlockTapPayload, SwapHoldPayload } from './core/events/GameEvents';
 import { calculateRankDetails } from './utils/progression';
 import { getPaletteForRank } from './utils/gameLogic';
-import { TETRA_NORMAL, TETRA_CORRUPTED, PENTA_NORMAL, PENTA_CORRUPTED, HEXA_NORMAL, HEXA_CORRUPTED, COLORS } from './constants';
+import { TETRA_NORMAL, TETRA_CORRUPTED, PENTA_NORMAL, PENTA_CORRUPTED, HEXA_NORMAL, HEXA_CORRUPTED, COLORS, SHIFT_DURATION } from './constants';
 import { SpinTankCommand, RotateGoopCommand, SetFastDropCommand, SwapPieceCommand, StartRunCommand, SetPhaseCommand, TogglePauseCommand, ResolveComplicationCommand, PopGoopCommand, ActivateAbilityCommand } from './core/commands/actions';
 import { IntercomMessageDisplay } from './components/IntercomMessage';
 import { TutorialOverlay } from './components/TutorialOverlay';
@@ -58,8 +58,7 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
   const [showPhysicsDebug, setShowPhysicsDebug] = useState(false);
   // Dev piece picker panel (toggle with ~ key)
   const [showPiecePicker, setShowPiecePicker] = useState(false);
-  // Dev intercom test
-  const [showTestIntercom, setShowTestIntercom] = useState(false);
+  // (showTestIntercom removed — replaced by Jump to D button)
   const [selectedPieceColor, setSelectedPieceColor] = useState(COLORS.RED);
   const [randomPieces, setRandomPieces] = useState(true);
   const [physicsParams, setPhysicsParams] = useState<PhysicsParams>({ ...DEFAULT_PHYSICS });
@@ -841,25 +840,42 @@ const Game: React.FC<GameProps> = ({ onExit, onRunComplete, initialTotalScore, p
         </div>
       )}
 
-      {/* LAYER 5b: DEV INTERCOM TEST */}
+      {/* LAYER 5b: DEV JUMP TO TRAINING PHASE */}
       {import.meta.env.DEV && (
         <button
-          onClick={() => setShowTestIntercom(true)}
-          className="absolute bottom-2 left-2 z-[100] px-2 py-1 bg-slate-800 text-slate-400 t-meta font-mono rounded border border-slate-700 hover:text-slate-200 pointer-events-auto"
-        >
-          Test Intercom
-        </button>
-      )}
-      {showTestIntercom && (
-        <IntercomMessageDisplay
-          message={{
-            fullText: "Attention operator. Begin rotation training immediately. Failure will result in demotion.",
-            keywords: ["rotation", "training"],
+          onClick={() => {
+            // Mark all A/B/C steps (+ their markComplete entries) as done
+            const completedSteps = [
+              'A1_BRIEFING', 'WELCOME',
+              'A2_PERISCOPE',
+              'B1_GOOP_INTRO', 'B1B_SLOW_COMMENT', 'B2_FAST_FALL',
+              'B3_PIECE_ROTATION', 'DROP_INTRO',
+              'B4_PRACTICE',
+              'C1_POP_INTRO', 'C1B_PRESSURE_RISING',
+              'C1C_POP_INSTRUCTION',
+              'C2_MERGE',
+              'C3_FILL_TIMING', 'POP_TIMING',
+              'C3B_POP_HINT',
+            ];
+            // Update save data to skip A/B/C
+            setSaveData(sd => ({
+              ...sd,
+              tutorialProgress: { completedSteps },
+            }));
+            // Put engine into training mode at 20% pressure, empty grid
+            if (engine) {
+              const palette = [COLORS.BLUE, COLORS.YELLOW, COLORS.GREEN, COLORS.RED];
+              engine.startTraining(palette);
+              engine.state.phase = ScreenType.TankScreen;
+              engine.state.shiftTime = SHIFT_DURATION * 0.8; // 20% PSI
+              engine.state.shiftScore = 450;
+              engine.emitChange();
+            }
           }}
-          onDismiss={() => setShowTestIntercom(false)}
-          onComplete={() => setShowTestIntercom(false)}
-          position="top"
-        />
+          className="absolute bottom-2 left-2 z-[100] px-2 py-1 bg-amber-900 text-amber-400 t-meta font-mono rounded border border-amber-700 hover:text-amber-200 pointer-events-auto"
+        >
+          Jump to D
+        </button>
       )}
 
       {/* LAYER 5: PIECE PICKER DEV PANEL (Toggle with ~ key) */}

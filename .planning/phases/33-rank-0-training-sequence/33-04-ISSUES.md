@@ -126,6 +126,17 @@
 **Expected:** Pressure rate slow enough for learning but fast enough to feel consequential.
 **Actual:** Pressure rate 0.2 feels sluggish compared to normal gameplay.
 
+### UAT-013: D1 crack never spawns — spawnCrack handler not implemented
+
+**Discovered:** 2026-02-13
+**Phase/Plan:** 33-04 (UAT round 7, D-phase)
+**Severity:** Blocker
+**Feature:** D1 crack spawning in training mode
+**Description:** D1 defines `spawnCrack: { color: GREEN, placement: 'near-stack' }` in its step config, and the `CrackSpawn` type exists in `types/training.ts`, but `useTrainingFlow.ts` has no handler that reads or processes `spawnCrack`. The `spawnPiece` handler exists (line ~147) but no equivalent for cracks. After D1's message dismisses, pressure rises to ~25% then stops — no crack ever appears. Player is stuck with no way to advance. Blocks D2, D3, E1, F1, F2.
+**Expected:** Green crack spawns on-screen near existing goop stack after D1 message. Player can pop matching goop onto it to advance.
+**Actual:** No crack spawns. Pressure rises and stops. Training stuck at D1 forever.
+**Root cause:** `spawnCrack` config defined but handler never built in `useTrainingFlow.ts`. Crack creation infrastructure exists in `GoalManager.trySpawnCrack()` but is not wired to training flow.
+
 ## Resolved Issues
 
 [None yet]
@@ -134,4 +145,4 @@
 
 *Phase: 33-rank-0-training-sequence*
 *Plan: 04*
-*Tested: 2026-02-08, 2026-02-11 (round 5)*
+*Tested: 2026-02-08, 2026-02-11 (round 5), 2026-02-13 (round 7 D-phase)*

@@ -10,9 +10,9 @@ updated: 2026-02-10
 ## Current Position
 
 Phase: 33 of 38 (Rank 0 Training Sequence)
-Plan: 4 of 4 in current phase — FIX-R5 plan created, fixes coded (uncommitted), ready to commit and verify
-Status: In progress — A & B approved, C1/C1B/C1C approved, C2+ through F need UAT after R5 fixes
-Last activity: 2026-02-12 - Round 5 fixes: C2 tap advance, C3B step, pressure tuning, fill timestamp adjustment
+Plan: 4 of 4 in current phase — Tutorial v2 redesign approved, full rebuild next
+Status: In progress — D-phase bugs fixed, Tutorial2.md finalized, ready for full tutorial rebuild
+Last activity: 2026-02-15 - Tutorial2.md design review complete, all 3 user concerns addressed
 
 Progress: █████░░░░░ 50%
 
@@ -28,23 +28,30 @@ Progress: █████░░░░░ 50%
 
 ## Next Steps
 
-33-04-FIX-R5 plan created for 3 round-5 UAT issues. Fixes already coded (uncommitted).
+**Tutorial v2 redesign (Tutorial2.md) finalized.** Ready for full rebuild.
 
-**Round 5 fixes (uncommitted, ready to commit):**
-- UAT-011 (Blocker): C2 changed from event-based to tap advance — merge fires during pauseDelay
-- UAT-010 (Major): Added C3B_POP_HINT step bridging C3→D1 gap
-- UAT-012 (Minor): Pressure rates bumped 0.2→0.3125 (C2/C3), 0.3→0.46875 (D/E)
-- Bonus: fill timestamp adjustment, showOnInput, reshowAfterMs, D1 pauseDelay
+**Key design decisions (2026-02-15):**
+- 14 steps (down from 19), 6 phases (A:1, B:4, C:4, D:3, E:1, F:1)
+- Player never waits > 3s without an action — C1 pressure sped up to 2.5 rate (~3s to reach goop)
+- Pressure is "honest": only rises when relevant, popping lowers it, never reaches 100%
+- D1 pressure = 0 (player just reading about cracks, not managing pressure)
+- F1 graduation: pressure caps at 95% → practice message → "swipe up to leave training" → console
+- Stack overflow during F1: "Training is over. Swipe up to end." → console (no end-game screen)
+- New features needed: continuous piece spawning, persistent D3 discovery trigger, pressure cap, swipe-up exit, pop-lowers-pressure during training
 
-**UAT approval status:**
-- A-phase (A1, A2): APPROVED
-- B-phase (B1, B1B, B2, B3, B4): APPROVED
-- C-phase (C1, C1B, C1C, C2, C3, C3B): APPROVED
-- D-phase (D1, D2, D3): NEEDS TESTING
-- E-phase (E1): NEEDS TESTING
-- F-phase (F1, F2): NEEDS TESTING
+**D-phase bugs fixed (2026-02-14, in this commit):**
+1. D2 piece never falls — isDelayedPause expanded for position-gated + cracks-offscreen steps
+2. D3 soft-lock — added spawnCrack (green, near-stack) to D3 config
+3. D2 retry — staged 3-phase: freeze → 1s → pop → 1.5s → retry message
+4. D2 message-timing branch reorder — position-gated → cracks-offscreen → pauseDelay
+5. Offscreen arrow threshold — `>` to `>=` in GameBoard.tsx
+6. D3 discovery — `some()` not `every()`, auto-skip after 15s
 
-After full verification: create 33-04-FIX-SUMMARY, update ROADMAP, metadata commit.
+**What changed (uncommitted):**
+- All prior C-phase + D1 crack spawn changes (from last session)
+- `hooks/useTrainingFlow.ts`: isDelayedPause, branch reorder, staged retry (3 phases), discovery-gated D3 with auto-skip
+- `data/trainingScenarios.ts`: D3 spawnCrack added
+- `components/GameBoard.tsx`: offscreen arrow threshold `>` → `>=`
 
 ### Key Technical Changes This Session
 
@@ -136,7 +143,7 @@ After full verification: create 33-04-FIX-SUMMARY, update ROADMAP, metadata comm
 
 - PiecePreview NEXT/HOLD labels at 18px may be too large for 48px box
 - Some SVG text in Art.tsx not yet standardized
-- Per-step crack spawning not yet active
+- Per-step crack spawning now active (spawnCrack handler in useTrainingFlow.ts)
 
 ### Roadmap Evolution
 
@@ -147,29 +154,26 @@ After full verification: create 33-04-FIX-SUMMARY, update ROADMAP, metadata comm
 
 ## Session Continuity
 
-Last session: 2026-02-12
+Last session: 2026-02-15
 **Version:** 1.1.13
 **Branch:** feature/tutorial-infrastructure
-**Build:** 250
+**Build:** 266
 
 ### Resume Command
 ```
-Phase 33 Plan 04-FIX-R5 — commit fixes and UAT round 6
+Phase 33 Plan 04 — Tutorial v2 full rebuild
 
-Round 5 fixes CODED but uncommitted (8 files, 175 insertions).
-A & B approved. C1/C1B/C1C approved. C2+ through F need testing.
-
-FIXES IN UNCOMMITTED CHANGES:
-- C2: tap advance (was event-based, merge fired before listener)
-- C3B: new step bridging C3→D1 (pop prompt with 2s delay)
-- Pressure: 0.3125 (C/D/E), fill timestamp adjustment, showOnInput
+Tutorial2.md is the approved design spec (14 steps, 6 phases).
+D-phase bug fixes committed. 210 tests pass.
 
 WHAT TO DO:
-1. Run tests: npm run test:run
-2. Commit round 5 fixes
-3. Start dev server: npm run dev -- --host
-4. Clear localStorage, test C2→C3→C3B→D→E→F flow
-5. After full approval: 33-04-FIX-SUMMARY, ROADMAP, metadata commit
+1. Read .planning/Tutorial2.md — this IS the plan
+2. Rebuild entire tutorial from scratch based on Tutorial2.md
+3. Remove "jump to D" debug button
+4. New features needed: continuous piece spawning, pressure cap at 95%,
+   swipe-up exit, persistent D3 discovery trigger, pop-lowers-pressure
+5. Build top-to-bottom: types → scenarios → steps → flow hook → rendering
+6. Test full flow A1→F1
 ```
 
 ---

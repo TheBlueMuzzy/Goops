@@ -246,7 +246,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       pauseDelay: 2500,  // Wait for pop droplets to fade + crack to appear before message
     },
     pauseGame: true,
-    advance: { type: 'action', action: 'pop-goop' },
+    advance: { type: 'tap' },  // Introduce cracks visually — actual sealing comes in D2/E1
     markComplete: 'CRACK_INTRO',
   },
 
@@ -259,9 +259,14 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       spawnPiece: { color: COLORS.GREEN, shape: GoopShape.T_O },
       pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
+      showWhenPieceBelow: 8,  // Show message when piece is ~25% down the viewport
+      retryOnPieceLand: {
+        retryMessageId: 'D2_RETRY',
+        spawnExtraCrack: { color: COLORS.GREEN, placement: 'near-stack' },
+      },
     },
-    pauseGame: true,
-    advance: { type: 'action', action: 'rotate-tank' },
+    pauseGame: true,  // Pause when position-gated message appears
+    advance: { type: 'event', event: 'crack-sealed' },
     markComplete: 'ROTATE_INTRO',
   },
 
@@ -271,10 +276,12 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Offscreen Cracks',
     teaches: 'cylindrical-awareness',
     setup: {
+      spawnCrack: { color: COLORS.GREEN, placement: 'near-stack' },  // Visible crack — message triggers when player rotates it offscreen
       pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
+      showWhenCracksOffscreen: true,  // Message appears only when player rotates all cracks out of view
     },
-    pauseGame: true,
+    pauseGame: true,  // Pause when message appears (after cracks go offscreen)
     advance: { type: 'tap' },
     markComplete: 'WRAP_INTRO',
   },

@@ -716,7 +716,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 if (diff > TANK_WIDTH / 2) diff -= TANK_WIDTH;
                 if (diff < -TANK_WIDTH / 2) diff += TANK_WIDTH;
                 
-                if (Math.abs(diff) > TANK_VIEWPORT_WIDTH / 2) {
+                if (Math.abs(diff) >= TANK_VIEWPORT_WIDTH / 2) {
                     const isRight = diff > 0;
                     const yPos = (mark.y - BUFFER_HEIGHT) * BLOCK_SIZE + (BLOCK_SIZE / 2);
                     const xPos = isRight ? (vbX + vbW - 5) : (vbX + 5);

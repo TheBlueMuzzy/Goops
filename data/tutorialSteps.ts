@@ -118,3 +118,14 @@ export const TRAINING_MESSAGES: Record<TrainingStepId, IntercomMessage> = {
     fullText: "We'll turn [the] pressure off [so you can] practice. When [you're] done practicing, [just let the goop] overflow [the] tank.",
   },
 };
+
+/**
+ * Retry messages shown when the player misses during a training step.
+ * Separate from TRAINING_MESSAGES because these aren't keyed by TrainingStepId.
+ */
+export const TRAINING_RETRY_MESSAGES: Record<string, IntercomMessage> = {
+  D2_RETRY: {
+    keywords: ['tank', 'goop', 'crack'],
+    fullText: "Try again! Spin [the] tank [with] A/D or [by] dragging left/right so that [the] goop covers [the] crack.",
+  },
+};
