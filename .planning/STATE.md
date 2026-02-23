@@ -69,6 +69,7 @@ Plan 33-07: Custom Handlers + Integration + UAT (2 tasks + 1 checkpoint)
      - D2 bugs found and fixed (6157603, 5ddd66d, 66e2b91)
      - Operator precedence fix (0126ca8)
      - D3 post-seal delay added — droplets fade before message (next commit)
+     - E1 pop always skipped E2 (fixed — only skip if pop before hint)
      - A1→D2 verified working, continuing D2→F1
 ```
 

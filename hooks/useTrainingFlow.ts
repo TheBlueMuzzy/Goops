@@ -947,6 +947,7 @@ export const useTrainingFlow = ({
         advanceArmedRef.current = true;
 
         pool.set('e1-hint', () => {
+          e1HintShown = true;
           setMessageVisible(true);
           setCanDismiss(false);
           gameEngine.trainingHighlightColor = COLORS.GREEN;
@@ -962,14 +963,19 @@ export const useTrainingFlow = ({
       });
       cleanups.push(e1GoalUnsub);
 
+      // Track whether hint has shown (pop before hint = skip E2, pop after hint = show E2)
+      let e1HintShown = false;
+
       const e1PopUnsub = gameEventBus.on(GameEventType.GOOP_POPPED, () => {
         if (!advanceArmedRef.current) return;
-        // Mark E2 as complete so getNextTrainingStep skips it
-        setSaveData(sd => {
-          const existing = sd.tutorialProgress?.completedSteps ?? [];
-          if (existing.includes('E2_SCAFFOLDING')) return sd;
-          return { ...sd, tutorialProgress: { completedSteps: [...existing, 'E2_SCAFFOLDING'] } };
-        });
+        // Skip E2 only if player figured out to pop WITHOUT the hint
+        if (!e1HintShown) {
+          setSaveData(sd => {
+            const existing = sd.tutorialProgress?.completedSteps ?? [];
+            if (existing.includes('E2_SCAFFOLDING')) return sd;
+            return { ...sd, tutorialProgress: { completedSteps: [...existing, 'E2_SCAFFOLDING'] } };
+          });
+        }
         advanceStepRef.current();
       });
       cleanups.push(e1PopUnsub);
