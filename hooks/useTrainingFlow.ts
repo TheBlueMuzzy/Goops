@@ -943,7 +943,7 @@ export const useTrainingFlow = ({
     }
 
     // --- Discoverable D3 offscreen message ---
-    const stepsWithCracksAndRotation = ['D2_TANK_ROTATION', 'E1_SEAL_CRACK', 'F1_GRADUATION'];
+    const stepsWithCracksAndRotation = ['E1_SEAL_CRACK', 'F1_GRADUATION'];
     const d3AlreadyCompleted = completedRef.current.includes('D3_OFFSCREEN');
     if (!d3AlreadyCompleted && !d3MessageShownRef.current && gameEngine &&
         currentStep.id !== 'D3_OFFSCREEN' &&
