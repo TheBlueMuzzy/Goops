@@ -762,6 +762,7 @@ export const useTrainingFlow = ({
             // Crack was plugged! Unpause so player can pop to seal
             gameEngine.state.isPaused = false;
             gameEngine.freezeFalling = false;
+            gameEngine.trainingHighlightColor = currentStep.setup?.spawnCrack?.color ?? COLORS.GREEN;
             gameEngine.emitChange();
 
             // Hint timer: if no pop within 3s, show "Pop to seal" hint
