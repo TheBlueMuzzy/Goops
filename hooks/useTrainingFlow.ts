@@ -1120,7 +1120,7 @@ export const useTrainingFlow = ({
   // Sync highlight color to engine (static config + dynamic override)
   useEffect(() => {
     if (!gameEngine) return;
-    const color = dynamicHighlight ?? (isInTraining && currentStep?.setup?.highlightGoopColor) || null;
+    const color = dynamicHighlight ?? ((isInTraining && currentStep?.setup?.highlightGoopColor) || null);
     gameEngine.trainingHighlightColor = color;
   }, [gameEngine, currentStep?.id, isInTraining, dynamicHighlight]);
 
@@ -1181,7 +1181,7 @@ export const useTrainingFlow = ({
   }, [currentStep?.id, messageVisible, retryMessage]);
 
   const messagePosition = currentStep?.setup?.messagePosition ?? 'center';
-  const highlightColor = dynamicHighlight ?? (isInTraining && currentStep?.setup?.highlightGoopColor) || null;
+  const highlightColor = dynamicHighlight ?? ((isInTraining && currentStep?.setup?.highlightGoopColor) || null);
 
   return {
     currentStep,
