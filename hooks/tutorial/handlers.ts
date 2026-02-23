@@ -6,16 +6,20 @@
  *
  * Handlers:
  *   standardHandler    → used by most steps (patterns 1-5)
- *   retryHandler       → D2 (accumulating cracks on retry) — stub, plan 33-07
- *   discoveryHandler   → D3 (persistent arrow listener) — stub, plan 33-07
- *   continuousHandler  → E1 (continuous spawn + event-driven) — stub, plan 33-07
- *   freePlayHandler    → F1 (pressure cap cycle, overflow, swipe-up) — stub, plan 33-07
+ *   retryHandler       → D2 (accumulating cracks on retry)
+ *   discoveryHandler   → D3 (persistent arrow listener)
+ *   continuousHandler  → E1 (continuous spawn + event-driven)
+ *   freePlayHandler    → F1 (pressure cap cycle, overflow, swipe-up)
  */
 
 import { GameEngine } from '../../core/GameEngine';
 import { TrainingStep, HandlerType } from '../../types/training';
 import { TimeoutPool } from './timeoutPool';
 import { StepStateMachine } from './stateMachine';
+import { createRetryHandler as retryImpl } from './retryHandler';
+import { createDiscoveryHandler as discoveryImpl, setupDiscoveryListener } from './discoveryHandler';
+import { createContinuousHandler as continuousImpl } from './continuousHandler';
+import { createFreePlayHandler as freeplayImpl } from './freeplayHandler';
 
 // --- Handler Interface ---
 
@@ -54,6 +58,19 @@ export interface HandlerContext {
   onSetMessageVisible: (visible: boolean) => void;
   onSetCanDismiss: (canDismiss: boolean) => void;
   onSetRetryMessage: (message: { keywords: string[]; fullText: string } | null) => void;
+  // Orchestrator state accessors (for custom handlers)
+  onSuppressContinuousSpawn: (suppress: boolean) => void;
+  onSetPauseStartTime: (time: number | null) => void;
+  onMarkStepComplete: (stepId: string) => void;
+  onSetDiscoveryInterrupt: (active: boolean) => void;
+  onSetF1Ending: (ending: 'none' | 'pressure-cap' | 'overflow') => void;
+  getF1Ending: () => 'none' | 'pressure-cap' | 'overflow';
+  getCompletedSteps: () => string[];
+  isDiscoveryInterrupt: () => boolean;
+  // Spawn helpers
+  spawnPieceFromConfig: (engine: GameEngine, step: TrainingStep) => void;
+  addCrackToGrid: (engine: GameEngine, x: number, y: number, color: string, source: string) => void;
+  spawnRandomCrack: (engine: GameEngine) => void;
 }
 
 // --- Standard Handler ---
@@ -100,84 +117,30 @@ export function createStandardHandler(): StepHandler {
   };
 }
 
-// --- Custom Handler Stubs (Plan 33-07) ---
+// --- Custom Handlers (Plan 33-07) ---
 
-/**
- * Retry handler stub — D2 tank rotation.
- * Accumulates cracks on failed attempts.
- * Implementation in plan 33-07.
- */
+/** Retry handler — D2 tank rotation. Accumulates cracks on failed attempts. */
 export function createRetryHandler(): StepHandler {
-  return {
-    setup(_context: HandlerContext): (() => void)[] {
-      // Plan 33-07: D2 retry logic
-      // - Watch for PIECE_DROPPED without GOAL_CAPTURED
-      // - On miss: keep old cracks, spawn extra crack near bottom
-      // - Respawn piece, show retry message
-      // - On crack-sealed: advance
-      return [];
-    },
-    cleanup() {},
-  };
+  return retryImpl();
 }
 
-/**
- * Discovery handler stub — D3 offscreen.
- * Persistent CRACK_OFFSCREEN listener that fires once.
- * Implementation in plan 33-07.
- */
+/** Discovery handler — D3 offscreen. Persistent CRACK_OFFSCREEN listener, fires once. */
 export function createDiscoveryHandler(): StepHandler {
-  return {
-    setup(_context: HandlerContext): (() => void)[] {
-      // Plan 33-07: D3 discovery logic
-      // - Listen for CRACK_OFFSCREEN event
-      // - Fires once, ever. Interrupts current step.
-      // - Pauses, shows D3 message, player acknowledges
-      // - Resumes current step. D3 marked complete permanently.
-      return [];
-    },
-    cleanup() {},
-  };
+  return discoveryImpl();
 }
 
-/**
- * Continuous handler stub — E1 seal crack.
- * Continuous spawn + GOAL_CAPTURED event-driven flow.
- * Implementation in plan 33-07.
- */
+/** Continuous handler — E1 seal crack. Continuous spawn + GOAL_CAPTURED flow. */
 export function createContinuousHandler(): StepHandler {
-  return {
-    setup(_context: HandlerContext): (() => void)[] {
-      // Plan 33-07: E1 continuous logic
-      // - Continuous piece spawn after each landing
-      // - On GOAL_CAPTURED: suppress spawn, freeze falling
-      // - Standard hint pattern: wait 3s, show if no pop
-      // - On pop: crack sealed, advance
-      return [];
-    },
-    cleanup() {},
-  };
+  return continuousImpl();
 }
 
-/**
- * Free play handler stub — F1 graduation.
- * Pressure cap cycle, overflow detection, swipe-up exit.
- * Implementation in plan 33-07.
- */
+/** Free play handler — F1 graduation. Pressure cap cycle, overflow, swipe-up exit. */
 export function createFreePlayHandler(): StepHandler {
-  return {
-    setup(_context: HandlerContext): (() => void)[] {
-      // Plan 33-07: F1 freeplay logic
-      // - Continuous pieces + periodic cracks
-      // - Pressure cap at 95% → pause + ending message
-      // - Overflow → freeze + ending message
-      // - Swipe-up to exit (gated on ending state)
-      // - Re-cap cycle if pressure drops and rises again
-      return [];
-    },
-    cleanup() {},
-  };
+  return freeplayImpl();
 }
+
+// Re-export discovery listener setup for the orchestrator
+export { setupDiscoveryListener };
 
 // --- Handler Registry ---
 
