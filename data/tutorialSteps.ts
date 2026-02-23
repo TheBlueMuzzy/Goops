@@ -32,7 +32,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
 ];
 
 /**
- * Tutorial v2 — Intercom messages for all 16 training steps.
+ * Tutorial v3 — Intercom messages for all 15 training steps.
  *
  * Voice: bored shift supervisor reading from a manual he's memorized
  * against his will. Never "please" or "try to." Imperative mood. Brief.
@@ -93,11 +93,7 @@ export const TRAINING_MESSAGES: Record<TrainingStepId, IntercomMessage> = {
     keywords: ['Pop', 'goop', 'seal', 'crack'],
     fullText: 'Pop [the] goop [to] seal the crack.',
   },
-  E2_POP_SEALED: {
-    keywords: ['Pop'],
-    fullText: 'Pop [it].',
-  },
-  E3_SCAFFOLDING: {
+  E2_SCAFFOLDING: {
     keywords: ['Cracks', 'pressure', 'goop', 'reach'],
     fullText: 'Cracks [spawn] higher as [the] pressure builds. Stack goop [to] reach [them].',
   },

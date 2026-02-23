@@ -14,11 +14,17 @@ export const TRAINING_PHASE_NAMES: Record<TrainingPhase, string> = {
 };
 
 /**
- * Tutorial v2 — 16 steps across 6 phases (A-F).
+ * Tutorial v3 — 15 steps across 6 phases (A-F).
  *
- * Design spec: .planning/Tutorial2.md
+ * Design spec: .planning/Tutorial3.md
  * Principles: show-then-name-then-do, one concept per step,
  * under 20 words per message, always doing something within 3s.
+ *
+ * Step IDs:
+ *   A1_WELCOME, B1_GOOP_FALLS, B2_FAST_DROP, B3_ROTATION, B4_PRACTICE,
+ *   C1_PRESSURE, C2_POP, C3_MERGE_SOLIDIFY, C4_PRACTICE_POP,
+ *   D1_CRACK, D2_TANK_ROTATION, D3_OFFSCREEN,
+ *   E1_SEAL_CRACK, E2_SCAFFOLDING, F1_GRADUATION
  */
 export const TRAINING_SEQUENCE: TrainingStep[] = [
 
@@ -41,6 +47,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     pauseGame: true,
     advance: { type: 'action', action: 'drag-periscope' },
     markComplete: 'WELCOME',
+    handlerType: 'standard',
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -64,11 +71,11 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     },
     pauseGame: false,  // Game running, piece falling, message visible
     advance: { type: 'event', event: 'piece-landed' },  // Fallback if piece lands before row 8
+    handlerType: 'standard',
   },
 
   {
     // B2: Same piece still falling. Acknowledge slowness + teach fast-drop.
-    // "Yeah. It's slow. Drag down or press S to fast-drop."
     // Controls: fast-drop enabled. Advance when piece lands.
     id: 'B2_FAST_DROP',
     phase: 'B',
@@ -81,6 +88,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     },
     pauseGame: false,  // Piece keeps falling, player can fast-drop
     advance: { type: 'event', event: 'piece-landed' },
+    handlerType: 'standard',
   },
 
   {
@@ -100,11 +108,11 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     pauseGame: true,
     advance: { type: 'event', event: 'piece-landed' },
     markComplete: 'DROP_INTRO',
+    handlerType: 'standard',
   },
 
   {
     // B4: Practice rep. Blue 2x2 (simple, no rotation needed). Breather.
-    // "Do it again."
     id: 'B4_PRACTICE',
     phase: 'B',
     name: 'Practice',
@@ -116,6 +124,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     },
     pauseGame: true,  // Message shows immediately, dismiss → piece falls
     advance: { type: 'event', event: 'piece-landed' },
+    handlerType: 'standard',
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -124,8 +133,8 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
   // ═══════════════════════════════════════════════════════════════
 
   {
-    // C1: "Pressure builds over time." — 4 words.
-    // Dismiss → pressure rises fast (2.5 rate) → reaches yellow goop in ~3s → auto-advance.
+    // C1: "Pressure builds over time."
+    // Dismiss → pressure rises fast (2.5 rate) → reaches yellow goop → auto-advance.
     // All controls disabled — watch only.
     id: 'C1_PRESSURE',
     phase: 'C',
@@ -140,11 +149,12 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     },
     pauseGame: true,  // Pause for message. Dismiss → pressure starts rising.
     advance: { type: 'auto', delayMs: 60000 },  // Never fires — pressure-above-pieces advances first
+    handlerType: 'standard',
   },
 
   {
     // C2: "Tap goop below the pressure line to pop it."
-    // Pressure frozen (0). Yellow goop pulses. Reshow after 3s (non-dismissible).
+    // Pressure frozen (0). Yellow goop pulses. Hint reshow after 3s (non-dismissible).
     // Game NOT paused — player can pop while reading.
     id: 'C2_POP',
     phase: 'C',
@@ -154,38 +164,36 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       pressureRate: 0,  // Frozen — focus on learning to pop
       allowedControls: { fastDrop: false, rotate: false, tankRotate: false },
       highlightGoopColor: COLORS.YELLOW,
-      reshowAfterMs: 3000,
-      reshowNonDismissible: true,
+      hintDelay: 3000,  // Wait 3s after dismiss; if no pop, reshow non-dismissible + pause pressure
       popLowersPressure: true,
     },
     pauseGame: false,  // Game running, player can pop while reading
     advance: { type: 'action', action: 'pop-goop' },
+    handlerType: 'standard',
   },
 
   {
     // C3: Merge + solidify in one message.
-    // "Same-color goop merges. Bigger blobs vent more. Fresh goop needs a moment to set."
     // Shows 1.5s after C2's pop (let droplets fade, merge animation play).
-    // Pressure 0.3125 (moderate, needs to reach merged blue).
+    // Pressure 0.3125 (moderate).
     id: 'C3_MERGE_SOLIDIFY',
     phase: 'C',
     name: 'Merge & Solidify',
     teaches: 'merge-and-fill-timing',
     setup: {
       pressureRate: 0.3125,
-      allowedControls: { fastDrop: true, rotate: true, tankRotate: false, pop: false },
       pauseDelay: 1500,  // Wait for pop droplets + merge animation
     },
     pauseGame: true,
     advance: { type: 'tap' },  // Acknowledge merge+solidify info
     markComplete: 'POP_TIMING',
+    handlerType: 'standard',
   },
 
   {
     // C4: "Pop it." — second pop rep. Merged blue visible, pressure frozen.
-    // Blue goop pulses (highlight). Player waits for solidify, then pops.
-    // Message shows after 2s delay. Game NOT paused — player can pop while reading.
-    // Reshow after 3s if player hasn't popped (non-dismissible reminder).
+    // Blue goop pulses (highlight). Message shows after 2s delay.
+    // Hint reshow after 3s if player hasn't popped (non-dismissible reminder).
     id: 'C4_PRACTICE_POP',
     phase: 'C',
     name: 'Practice Pop',
@@ -195,12 +203,12 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       allowedControls: { fastDrop: true, rotate: true, tankRotate: false },
       highlightGoopColor: COLORS.BLUE,  // Pulse blue goop, restrict popping to blue
       messageDelay: 2000,  // Wait for fill context to settle
-      reshowAfterMs: 3000,
-      reshowNonDismissible: true,
+      hintDelay: 3000,  // Wait 3s after dismiss; if no pop, reshow non-dismissible + pause pressure
       popLowersPressure: true,
     },
     pauseGame: false,  // Game running so player can pop while reading
     advance: { type: 'action', action: 'pop-goop' },
+    handlerType: 'standard',
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -220,19 +228,19 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     setup: {
       spawnCrack: { color: COLORS.GREEN, placement: 'near-stack', row: 22 },
       pressureRate: 0,
-      allowedControls: { fastDrop: true, rotate: true, tankRotate: false, pop: false },
       pauseDelay: 2500,  // Let C4 droplets fade, crack spawns and becomes visible
     },
     pauseGame: true,
     advance: { type: 'tap' },
     markComplete: 'CRACK_INTRO',
+    handlerType: 'standard',
   },
 
   {
     // D2: Tank rotation. Green T_O piece. Crack is off to one side.
     // "Swipe left/right or A/D to spin the tank."
     // All controls enabled. Message at row 8. Advance on crack-sealed.
-    // Retry: freeze → 1s → pop all → 1.5s → new crack + retry msg + new piece.
+    // Retry: keep old cracks, add extra near bottom, respawn piece, retry message.
     id: 'D2_TANK_ROTATION',
     phase: 'D',
     name: 'Tank Rotation',
@@ -251,93 +259,73 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     pauseGame: true,  // Pause when position-gated message shows
     advance: { type: 'event', event: 'crack-sealed' },
     markComplete: 'ROTATE_INTRO',
+    handlerType: 'retry',
   },
 
   {
-    // D3: Offscreen discovery. Green crack visible.
-    // Triggers when ANY crack rotated offscreen. Auto-skip after 15s.
+    // D3: Offscreen discovery. Persistent listener for CRACK_OFFSCREEN event.
+    // Fires when ANY crack is rotated offscreen. Auto-skip after 15s.
     // If auto-skipped, trigger stays armed through E and F phases (persistent).
     id: 'D3_OFFSCREEN',
     phase: 'D',
     name: 'Offscreen Cracks',
     teaches: 'cylindrical-awareness',
     setup: {
-      spawnCrack: { color: COLORS.GREEN, placement: 'near-stack' },
       pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
-      showWhenCracksOffscreen: true,
       autoSkipMs: 15000,  // Auto-advance if player never rotates crack offscreen
       popLowersPressure: true,
     },
-    pauseGame: true,  // Pause when cracks-offscreen message appears
+    pauseGame: true,
     advance: { type: 'tap' },
     markComplete: 'WRAP_INTRO',
+    handlerType: 'discovery',
   },
 
   // ═══════════════════════════════════════════════════════════════
-  // Phase E — Scaffolding (3 steps)
+  // Phase E — Scaffolding (2 steps)
   // Seal a high crack → pop → learn scaffolding concept
   // ═══════════════════════════════════════════════════════════════
 
   {
     // E1: High crack at pressure line. Continuous spawn. No initial message.
-    // GOAL_CAPTURED → freeze + suppress spawn → 3s → message → pop advances.
-    // If pop during E1, skip E2 → go to E3.
-    // If 3s after message with no pop → auto-advance to E2.
+    // GOAL_CAPTURED → freeze + suppress spawn → 3s → message + pulse → pop advances.
+    // If pop during 3s window → skip E2 → go to F1.
     id: 'E1_SEAL_CRACK',
     phase: 'E',
     name: 'Seal the Crack',
     teaches: 'high-crack-sealing',
     setup: {
-      spawnPiece: { shape: GoopShape.T_O, color: COLORS.GREEN },  // Green 2x2 to cover crack
+      spawnPiece: { shape: GoopShape.T_O, color: COLORS.GREEN },
       spawnCrack: { color: COLORS.GREEN, placement: 'at-pressure-line' },
       pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
       messagePosition: 'top',
       continuousSpawn: true,
       messageDelay: 999999,    // Message shown by custom GOAL_CAPTURED handler, not timer
+      hintDelay: 3000,         // After crack plugged: wait 3s, then show hint
       autoSkipMs: 90000,       // Safety: move on if stuck
       popLowersPressure: true,
     },
     pauseGame: false,  // Game running, no pause. Message controlled by GOAL_CAPTURED handler.
-    advance: { type: 'action', action: 'pop-goop' },  // Custom handler manages this
-  },
-
-  {
-    // E2: Crack is sealed. Green goop pulses. Player should pop it.
-    // Non-dismissible message shows immediately. Green highlight restricts popping.
-    // Entered only if player didn't pop during E1's 3s window.
-    id: 'E2_POP_SEALED',
-    phase: 'E',
-    name: 'Pop Sealed',
-    teaches: 'pop-after-seal',
-    setup: {
-      pressureRate: 0.46875,
-      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
-      highlightGoopColor: COLORS.GREEN,
-      nonDismissible: true,       // Can't dismiss — must pop to advance
-      autoSkipMs: 30000,          // Safety: prevent soft lock if goop isn't poppable
-      popLowersPressure: true,
-    },
-    pauseGame: false,  // Game running, player pops green goop
     advance: { type: 'action', action: 'pop-goop' },
+    handlerType: 'continuous',
   },
 
   {
-    // E3: Scaffolding concept. Shows after pop animation settles (1.5s delay).
+    // E2: Scaffolding concept. Shows after pop animation settles (1.5s delay).
     // "Cracks spawn higher as pressure builds. Stack goop to reach them."
-    id: 'E3_SCAFFOLDING',
+    id: 'E2_SCAFFOLDING',
     phase: 'E',
     name: 'Scaffolding',
     teaches: 'scaffolding-strategy',
     setup: {
       pressureRate: 0.46875,
-      allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
       pauseDelay: 1500,  // Wait for pop droplets + blobs to disappear
-      popLowersPressure: true,
     },
     pauseGame: true,
     advance: { type: 'tap' },
+    handlerType: 'standard',
   },
 
   // ═══════════════════════════════════════════════════════════════
@@ -347,7 +335,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
 
   {
     // F1: Graduation game. All mechanics active.
-    // Continuous pieces, periodic cracks every ~20s, pressure at 0.5 rate.
+    // Continuous pieces, periodic cracks every 10s, pressure at 0.5 rate.
     // Pressure caps at 95% → practice msg → swipe up → console.
     // Stack overflow → end msg → swipe up → console.
     // Pop lowers pressure (real game behavior).
@@ -363,11 +351,12 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       pressureCap: 0.95,
       periodicCrackIntervalMs: 10000,
       popLowersPressure: true,
-      pauseDelay: 2000,  // 2s breathing room after E3 before showing graduation message
+      pauseDelay: 2000,  // 2s breathing room after E2 before showing graduation message
     },
     pauseGame: true,  // Delayed pause for graduation message. Dismiss → free play begins.
     advance: { type: 'action', action: 'swipe-up' },  // Swipe up to leave training
     markComplete: 'FIRST_SHIFT',
+    handlerType: 'freeplay',
   },
 ];
 
