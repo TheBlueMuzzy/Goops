@@ -2,7 +2,7 @@
 title: Project State
 type: session
 tags: [active, continuity, status]
-updated: 2026-02-19
+updated: 2026-02-23
 ---
 
 # Project State
@@ -10,11 +10,11 @@ updated: 2026-02-19
 ## Current Position
 
 Phase: 33 of 38 (Rank 0 Training Sequence)
-Plan: 33-05 in progress (Engine Prerequisites) → 33-06, 33-07 remaining
-Status: Tutorial v3 — walkthrough approved (14 steps), Plan 33-05 Task 1+2 coded
-Last activity: 2026-02-20 — Plan 33-05 implemented (two-step sealing + CRACK_OFFSCREEN)
+Plan: 33-06 complete → 33-07 next (Custom Handlers + Integration + UAT)
+Status: Tutorial v3 — Plan 33-06 committed (ef26d1d, c3ec712), ready for 33-07
+Last activity: 2026-02-23 — Plan 33-06 completed (state machine framework + 15 step configs)
 
-Progress: █████████░ 93%
+Progress: █████████░ 95%
 
 ## Branch Workflow (SOP)
 
@@ -35,49 +35,50 @@ Tutorial v2 had persistent bugs through 11 UAT rounds. Root cause: fragile archi
 **Source of truth:** `.planning/Tutorial3.md`
 - Full audit of v2 (every step, every pattern, every coupling point)
 - All designer questions answered and confirmed
-- 14 steps across 6 phases (E1_SEAL_CRACK removed, E2 reworked as discovery trigger)
+- 15 steps across 6 phases (E2_POP_SEALED removed, E3 renumbered to E2)
 - Architecture direction: state machine, handler registry, timeout pool
 
 ### Key Decisions Confirmed
 | Decision | Detail |
 |----------|--------|
-| Architecture | State machine pattern (ENTERING → WAITING → MESSAGE_VISIBLE → ARMED → ADVANCING) |
-| Step count | 14 steps, 6 phases (A:1, B:4, C:4, D:3, E:1, F:1) |
-| E-phase | E2 eliminated, absorbed into E1 via standard hint pattern. E3→E2 renumbered. |
-| Crack sealing | Two-step: plug on lock, seal on pop (engine prerequisite — current behavior is buggy) |
-| D3 trigger | CRACK_OFFSCREEN event (replaces 200ms polling) |
+| Architecture | State machine pattern (ENTERING -> WAITING -> MESSAGE_VISIBLE -> ARMED -> ADVANCING) |
+| Step count | 15 steps, 6 phases (A:1, B:4, C:4, D:3, E:2, F:1) |
+| E-phase | E2_POP_SEALED eliminated, absorbed into E1 via standard hint pattern. E3->E2 renumbered. |
+| Crack sealing | Two-step: plug on lock, seal on pop (implemented in plan 33-05) |
+| D3 trigger | CRACK_OFFSCREEN event (implemented in plan 33-05) |
 | D2 retry | Accumulate cracks (never remove old ones) instead of pop-all reset |
-| F1 exit | Console screen, rank 0→1 (no end screen). Replays don't affect rank. |
+| F1 exit | Console screen, rank 0->1 (no end screen). Replays don't affect rank. |
 | Config editing | All timings/colors/pause states as named config fields, easy to change |
 | Garble system | Keep exactly as-is |
 | Future tutorials | Same system reused at higher ranks for new concepts |
 
-### GSD Plans (Approved — committed b99ed73)
+### GSD Plans
 ```
-Plan 33-05: Engine Prerequisites (2 tasks)
+Plan 33-05: Engine Prerequisites (2 tasks) — COMPLETE (b6f4a40)
   1. Two-step crack sealing (plug on lock, seal on pop, glow indicator)
   2. CRACK_OFFSCREEN event (fires when arrow first appears)
 
-Plan 33-06: Tutorial Framework + Step Configs (2 tasks)
+Plan 33-06: Tutorial Framework + Step Configs (2 tasks) — COMPLETE (ef26d1d, c3ec712)
   1. State machine framework (lifecycle states, timeout pool, handler registry, types)
   2. Step configs (15 steps) + messages + standard handler implementations
 
 Plan 33-07: Custom Handlers + Integration + UAT (2 tasks + 1 checkpoint)
   1. Custom handlers (D2 retry, D3 discovery, E1 seal+pop, F1 freeplay)
   2. Wire into Game.tsx, GameBoard, TutorialOverlay, remove old code
-  3. Full A1→F1 playthrough verification
+  3. Full A1->F1 playthrough verification
 ```
 
-### Uncommitted Changes (from v2 UAT round 11)
-- `hooks/useTrainingFlow.ts` — v2 code (will be replaced by v3 rewrite)
-- `data/trainingScenarios.ts` — v2 step configs (will be replaced)
-- `core/GameEngine.ts` — Debug logging from v2 (will be cleaned up)
+### What Plan 33-06 Built
+- **State machine:** `hooks/tutorial/stateMachine.ts` — 5 lifecycle states with derived properties
+- **Timeout pool:** `hooks/tutorial/timeoutPool.ts` — Named timers, clearAll on step change
+- **Handler registry:** `hooks/tutorial/handlers.ts` — Standard + stubs for 4 custom handlers
+- **Types updated:** `types/training.ts` — 15 step IDs, handlerType, hintDelay, state machine types
+- **Orchestrator:** `hooks/useTrainingFlow.ts` — Rewritten using pool + state machine (same Game.tsx interface)
+- **Step configs:** `data/trainingScenarios.ts` — 15 steps with handlerType assignments
+- **Messages:** `data/tutorialSteps.ts` — 15 messages, F1 endings, D2 retry
 
 ### Next Steps
-1. **Step-by-step walkthrough** — Claude presents each of the 15 steps, user approves or corrects
-2. Execute Plan 33-05: Engine prerequisites (crack sealing + CRACK_OFFSCREEN)
-3. Execute Plan 33-06: Framework + step configs
-4. Execute Plan 33-07: Custom handlers + integration + UAT
+1. Execute Plan 33-07: Custom handlers + integration + UAT
 
 ---
 
@@ -113,27 +114,28 @@ Plan 33-07: Custom Handlers + Integration + UAT (2 tasks + 1 checkpoint)
 - PiecePreview NEXT/HOLD labels at 18px may be too large for 48px box
 - Some SVG text in Art.tsx not yet standardized
 - **Fill rendering "almost hole" inversion**: fillRule="evenodd" issue with near-touching vertices
-- **Crack sealing mechanic is wrong**: Cracks disappear on piece lock instead of requiring pop to seal (documented in Tutorial3.md as engine prerequisite)
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-02-19
+Last session: 2026-02-23
 **Version:** 1.1.13
 **Branch:** feature/tutorial-infrastructure
-**Build:** 307 (untested — v2 round 11 fixes)
+**Build:** 307
 
 ### Resume Command
 ```
 Phase 33 — Tutorial v3 Rewrite
 
-Design complete. Plans approved and committed.
+Plans 33-05 and 33-06 COMPLETE. One plan remaining.
 
 WHAT TO DO:
-1. Read .planning/Tutorial3.md (Section 5: Step Spec)
-2. Walk through all 15 steps with user — present what each step does, user approves/corrects
-3. After walkthrough approved, execute plans 33-05 → 33-06 → 33-07
+1. Execute Plan 33-07: Custom handlers + integration + UAT
+   - Read .planning/phases/33-rank-0-training-sequence/33-07-PLAN.md
+   - Implement D2 retry, D3 discovery, E1 continuous, F1 freeplay handlers
+   - Wire into Game.tsx, remove old v2 code
+   - Full A1->F1 playthrough verification
 ```
 
 ---

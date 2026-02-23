@@ -104,13 +104,16 @@ Plans:
 **Goal**: Multiple constrained training scenarios (0TA through 0T?) with intercom-guided progression. Each teaches one concept: rotation, dropping, crack sealing, pop timing tension (scaffolding vs pressure), cylindrical wrapping, first real shift. As many levels as needed to prove out core mechanics before rank 1
 **Depends on**: Phase 32 (journal records what's learned)
 **Research**: Unlikely (gameplay constraints, needs design iteration)
-**Plans**: 4
+**Plans**: 7
 
 Plans:
 - [x] 33-01: Training scenario data model & configs
 - [x] 33-02: GameEngine training mode & flow controller
 - [x] 33-03: Intercom scripts & journal content
-- [ ] 33-04: Training HUD, highlight system & verification
+- [x] 33-04: Training HUD, highlight system & verification
+- [x] 33-05: Engine prerequisites (two-step crack sealing + CRACK_OFFSCREEN)
+- [x] 33-06: Tutorial framework + step configs (state machine, timeout pool, handler registry)
+- [ ] 33-07: Custom handlers + integration + UAT
 
 #### Phase 34: Rank-Gated UI
 
@@ -326,7 +329,7 @@ See [[v1.4-ROADMAP]] for full details.
 | 28-30. Locked Goop / Pop / Polish | v1.5 | — | Deferred | - |
 | 31. Tutorial Infrastructure | v1.6 | 3/3 | Complete | 2026-02-08 |
 | 32. Journal System | v1.6 | 1/1 | Complete | 2026-02-08 |
-| 33. Rank 0 Training Sequence | v1.6 | 3/4 | In progress | - |
+| 33. Rank 0 Training Sequence | v1.6 | 6/7 | In progress | - |
 | 34. Rank-Gated UI | v1.6 | 0/? | Not started | - |
 | 35. Complication Introductions | v1.6 | 0/? | Not started | - |
 | 36. Upgrade & Progression Onboarding | v1.6 | 0/? | Not started | - |
