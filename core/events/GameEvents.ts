@@ -7,8 +7,10 @@ export enum GameEventType {
     GOOP_POPPED = 'GOOP_POPPED',
     ACTION_REJECTED = 'ACTION_REJECTED',
     GAME_OVER = 'GAME_OVER',
-    GOAL_CAPTURED = 'GOAL_CAPTURED',
-    
+    GOAL_CAPTURED = 'GOAL_CAPTURED',     // Crack fully sealed (popped over plugged crack)
+    GOAL_PLUGGED = 'GOAL_PLUGGED',       // Matching goop landed on crack (not sealed yet)
+    CRACK_OFFSCREEN = 'CRACK_OFFSCREEN', // Crack arrow first appeared offscreen
+
     // Complications
     COMPLICATION_SPAWNED = 'COMPLICATION_SPAWNED',
     COMPLICATION_RESOLVED = 'COMPLICATION_RESOLVED',
@@ -55,6 +57,15 @@ export interface PopPayload {
 
 export interface GoalCapturePayload {
     count: number;
+}
+
+export interface GoalPluggedPayload {
+    count: number;
+}
+
+export interface CrackOffscreenPayload {
+    goalId: string;
+    direction: 'left' | 'right';
 }
 
 export interface MilestonePayload {

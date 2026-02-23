@@ -295,7 +295,7 @@ export const updateGroups = (grid: TankCell[][]): TankCell[][] => {
     return newGrid;
 };
 
-// Returns updated grid AND any consumed goal marks AND destroyed goal marks (wrong color)
+// Returns updated grid AND goal IDs hit by matching goop (to be plugged) AND destroyed goal marks (wrong color)
 export const mergePiece = (
     grid: TankCell[][], 
     piece: ActivePiece, 

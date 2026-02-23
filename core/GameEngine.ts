@@ -1202,7 +1202,7 @@ export class GameEngine {
             gameEventBus.emit(GameEventType.PIECE_DROPPED);
             const newGrid = this.state.grid.map(row => [...row]);
             let landUpdates = false;
-            const consumedGoals: string[] = [];
+            const pluggedGoals: string[] = [];
 
             landed.forEach(b => {
                 if (b.y >= 0 && b.y < TANK_HEIGHT) {
@@ -1215,7 +1215,7 @@ export class GameEngine {
 
                     let isMatch = false;
                     if (hitGoal && hitGoal.color === b.data.color) {
-                        consumedGoals.push(hitGoal.id);
+                        pluggedGoals.push(hitGoal.id);
                         isMatch = true;
                     }
                     // Non-matching: goal stays in array, visible through goop
@@ -1233,37 +1233,16 @@ export class GameEngine {
                 this.state.grid = updateGroups(newGrid);
             }
 
-            // Handle consumed goals (remove from arrays, emit events)
-            if (consumedGoals.length > 0) {
-                const removedIds = new Set(consumedGoals);
-
-                // Update crack parent/child references before removing
-                consumedGoals.forEach(id => {
-                    const cell = this.state.crackCells.find(c => c.id === id);
-                    if (!cell) return;
-
-                    // Remove this cell from its parents' branchCrackIds
-                    cell.originCrackId.forEach(parentId => {
-                        const parent = this.state.crackCells.find(c => c.id === parentId);
-                        if (parent) {
-                            parent.branchCrackIds = parent.branchCrackIds.filter(cid => cid !== id);
-                        }
-                    });
-
-                    // Remove this cell from its children's originCrackId
-                    cell.branchCrackIds.forEach(childId => {
-                        const child = this.state.crackCells.find(c => c.id === childId);
-                        if (child) {
-                            child.originCrackId = child.originCrackId.filter(pid => pid !== id);
-                        }
-                    });
+            // Two-step sealing: mark as plugged (don't remove — sealed on pop)
+            if (pluggedGoals.length > 0) {
+                pluggedGoals.forEach(id => {
+                    const goal = this.state.goalMarks.find(g => g.id === id);
+                    if (goal) goal.plugged = true;
+                    const crack = this.state.crackCells.find(c => c.id === id);
+                    if (crack) (crack as any).plugged = true;
                 });
 
-                // Remove from BOTH crackCells and goalMarks
-                this.state.crackCells = this.state.crackCells.filter(c => !removedIds.has(c.id));
-                this.state.goalMarks = this.state.goalMarks.filter(g => !removedIds.has(g.id));
-
-                gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: consumedGoals.length });
+                gameEventBus.emit(GameEventType.GOAL_PLUGGED, { count: pluggedGoals.length });
             }
 
             this.state.looseGoop = active;
@@ -1397,6 +1376,18 @@ export class GameEngine {
 
         let { grid: newGrid, consumedGoals, destroyedGoals } = mergePiece(this.state.grid, finalPiece, this.state.goalMarks);
 
+        // Training debug: log every piece lock with goal info
+        if (this.isTrainingMode) {
+            const cells = finalPiece.cells.map((c: {x:number,y:number}, i: number) => {
+                const cx = ((finalPiece.x + c.x) % TANK_WIDTH + TANK_WIDTH) % TANK_WIDTH;
+                const cy = Math.floor(finalPiece.y + c.y);
+                const col = finalPiece.definition.cellColors?.[i] ?? finalPiece.definition.color;
+                return `(${cx},${cy})${col.slice(0,3)}`;
+            });
+            const goals = this.state.goalMarks.map(g => `(${g.x},${g.y})${g.color.slice(0,3)}`);
+            console.log(`[LOCK] piece=${cells.join(' ')} | goals=${goals.length ? goals.join(' ') : 'NONE'} | consumed=${consumedGoals.length}`);
+        }
+
         // Process wild piece conversions (wild spreads to neighbors, or non-wild converts wild neighbors)
         if (finalPiece.definition.isWild || this.hasAdjacentWild(newGrid, finalPiece)) {
             newGrid = processWildConversions(newGrid, finalPiece);
@@ -1420,6 +1411,16 @@ export class GameEngine {
         // Check for floating blocks after piece locks (handles corrupted pieces with corner-connected cells)
         // mergePiece already called updateGroups, so corner-connected cells are now separate groups
         const { grid: gridAfterGravity, looseGoop: newLoose } = getFloatingBlocks(newGrid);
+        // Unplug any cracks that lost their covering goop due to gravity
+        newLoose.forEach(loose => {
+            if (loose.data.isSealingGoop) {
+                const goal = this.state.goalMarks.find(
+                    g => g.x === loose.x && g.y === Math.floor(loose.y) && g.plugged
+                );
+                if (goal) goal.plugged = false;
+                loose.data.isSealingGoop = false;
+            }
+        });
         if (newLoose.length > 0) {
             this.state.looseGoop.push(...newLoose);
         }

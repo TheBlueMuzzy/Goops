@@ -10,9 +10,9 @@ updated: 2026-02-19
 ## Current Position
 
 Phase: 33 of 38 (Rank 0 Training Sequence)
-Plan: 4 of 4 complete (v2) → Plans 05-07 committed (v3 rewrite)
-Status: Tutorial v3 — plans approved and committed, step walkthrough next
-Last activity: 2026-02-19 — Plans committed at b99ed73
+Plan: 33-05 in progress (Engine Prerequisites) → 33-06, 33-07 remaining
+Status: Tutorial v3 — walkthrough approved (14 steps), Plan 33-05 Task 1+2 coded
+Last activity: 2026-02-20 — Plan 33-05 implemented (two-step sealing + CRACK_OFFSCREEN)
 
 Progress: █████████░ 93%
 
@@ -35,14 +35,14 @@ Tutorial v2 had persistent bugs through 11 UAT rounds. Root cause: fragile archi
 **Source of truth:** `.planning/Tutorial3.md`
 - Full audit of v2 (every step, every pattern, every coupling point)
 - All designer questions answered and confirmed
-- 15 steps across 6 phases (down from 16 — E2_POP_SEALED absorbed into E1)
+- 14 steps across 6 phases (E1_SEAL_CRACK removed, E2 reworked as discovery trigger)
 - Architecture direction: state machine, handler registry, timeout pool
 
 ### Key Decisions Confirmed
 | Decision | Detail |
 |----------|--------|
 | Architecture | State machine pattern (ENTERING → WAITING → MESSAGE_VISIBLE → ARMED → ADVANCING) |
-| Step count | 15 steps, 6 phases (A:1, B:4, C:4, D:3, E:2, F:1) |
+| Step count | 14 steps, 6 phases (A:1, B:4, C:4, D:3, E:1, F:1) |
 | E-phase | E2 eliminated, absorbed into E1 via standard hint pattern. E3→E2 renumbered. |
 | Crack sealing | Two-step: plug on lock, seal on pop (engine prerequisite — current behavior is buggy) |
 | D3 trigger | CRACK_OFFSCREEN event (replaces 200ms polling) |

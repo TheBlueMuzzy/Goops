@@ -289,6 +289,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
     name: 'Seal the Crack',
     teaches: 'high-crack-sealing',
     setup: {
+      spawnPiece: { shape: GoopShape.T_O, color: COLORS.GREEN },  // Green 2x2 to cover crack
       spawnCrack: { color: COLORS.GREEN, placement: 'at-pressure-line' },
       pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },

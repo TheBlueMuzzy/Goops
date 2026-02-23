@@ -1053,6 +1053,24 @@ export const useTrainingFlow = ({
         }, 0);
         continuousSpawnTimeoutsRef.current.push(t0);
       });
+
+      // Kick-start cycle: spawn first piece for non-pausing continuous-spawn steps.
+      // Pausing steps (F1) get their first piece from handleDismiss after message dismiss.
+      // E1 has pauseGame:false + messageDelay:999999, so no dismiss ever happens —
+      // we need to spawn the first piece here to get the PIECE_DROPPED cycle going.
+      if (!gameEngine.state.activeGoop && currentStep.pauseGame === false) {
+        const initGen = stepGenerationRef.current;
+        const initT = setTimeout(() => {
+          if (stepGenerationRef.current !== initGen) return;
+          if (suppressContinuousSpawnRef.current) return;
+          if (gameEngine.isSessionActive && !gameEngine.state.isPaused && !gameEngine.state.activeGoop) {
+            gameEngine.spawnNewPiece();
+            gameEngine.emitChange();
+          }
+        }, 300);
+        continuousSpawnTimeoutsRef.current.push(initT);
+      }
+
       cleanups.push(spawnUnsub);
       cleanups.push(() => {
         continuousSpawnTimeoutsRef.current.forEach(id => clearTimeout(id));
@@ -1156,14 +1174,25 @@ export const useTrainingFlow = ({
       cleanups.push(() => clearInterval(discoveryPoll));
     }
 
-    // --- E1 special: GOAL_CAPTURED → suppress spawn → 3s → message → 3s → auto-advance to E2 ---
+    // --- E1 special: GOAL_CAPTURED → suppress spawn → 3s → message + pulse → 3s → auto-advance to E2 ---
     // Pop at any point after crack sealed skips E2 and goes directly to E3.
     if (currentStep.id === 'E1_SEAL_CRACK' && gameEngine) {
       const e1GoalUnsub = gameEventBus.on(GameEventType.GOAL_CAPTURED, () => {
+        console.log('[E1] GOAL_CAPTURED fired! Setting up 3s message timer.');
         // Stop new piece spawns but don't pause — player must still be able to pop
         suppressContinuousSpawnRef.current = true;
         gameEngine.freezeFalling = true;
         gameEngine.emitChange();
+
+        // lockActivePiece auto-pauses in training mode (isPaused=true) AFTER this
+        // handler returns. We need the game UNPAUSED so the player can pop goop.
+        // Defer to next tick so this runs after lockActivePiece completes.
+        const tUnpause = setTimeout(() => {
+          gameEngine.state.isPaused = false;
+          gameEngine.freezeFalling = true; // keep pieces frozen, just allow interaction
+          gameEngine.emitChange();
+        }, 0);
+        retryTimeoutsRef.current.push(tUnpause);
 
         // Clear placeholder messageDelay timer
         if (transitionTimerRef.current) {
@@ -1174,10 +1203,11 @@ export const useTrainingFlow = ({
         // Arm advance immediately — if player pops right away, they "got it"
         advanceArmedRef.current = true;
 
-        // After 4.5s (1.5s fill animation + 3s), show E1 message (non-dismissible) and freeze pressure
+        // After 3s, show E1 message (non-dismissible), green pulse, freeze pressure
         const t1 = setTimeout(() => {
           setMessageVisible(true);
           setCanDismiss(false);
+          gameEngine.trainingHighlightColor = COLORS.GREEN;
           gameEngine.trainingPressureRate = 0;
           gameEngine.emitChange();
 
@@ -1188,7 +1218,7 @@ export const useTrainingFlow = ({
             }
           }, 3000);
           retryTimeoutsRef.current.push(t2);
-        }, 4500);
+        }, 3000);
         retryTimeoutsRef.current.push(t1);
       });
       cleanups.push(e1GoalUnsub);

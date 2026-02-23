@@ -168,6 +168,7 @@ export interface GoalMark {
   y: number;
   color: string;
   spawnTime: number;
+  plugged?: boolean;  // true when matching goop is covering it (awaiting pop to seal)
 }
 
 export interface Crack {

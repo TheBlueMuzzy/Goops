@@ -136,53 +136,35 @@ export class GoalManager {
         piece: ActivePiece,
         emitChange: () => void
     ): void {
-        // Only remove consumed goals - non-matching cracks persist under goop
-        state.goalMarks = state.goalMarks.filter(g => !consumed.includes(g.id));
-
-        // Also remove from crackCells (for new crack system rendering)
-        const consumedSet = new Set(consumed);
+        // Two-step sealing: mark as plugged (don't remove yet — sealed on pop)
         consumed.forEach(id => {
-            const cell = state.crackCells.find(c => c.id === id);
-            if (cell) {
-                // Update parent/child references before removing
-                cell.originCrackId.forEach(parentId => {
-                    const parent = state.crackCells.find(c => c.id === parentId);
-                    if (parent) {
-                        parent.branchCrackIds = parent.branchCrackIds.filter(cid => cid !== id);
-                    }
-                });
-                cell.branchCrackIds.forEach(childId => {
-                    const child = state.crackCells.find(c => c.id === childId);
-                    if (child) {
-                        child.originCrackId = child.originCrackId.filter(pid => pid !== id);
-                    }
-                });
-            }
+            const goal = state.goalMarks.find(g => g.id === id);
+            if (goal) goal.plugged = true;
+            const crack = state.crackCells.find(c => c.id === id);
+            if (crack) (crack as any).plugged = true;
         });
-        state.crackCells = state.crackCells.filter(c => !consumedSet.has(c.id));
 
-        consumed.forEach(id => {
+        if (consumed.length > 0) {
             const cx = normalizeX(piece.x);
             const cy = Math.floor(piece.y);
             const textId = Math.random().toString(36).substr(2, 9);
 
             state.floatingTexts.push({
                 id: textId,
-                text: 'Laser to Seal',
+                text: 'Plugged!',
                 x: cx,
                 y: cy,
                 life: 1,
                 color: '#facc15'
             });
 
-            // Schedule removal of floating text
             setTimeout(() => {
                 state.floatingTexts = state.floatingTexts.filter(ft => ft.id !== textId);
                 emitChange();
             }, 1000);
 
-            gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: 1 });
-        });
+            gameEventBus.emit(GameEventType.GOAL_PLUGGED, { count: consumed.length });
+        }
         // destroyed goals (non-matching color) are ignored - crack persists
     }
 
@@ -199,58 +181,33 @@ export class GoalManager {
     ): void {
         if (consumedIds.length === 0) return;
 
-        const removedIds = new Set(consumedIds);
-
-        // Update parent/child references before removing cells
+        // Two-step sealing: mark as plugged (don't remove yet — sealed on pop)
         consumedIds.forEach(id => {
-            const cell = state.crackCells.find(c => c.id === id);
-            if (!cell) return;
-
-            // Remove this cell from its parents' branchCrackIds
-            cell.originCrackId.forEach(parentId => {
-                const parent = state.crackCells.find(c => c.id === parentId);
-                if (parent) {
-                    parent.branchCrackIds = parent.branchCrackIds.filter(cid => cid !== id);
-                }
-            });
-
-            // Remove this cell from its children's originCrackId
-            cell.branchCrackIds.forEach(childId => {
-                const child = state.crackCells.find(c => c.id === childId);
-                if (child) {
-                    child.originCrackId = child.originCrackId.filter(pid => pid !== id);
-                }
-            });
+            const goal = state.goalMarks.find(g => g.id === id);
+            if (goal) goal.plugged = true;
+            const crack = state.crackCells.find(c => c.id === id);
+            if (crack) (crack as any).plugged = true;
         });
 
-        // Remove only the consumed cells (not the whole connected group)
-        state.crackCells = state.crackCells.filter(c => !removedIds.has(c.id));
+        const cx = normalizeX(piece.x);
+        const cy = Math.floor(piece.y);
+        const textId = Math.random().toString(36).substr(2, 9);
 
-        // Also sync to goalMarks for backward compatibility
-        state.goalMarks = state.goalMarks.filter(g => !removedIds.has(g.id));
+        state.floatingTexts.push({
+            id: textId,
+            text: consumedIds.length > 1 ? `Plugged ${consumedIds.length}` : 'Plugged!',
+            x: cx,
+            y: cy,
+            life: 1,
+            color: '#facc15'
+        });
 
-        // Create floating text for captures (only one per seal action)
-        if (consumedIds.length > 0) {
-            const cx = normalizeX(piece.x);
-            const cy = Math.floor(piece.y);
-            const textId = Math.random().toString(36).substr(2, 9);
+        setTimeout(() => {
+            state.floatingTexts = state.floatingTexts.filter(ft => ft.id !== textId);
+            emitChange();
+        }, 1000);
 
-            state.floatingTexts.push({
-                id: textId,
-                text: consumedIds.length > 1 ? `Sealed ${consumedIds.length}` : 'Sealed',
-                x: cx,
-                y: cy,
-                life: 1,
-                color: '#facc15'
-            });
-
-            setTimeout(() => {
-                state.floatingTexts = state.floatingTexts.filter(ft => ft.id !== textId);
-                emitChange();
-            }, 1000);
-
-            gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: consumedIds.length });
-        }
+        gameEventBus.emit(GameEventType.GOAL_PLUGGED, { count: consumedIds.length });
     }
 
     /**

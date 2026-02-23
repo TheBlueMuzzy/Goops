@@ -348,15 +348,47 @@ export class PopGoopCommand implements Command {
                 tierPressureReduc = tier * PRESSURE_TIER_BONUS_MS;
             }
 
-            // GOAL CLEAR LOGIC
+            // GOAL CLEAR LOGIC — Two-step sealing: popping cells with isSealingGoop = actual seal
             let infusedCount = 0;
+            const sealedGoalIds: string[] = [];
             group.forEach(pt => {
-                if (engine.state.grid[pt.y][pt.x]?.isSealingGoop) infusedCount++;
+                const gridCell = engine.state.grid[pt.y][pt.x];
+                if (gridCell?.isSealingGoop) {
+                    infusedCount++;
+                    // Find the plugged goalMark at this position
+                    const goalMark = engine.state.goalMarks.find(
+                        g => g.x === pt.x && g.y === pt.y && g.plugged
+                    );
+                    if (goalMark) sealedGoalIds.push(goalMark.id);
+                }
             });
             const infusedBonus = infusedCount * 3000;
 
             if (infusedCount > 0) {
                  engine.state.goalsCleared += infusedCount;
+
+                 // Remove sealed goals from goalMarks and crackCells
+                 if (sealedGoalIds.length > 0) {
+                     const removedIds = new Set(sealedGoalIds);
+
+                     // Update crack parent/child references before removing
+                     sealedGoalIds.forEach(id => {
+                         const crack = engine.state.crackCells.find(c => c.id === id);
+                         if (!crack) return;
+                         crack.originCrackId.forEach(parentId => {
+                             const parent = engine.state.crackCells.find(c => c.id === parentId);
+                             if (parent) parent.branchCrackIds = parent.branchCrackIds.filter(cid => cid !== id);
+                         });
+                         crack.branchCrackIds.forEach(childId => {
+                             const child = engine.state.crackCells.find(c => c.id === childId);
+                             if (child) child.originCrackId = child.originCrackId.filter(pid => pid !== id);
+                         });
+                     });
+
+                     engine.state.crackCells = engine.state.crackCells.filter(c => !removedIds.has(c.id));
+                     engine.state.goalMarks = engine.state.goalMarks.filter(g => !removedIds.has(g.id));
+                 }
+
                  gameEventBus.emit(GameEventType.GOAL_CAPTURED, { count: infusedCount });
 
                  // Charge active abilities: 25% per sealed crack-goop
@@ -438,6 +470,17 @@ export class PopGoopCommand implements Command {
             });
 
             const { grid: cleanGrid, looseGoop: newFalling } = getFloatingBlocks(tempGrid, poppedCells);
+
+            // Unplug any cracks that lost their covering goop due to gravity
+            newFalling.forEach(loose => {
+                if (loose.data.isSealingGoop) {
+                    const goal = engine.state.goalMarks.find(
+                        g => g.x === loose.x && g.y === Math.floor(loose.y) && g.plugged
+                    );
+                    if (goal) goal.plugged = false;
+                    loose.data.isSealingGoop = false;
+                }
+            });
 
             // Burst Logic — skip in training (no goal system active)
             if (infusedCount > 0 && !engine.isTrainingMode) {

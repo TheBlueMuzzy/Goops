@@ -330,6 +330,34 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const prevRotationRef = useRef<number | null>(null);
   const prevTankRotationRef = useRef<number>(0);
 
+  // Track which goalMarks were offscreen last frame (for CRACK_OFFSCREEN event)
+  const prevOffscreenIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const currentOffscreen = new Set<string>();
+    goalMarks.forEach(mark => {
+      let visX = mark.x - tankRotation;
+      if (visX > TANK_WIDTH / 2) visX -= TANK_WIDTH;
+      if (visX < -TANK_WIDTH / 2) visX += TANK_WIDTH;
+      if (visX < 0 || visX >= TANK_VIEWPORT_WIDTH) {
+        currentOffscreen.add(mark.id);
+      }
+    });
+    // Emit for goals that just became offscreen (weren't offscreen before)
+    currentOffscreen.forEach(id => {
+      if (!prevOffscreenIdsRef.current.has(id)) {
+        const mark = goalMarks.find(m => m.id === id);
+        if (mark) {
+          let visX = mark.x - tankRotation;
+          if (visX > TANK_WIDTH / 2) visX -= TANK_WIDTH;
+          if (visX < -TANK_WIDTH / 2) visX += TANK_WIDTH;
+          const direction = visX >= TANK_VIEWPORT_WIDTH ? 'right' : 'left';
+          gameEventBus.emit(GameEventType.CRACK_OFFSCREEN, { goalId: id, direction });
+        }
+      }
+    });
+    prevOffscreenIdsRef.current = currentOffscreen;
+  }, [goalMarks, tankRotation]);
+
   // Update blob X position when tank rotates, and shape when piece rotates
   // NOTE: Y position is owned by physics (stepActivePieceFalling), NOT synced from game
   // This effect ONLY updates X and shape - never touches Y except during rotation
@@ -676,8 +704,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 return null;
             })}
 
-            {/* Goal Marks - always render */}
-            {goalMarks.filter(m => now - m.spawnTime >= 500).map(mark => {
+            {/* Goal Marks - render unplugged only (plugged ones are under goop with glow indicator) */}
+            {goalMarks.filter(m => now - m.spawnTime >= 500 && !m.plugged).map(mark => {
                 let visX = mark.x - tankRotation;
                 if (visX > TANK_WIDTH / 2) visX -= TANK_WIDTH;
                 if (visX < -TANK_WIDTH / 2) visX += TANK_WIDTH;
