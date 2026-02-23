@@ -274,10 +274,10 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
       autoSkipMs: 15000,  // Auto-advance if player never rotates crack offscreen
-      pauseDelay: 1500,   // Wait for D2 seal pop droplets to fade
+      messageDelay: 999999,  // Message shown by offscreen detection, not timer
       popLowersPressure: true,
     },
-    pauseGame: true,
+    pauseGame: false,  // Game running — message only appears when offscreen detected
     advance: { type: 'tap' },
     markComplete: 'WRAP_INTRO',
     handlerType: 'discovery',

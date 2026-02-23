@@ -842,6 +842,27 @@ export const useTrainingFlow = ({
       cleanups.push(dropUnsub);
     }
 
+    // --- D3 as current step: poll for offscreen cracks ---
+    if (currentStep.id === 'D3_OFFSCREEN' && gameEngine) {
+      pool.setInterval('d3-current-poll', () => {
+        if (gameEngine.state.isPaused) return;
+        if (isAnyCrackOffscreen(gameEngine)) {
+          pool.clear('d3-current-poll');
+          d3MessageShownRef.current = true;
+
+          // Pause and show D3 message
+          gameEngine.state.isPaused = true;
+          gameEngine.freezeFalling = true;
+          pauseStartTimeRef.current = Date.now();
+          gameEngine.emitChange();
+
+          setMessageVisible(true);
+          stateMachine.showMessage();
+          advanceArmedRef.current = true;
+        }
+      }, 200);
+    }
+
     // --- autoSkipMs: safety timer to auto-advance if condition not met ---
     if (currentStep.setup?.autoSkipMs) {
       pool.set('auto-skip', () => {
@@ -943,7 +964,7 @@ export const useTrainingFlow = ({
     }
 
     // --- Discoverable D3 offscreen message ---
-    const stepsWithCracksAndRotation = ['E1_SEAL_CRACK', 'F1_GRADUATION'];
+    const stepsWithCracksAndRotation = ['D2_TANK_ROTATION', 'E1_SEAL_CRACK', 'F1_GRADUATION'];
     const d3AlreadyCompleted = completedRef.current.includes('D3_OFFSCREEN');
     if (!d3AlreadyCompleted && !d3MessageShownRef.current && gameEngine &&
         currentStep.id !== 'D3_OFFSCREEN' &&
