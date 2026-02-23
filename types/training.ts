@@ -3,7 +3,7 @@ import { TutorialStepId } from './tutorial';
 import { GoopShape } from '../types';
 
 // --- Training Step Identifiers ---
-// Tutorial v2: 16 steps across 6 phases (A:1, B:4, C:4, D:3, E:3, F:1)
+// Tutorial v3: 15 steps across 6 phases (A:1, B:4, C:4, D:3, E:2, F:1)
 
 export type TrainingStepId =
   | 'A1_WELCOME'
@@ -19,8 +19,7 @@ export type TrainingStepId =
   | 'D2_TANK_ROTATION'
   | 'D3_OFFSCREEN'
   | 'E1_SEAL_CRACK'
-  | 'E2_POP_SEALED'
-  | 'E3_SCAFFOLDING'
+  | 'E2_SCAFFOLDING'
   | 'F1_GRADUATION';
 
 // Phase groupings (A-F)
@@ -56,7 +55,7 @@ export interface AllowedControls {
 export interface StepSetup {
   spawnPiece?: PieceSpawn;
   spawnCrack?: CrackSpawn;
-  pressureRate?: number;        // 0=frozen, 0.3=slow, 1=normal
+  pressureRate?: number;        // 0=frozen, 0.3=slow, 1=normal, 2.5=fast
   showPressureLine?: boolean;   // Reveal the pressure indicator
   view?: 'console' | 'tank';   // Which view to be in
   highlightElement?: string;    // UI element to glow/highlight
@@ -65,26 +64,21 @@ export interface StepSetup {
   showWhenPieceBelow?: number;  // Delay showing message until activeGoop.y >= this value (grid rows)
   pauseDelay?: number;          // Start unpaused, then pause + show message after this many ms
   messageDelay?: number;        // For non-pausing steps: delay showing hint message (game keeps running)
-  showOnInput?: boolean;        // Only show message when user tries input (after messageDelay)
   advanceAtRow?: number;        // Auto-advance when active piece reaches this grid row
-  reshowAtRow?: number;         // Re-show message if player hasn't acted by this row
-  reshowUntilAction?: string;   // Cancel re-show if this action is performed
   advanceAtPressure?: number;   // Auto-advance when PSI reaches this percentage (0-100)
   advanceWhenPressureAbovePieces?: boolean;  // Auto-advance when pressure line rises above highest locked goop
   advancePressureAboveColor?: string;       // Only check goops of this color for the pressure-above check
   highlightGoopColor?: string;  // Pulse-highlight goops of this color (also restricts popping to only this color)
-  reshowAfterMs?: number;       // After dismiss, re-show message after N ms of no input
-  reshowNonDismissible?: boolean; // When re-shown, message can't be closed — only clears when advance action fires
-  retryOnPieceLand?: {           // If piece lands without triggering advance: clear grid, respawn, show retry message
-    retryMessageId: string;      // Key into TRAINING_MESSAGES for retry message
+  hintDelay?: number;           // Wait N ms after dismiss; if no action, reshow message (non-dismissible), pause pressure
+  retryOnPieceLand?: {           // If piece lands without triggering advance: respawn, show retry message
+    retryMessageId: string;      // Key into TRAINING_RETRY_MESSAGES for retry message
     spawnExtraCrack?: CrackSpawn; // Spawn additional crack on each retry
   };
-  showWhenCracksOffscreen?: boolean; // Show message only when all cracks are rotated out of viewport
 
-  // --- Tutorial v2 new features ---
+  // --- Free play / continuous features ---
   continuousSpawn?: boolean;         // Auto-spawn next piece after each piece lands (E1, F1)
   pressureCap?: number;              // Cap pressure at this fraction 0-1 (F1: 0.95)
-  periodicCrackIntervalMs?: number;  // Spawn a crack every N ms (F1: ~20000)
+  periodicCrackIntervalMs?: number;  // Spawn a crack every N ms (F1: 10000)
   popLowersPressure?: boolean;       // Popping goop reduces the pressure bar (real gameplay behavior)
   autoSkipMs?: number;               // If step's show condition not met, auto-skip after N ms
   nonDismissible?: boolean;          // Message can't be dismissed — player must perform advance action to proceed
@@ -96,6 +90,9 @@ export type StepAdvance =
   | { type: 'action'; action: string }       // Perform specific action
   | { type: 'event'; event: string }         // Wait for game event
   | { type: 'auto'; delayMs: number };       // Auto-advance after delay
+
+// Handler types for the handler registry
+export type HandlerType = 'standard' | 'retry' | 'discovery' | 'continuous' | 'freeplay';
 
 // --- Training Step ---
 
@@ -109,7 +106,55 @@ export interface TrainingStep {
   pauseGame: boolean;               // True = game pauses while message shows
   advance: StepAdvance;             // How to move to next step
   markComplete?: TutorialStepId;    // Tutorial step to mark complete (unlocks journal pages)
+  handlerType: HandlerType;         // Which handler processes this step
 }
 
 // The full ordered training sequence
 export type TrainingSequence = TrainingStep[];
+
+// --- State Machine Types ---
+
+// Step lifecycle states
+export enum StepLifecycleState {
+  ENTERING = 'ENTERING',
+  WAITING_FOR_TRIGGER = 'WAITING_FOR_TRIGGER',
+  MESSAGE_VISIBLE = 'MESSAGE_VISIBLE',
+  ARMED = 'ARMED',
+  ADVANCING = 'ADVANCING',
+}
+
+// Properties derived from the current lifecycle state
+export interface StepStateProperties {
+  isPaused: boolean;
+  isFrozen: boolean;
+  messageShown: boolean;
+}
+
+// State machine state map — what each lifecycle state means
+export const STEP_STATE_MAP: Record<StepLifecycleState, StepStateProperties> = {
+  [StepLifecycleState.ENTERING]: {
+    isPaused: true,
+    isFrozen: true,
+    messageShown: false,
+  },
+  [StepLifecycleState.WAITING_FOR_TRIGGER]: {
+    isPaused: false,
+    isFrozen: false,
+    messageShown: false,
+  },
+  [StepLifecycleState.MESSAGE_VISIBLE]: {
+    isPaused: true,
+    isFrozen: true,
+    messageShown: true,
+  },
+  [StepLifecycleState.ARMED]: {
+    isPaused: false,
+    isFrozen: false,
+    messageShown: false,
+  },
+  [StepLifecycleState.ADVANCING]: {
+    isPaused: true,
+    isFrozen: true,
+    messageShown: false,
+  },
+};
