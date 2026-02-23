@@ -274,6 +274,7 @@ export const TRAINING_SEQUENCE: TrainingStep[] = [
       pressureRate: 0.46875,
       allowedControls: { fastDrop: true, rotate: true, tankRotate: true },
       autoSkipMs: 15000,  // Auto-advance if player never rotates crack offscreen
+      pauseDelay: 1500,   // Wait for D2 seal pop droplets to fade
       popLowersPressure: true,
     },
     pauseGame: true,

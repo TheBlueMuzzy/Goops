@@ -67,13 +67,17 @@ Plan 33-07: Custom Handlers + Integration + UAT (2 tasks + 1 checkpoint)
   2. Wire into Game.tsx, GameBoard, TutorialOverlay, remove old code — COMPLETE (c7c30cb)
   3. Full A1->F1 playthrough verification — IN PROGRESS (UAT round 1)
      - D2 bugs found and fixed (6157603, 5ddd66d, 66e2b91)
+     - Operator precedence fix (0126ca8)
+     - D3 post-seal delay added — droplets fade before message (next commit)
      - A1→D2 verified working, continuing D2→F1
 ```
 
-### UAT Round 1 Fixes (D2)
+### UAT Round 1 Fixes
 - **GOAL_PLUGGED vs GOAL_CAPTURED**: Retry handler listened for seal (pop) instead of plug (lock). Same fix applied to E1.
 - **D2 pressure → 0**: Retries caused pressure rise, making E1 cracks spawn too high.
 - **Post-plug pulse**: Added `dynamicHighlight` state so highlight flows through React props (not just engine-direct). Green goop pulses + restricts popping to green only. Reuses E1_SEAL_CRACK message for "Pop to seal" hint after 3s.
+- **Operator precedence**: `??` mixed with `||` needs parentheses (TypeScript strict).
+- **D3 post-seal timing**: Added `pauseDelay: 1500` to D3 so pop droplets fade before message shows (matches C3 pattern).
 
 ### What Plan 33-06 Built
 - **State machine:** `hooks/tutorial/stateMachine.ts` — 5 lifecycle states with derived properties
