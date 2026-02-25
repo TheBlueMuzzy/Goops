@@ -1,11 +1,15 @@
-
 {
   "short_name": "Goops",
   "name": "Goops: Filtration Defense",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/droplets.svg",
-      "type": "image/svg+xml",
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
       "sizes": "512x512"
     }
   ],
